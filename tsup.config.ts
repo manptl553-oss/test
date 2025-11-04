@@ -6,7 +6,7 @@ export default defineConfig({
   dts: true,
   sourcemap: true,
   clean: true,
-  
+
   // Only React and React-DOM should be external (peer deps)
   external: [
     "react",
@@ -30,6 +30,7 @@ export default defineConfig({
   
   esbuildOptions(options) {
     options.jsx = "automatic";
+    options.external = ["form-data"]; // 👈 Exclude form-data completely
   },
   
   treeshake: true,
