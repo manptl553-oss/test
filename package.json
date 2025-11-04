@@ -25,7 +25,7 @@
     "typecheck": "tsc --noEmit",
     "lint": "eslint 'src/**/*.{ts,tsx}' --fix",
     "format": "prettier --write 'src/**/*.{ts,tsx,js,jsx,json,css,scss,md}'",
-    "postinstall": "node ./src/scripts/postinstall.js"
+    "postinstall": "node ./scripts/postinstall.js"
   },
   "dependencies": {
     "axios": "^1.12.2",
