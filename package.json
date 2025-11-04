@@ -1,8 +1,11 @@
 {
-  "name": "bit-workflow-engine",
+  "name": "@manptl553-oss/bit-workflow-engine",
   "version": "1.0.0",
+  "license": "MIT",
   "private": false,
-  "type": "module",
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com/"
+  },
 
   "main": "dist/index.cjs",
   "module": "dist/index.js",
