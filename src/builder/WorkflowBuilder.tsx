@@ -7,6 +7,7 @@ import FlowCanvas from './components/FlowCanvas';
 import { normalizeWorkflowData } from './helpers/normalize';
 
 export function WorkflowBuilder({ workflowId }: { workflowId?: string }) {
+  console.log("🚀 ~ WorkflowBuilder ~ workflowId:", workflowId)
   const { api } = useWorkflowContext();
   const service = useMemo(() => createWorkflowService(api), [api]);
   const setWorkflowId = useWorkflowStore((s) => s.setWorkflowId);

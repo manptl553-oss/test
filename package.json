@@ -3,9 +3,11 @@
   "version": "1.0.0",
   "private": false,
   "type": "module",
+
   "main": "dist/index.cjs",
   "module": "dist/index.js",
   "types": "dist/index.d.ts",
+
   "exports": {
     ".": {
       "import": "./dist/index.js",
@@ -13,55 +15,45 @@
       "types": "./dist/index.d.ts"
     }
   },
-  "files": [
-    "dist",
-    "README.md",
-    "LICENSE",
-    "scripts"
-  ],
+
+  "files": ["dist", "README.md", "LICENSE"],
+
   "scripts": {
     "dev": "tsup --watch",
     "build": "tsup",
     "clean": "rimraf dist",
-    "typecheck": "tsc --noEmit",
-    "prepare": "npm run build",
-    "prepack": "npm run build",
-    "prepublishOnly": "npm run clean && npm run typecheck && npm run build",
-    "postinstall": "node ./scripts/postinstall.js"
+    "typecheck": "tsc --noEmit"
   },
+
   "dependencies": {
     "axios": "^1.12.2",
     "dagre": "^0.8.5",
-    "date-fns": "^3.6.0"
-  },
-  "peerDependencies": {
-    "react": ">=18",
-    "react-dom": ">=18",
-    "reactflow": ">=11",
-    "@tanstack/react-query": "^5",
-    "@hookform/resolvers": "^5",
-    "react-hook-form": "^7",
-    "lucide-react": "^0.452.0",
-    "framer-motion": "^12",
-    "clsx": "^2",
-    "zod": "^4",
-    "zustand": ">=5",
-    "socket.io-client": "^4.8.1",
+    "date-fns": "^3.6.0",
+    "zod": "^4.1.12",
+    "sonner": "^1.7.4",
     "radix-ui": "^1.4.3",
-    "tailwind-merge": "^2",
-    "tailwindcss": "^4",
-    "tailwindcss-animate": "^1",
-    "sonner": "^1",
-    "@monaco-editor/react": "^4",
     "react-resizable-panels": "^2.1.9",
-    "react-router-dom": "^6"
+    "framer-motion": "^12.23.24",
+    "@monaco-editor/react": "^4.7.0",
+    "lucide-react": "^0.452.0",
+    "reactflow": "^11.11.4",
+    "zustand": "^5.0.8",
+    "react-hook-form": "^7.66.0",
+    "@hookform/resolvers": "^5.2.2"
   },
+
+  "peerDependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+
   "devDependencies": {
-    "@types/react": "^18.3.0",
-    "@types/react-dom": "^18.3.0",
-    "@types/node": "^24.6.0",
     "typescript": "~5.9.3",
     "tsup": "^8.0.1",
+    "@types/react": "^18.3.0",
+    "@types/react-dom": "^18.3.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
     "rimraf": "^5.0.0"
   }
 }
