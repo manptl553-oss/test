@@ -1,6 +1,6 @@
 {
   "name": "@manptl553-oss/bit-workflow-engine",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "license": "MIT",
   "private": false,
   "publishConfig": {
@@ -46,8 +46,8 @@
   },
 
   "peerDependencies": {
-    "react": "^19.3.1",
-    "react-dom": "^19.3.1"
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1"
   },
 
   "devDependencies": {
