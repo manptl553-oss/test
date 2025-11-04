@@ -6,6 +6,7 @@ export default defineConfig({
   dts: true,
   sourcemap: true,
   clean: true,
+   platform: "browser",
 
   // Only React and React-DOM should be external (peer deps)
   external: [
