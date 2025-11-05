@@ -1,10 +1,10 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ReactFlowProvider } from 'reactflow';
-import { useWorkflowContext } from '../provider/WorkflowProvider';
 import { createWorkflowService } from '../api/service';
 import FlowCanvas from './components/FlowCanvas';
 import { normalizeWorkflowData } from './helpers/normalize';
 import { useFlowStore } from '@/core/store/useWorkflowStore';
+import { useWorkflowContext } from '@/public';
 
 export function WorkflowBuilder({ workflowId }: { workflowId?: string }) {
   const { api } = useWorkflowContext();

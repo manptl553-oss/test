@@ -1,16 +1,16 @@
 import React, { useMemo, useState } from 'react';
 import { useReactFlow } from 'reactflow';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../../ui/dialog/Dialog';
-import { useWorkflowStore } from '../../core/store/useWorkflowStore';
 import { useWorkflowContext } from '../../provider/WorkflowProvider';
 import { createWorkflowService } from '../../api/service';
 import { DynamicForm } from './DynamicForm';
 import { nodeFieldsConfig, nodeValidationSchema } from '../schemas/nodeSchemas';
+import { useFlowStore } from '@/core/store/useWorkflowStore';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/ui';
 
 export const getSourceHandle = (sourceHandle: string | undefined) => { switch (sourceHandle) { case 'true': return 'on_true'; case 'false': return 'on_false'; default: return sourceHandle; } };
 export function NodeConfigModal({ open, onOpenChange, nodeId, nodeData }: any) {
   const { setNodes, getEdges } = useReactFlow();
-  const { workflowId } = useWorkflowStore();
+  const { workflowId } = useFlowStore();
   const { api } = useWorkflowContext();
   const service = createWorkflowService(api);
   const nodeType = nodeData?.type as string;

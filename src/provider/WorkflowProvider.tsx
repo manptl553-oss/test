@@ -1,7 +1,7 @@
-import React, { createContext, useContext, useMemo } from "react";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { defaultTheme, mergeTheme, WorkflowTheme } from "../theme";
 import { ApiConfig } from "@/api/types";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import React, { createContext, useContext, useMemo } from "react";
+import { mergeTheme, WorkflowTheme } from "../theme";
 
 type WorkflowContextValue = {
   theme: WorkflowTheme;

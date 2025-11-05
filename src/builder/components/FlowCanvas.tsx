@@ -5,8 +5,8 @@ import AddNodeButton from './AddNodeButton';
 import NodeSidebar from './NodeSidebar';
 import CustomEdge from './CustomEdge';
 import CustomNode from './CustomNode';
-import { useWorkflowStore } from '../../core/store/useWorkflowStore';
 import { getAutoLayoutedElements } from '../../core/utils/layout';
+import { useFlowStore } from '@/core/store/useWorkflowStore';
 
 const nodeTypes = { custom: CustomNode };
 const edgeTypes = { custom: CustomEdge };
@@ -37,14 +37,14 @@ export function mapWorkflowToFlow(workflow: any, actions?: any) {
 }
 
 export default function FlowCanvas({ workflow }: any) {
-  const { setNodes, setEdges, nodes, edges, onNodesChange, onEdgesChange, onConnect, setSourceNodeId, setSourceHandleId, setShowSidebar, showSidebar, deleteNode, renameNode } = useWorkflowStore();
+  const { setNodes, setEdges, nodes, edges, onNodesChange, onEdgesChange, onConnect, setSourceNodeId, setSourceHandleId, setShowSidebar, showSidebar, deleteNode, renameNode } = useFlowStore();
   const { screenToFlowPosition, fitView } = useReactFlow();
   const [isLayouting, setIsLayouting] = useState(false);
   const isEditMode = !!workflow?.id;
   const handleDeleteClick = useCallback((nodeId: string) => deleteNode(nodeId), [deleteNode]);
   const handleAddClick = useCallback((nodeId: string, handleId: string) => { setSourceNodeId(nodeId); setSourceHandleId(handleId); setShowSidebar(true); }, [setSourceNodeId, setSourceHandleId, setShowSidebar]);
   const updateNodeInternals = useUpdateNodeInternals();
-  const { setUpdateNodeInternals } = useWorkflowStore();
+  const { setUpdateNodeInternals } = useFlowStore();
   useEffect(() => { setUpdateNodeInternals((id: string) => updateNodeInternals(id)); }, [setUpdateNodeInternals, updateNodeInternals]);
   useEffect(() => {
     const { nodes, edges } = isEditMode ? mapWorkflowToFlow(workflow, { onAddClick: handleAddClick, onDeleteClick: handleDeleteClick, onRename: renameNode }) : { nodes: [], edges: [] };
@@ -57,7 +57,7 @@ export default function FlowCanvas({ workflow }: any) {
     const type = e.dataTransfer.getData('application/reactflow'); const nodeType = e.dataTransfer.getData('nodeType'); const nodeName = e.dataTransfer.getData('nodeName');
     if (!type && !nodeType) return; const position = screenToFlowPosition({ x: e.clientX, y: e.clientY }); const id = `${type || nodeType}-${crypto.randomUUID()}`;
     const newNode: Node = { id, type: 'custom', position, data: { id, name: nodeName || type, type: nodeType, onAddClick: handleAddClick, onDeleteClick: deleteNode, onRename: renameNode } };
-    const { addNode, addNodeAfter, addNodeBetweenEdge, clearSource } = useWorkflowStore.getState();
+    const { addNode, addNodeAfter, addNodeBetweenEdge, clearSource } = useFlowStore.getState();
     const sourceNodeId = e.dataTransfer.getData('sourceNodeId'); const sourceHandleId = e.dataTransfer.getData('sourceHandleId'); const sourceEdgeId = e.dataTransfer.getData('sourceEdgeId');
     if (sourceEdgeId && sourceNodeId) addNodeBetweenEdge(newNode); else if (sourceNodeId) addNodeAfter(newNode, sourceNodeId, sourceHandleId || 'done'); else addNode(newNode);
     clearSource?.(); setShowSidebar(false);
