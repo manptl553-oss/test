@@ -1,16 +1,21 @@
 {
-  "name": "bit-workflow-engine",
-  "version": "1.0.0",
+  "name": "@manptl553-oss/bit-workflow-engine",
+  "version": "1.0.5",
+  "license": "MIT",
   "private": false,
   "type": "module",
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com/"
+  },
   "main": "dist/index.cjs",
   "module": "dist/index.js",
   "types": "dist/index.d.ts",
   "exports": {
     ".": {
+      "types": "./dist/index.d.ts",
+      "browser": "./dist/index.js",
       "import": "./dist/index.js",
-      "require": "./dist/index.cjs",
-      "types": "./dist/index.d.ts"
+      "require": "./dist/index.cjs"
     }
   },
   "files": [
@@ -42,11 +47,15 @@
     "zustand": "^5.0.8"
   },
   "peerDependencies": {
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1"
   },
   "devDependencies": {
     "@types/dagre": "^0.7.53",
+    "@types/react": "^18.3.0",
+    "@types/react-dom": "^18.3.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
     "rimraf": "^5.0.0",
     "tsup": "^8.0.1",
     "typescript": "~5.9.3"
