@@ -1,9 +1,6 @@
-// ---------------------------------------------
-// Types
-
 import { NodeTypeProps } from "../types/node.types";
 
-// ---------------------------------------------
+
 export type NodeDefinition = {
   outputs: string[];
   defaultTarget: string;
@@ -11,11 +8,6 @@ export type NodeDefinition = {
   labels?: Record<string, string>;
 };
 
-
-
-// ---------------------------------------------
-// Node Definitions
-// ---------------------------------------------
 export const NODE_DEFINITIONS: Record<NodeTypeProps, NodeDefinition> = {
   webhook: { outputs: ["next"], defaultTarget: "input" },
   event: { outputs: ["next"], defaultTarget: "input" },
@@ -79,63 +71,32 @@ export const NODE_DEFINITIONS: Record<NodeTypeProps, NodeDefinition> = {
   code_block: { outputs: ["done"], defaultTarget: "input" },
 };
 
-// ---------------------------------------------
-// Utils
-// ---------------------------------------------
 export const getNodeDefinition = (type?: string): NodeDefinition => {
-  const key = type?.toLowerCase?.();
-  if (!key) {
-    return { outputs: ["done"], defaultTarget: "input" };
-  }
-
-  return NODE_DEFINITIONS[key as keyof typeof NODE_DEFINITIONS] ?? {
-    outputs: ["done"],
-    defaultTarget: "input",
-  };
+  const key = type?.toLowerCase?.() as NodeTypeProps;
+  return NODE_DEFINITIONS[key] || { outputs: ["done"], defaultTarget: "input" };
 };
-
 
 export const getOutputsForNode = (node: any): string[] => {
   const type = node?.data?.type?.toLowerCase();
   const def = getNodeDefinition(type);
 
-  if (type === "switch") {
+  if (type === NodeTypeProps.SWITCH) {
     const cases = node?.data?.configuration?.switch_cases;
-    if (Array.isArray(cases) && cases.length > 0)
+    if (Array.isArray(cases) && cases.length > 0) {
       return cases.map((c: any, i: number) => c?.condition || `case_${i + 1}`);
+    }
     return ["case_1"];
   }
 
   return def.outputs;
 };
 
-export const getTargetHandleForNode = (node: any): string =>
-  getNodeDefinition(node?.data?.type).defaultTarget;
-
-export const getSelfLoopHandle = (node: any): string | null =>
-  getNodeDefinition(node?.data?.type).selfLoopHandle ?? null;
-
-export const getEdgeLabelForNode = (node: any, handle?: string): string | undefined => {
-  if (!handle) return;
-  const normalized = handle.toLowerCase().replace(/^on_/, "");
-
-  const def = getNodeDefinition(node?.data?.type);
-
-  // Static labels
-  if (def.labels?.[normalized]) return def.labels[normalized];
-
-  // Dynamic switch case: case_1 → Case 1
-  if (normalized.startsWith("case_")) {
-    const num = normalized.split("_")[1];
-    return `Case ${num}`;
-  }
-
-  return undefined;
-};
-
-// ✅ Includes old trigger logic + extended support
 export const isTriggerNode = (node?: any): boolean => {
   if (!node) return false;
   const type = node?.data?.type?.toLowerCase?.();
-  return ["webhook", "event", "schedule", "trigger", "cron"].includes(type);
+  return [
+    NodeTypeProps.WEBHOOK,
+    NodeTypeProps.EVENT,
+    NodeTypeProps.SCHEDULE
+  ].includes(type as NodeTypeProps);
 };

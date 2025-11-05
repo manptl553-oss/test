@@ -2,21 +2,20 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { ReactFlowProvider } from 'reactflow';
 import { useWorkflowContext } from '../provider/WorkflowProvider';
 import { createWorkflowService } from '../api/service';
-import { useWorkflowStore } from '../core/store/useWorkflowStore';
 import FlowCanvas from './components/FlowCanvas';
 import { normalizeWorkflowData } from './helpers/normalize';
+import { useFlowStore } from '@/core/store/useWorkflowStore';
 
 export function WorkflowBuilder({ workflowId }: { workflowId?: string }) {
-  console.log("🚀 ~ WorkflowBuilder ~ workflowId:", workflowId)
   const { api } = useWorkflowContext();
   const service = useMemo(() => createWorkflowService(api), [api]);
-  const setWorkflowId = useWorkflowStore((s) => s.setWorkflowId);
+  const setWorkflowId = useFlowStore((s) => s.setWorkflowId);
   const [workflow, setWorkflow] = useState<any>(null);
 
   useEffect(() => {
     if (!workflowId) return;
     setWorkflowId(workflowId);
-    service.fetchWorkflow(workflowId).then((data) => {
+    service.fetchWorkflow(workflowId).then((data:any) => {
       const normalized = normalizeWorkflowData(data);
       setWorkflow(normalized);
     }).catch(() => {});
