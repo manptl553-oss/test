@@ -1,4 +1,6 @@
-@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 @theme {
   --color-maastrichtblue: #0b1739;
   --color-primary: #7ec040;
@@ -10,4 +12,3 @@
 .card-gradient-color {
   background: linear-gradient(177deg, #6db92a 1%, #487c19 95%);
 }
-

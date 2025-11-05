@@ -1,12 +1,14 @@
 import { defineConfig } from "tsup";
 
 export default defineConfig({
-  entry: ["src/index.ts"],
+  entry: ["src/index.ts", "index.css"],
   format: ["esm", "cjs"],
-  dts: true,
-  sourcemap: true,
+  dts: {
+    entry: ["src/index.ts"],
+  },
+  sourcemap: false, // Set to false for production
   clean: true,
-   platform: "browser",
+  platform: "browser",
 
   // Only React and React-DOM should be external (peer deps)
   external: [
@@ -31,7 +33,7 @@ export default defineConfig({
 
   esbuildOptions(options) {
     options.jsx = "automatic";
-    options.external = ["form-data"]; // 👈 Exclude form-data completely
+    // options.external = ["form-data"]; // 👈 Exclude form-data completely
   },
 
   treeshake: true,

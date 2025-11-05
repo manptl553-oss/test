@@ -1,0 +1,20 @@
+# Source files
+src/
+scripts/
+
+# Config files
+tsconfig.json
+tailwind.config.ts
+tsup.config.ts
+postcss.config.ts
+
+# Node modules
+node_modules/
+
+# Other
+.gitignore
+*.log
+*.test.js
+*.spec.js
+
+.npmrc

@@ -11,7 +11,7 @@ type ToastType = {
   description?: string;
   variant?: "default" | "destructive" | "success";
   duration?: number;
-  open: boolean;
+  open?: boolean;
 };
 
 // Context for managing toasts
