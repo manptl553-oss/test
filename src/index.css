@@ -1,6 +1,4 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
 @theme {
   --color-maastrichtblue: #0b1739;
   --color-primary: #7ec040;
