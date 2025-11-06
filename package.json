@@ -1,6 +1,6 @@
 {
   "name": "@manptl553-oss/bit-workflow-engine",
-  "version": "1.0.9",
+  "version": "1.0.11",
   "license": "MIT",
   "private": false,
   "type": "module",
@@ -31,7 +31,8 @@
     "dev": "tsup --watch",
     "build": "tsup",
     "clean": "rimraf dist",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "release": "node scripts/release.js"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",

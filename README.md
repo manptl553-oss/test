@@ -22,3 +22,7 @@ export default function Page() {
   );
 }
 ```
+
+<!--  // "preversion": "npm run clean && npm run build",
+    // "version": "git add . && git commit -m 'chore(release): bump version to %s' || true",
+    // "postversion": "git push && git push --tags" -->
