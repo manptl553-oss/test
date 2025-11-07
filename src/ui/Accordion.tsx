@@ -5,7 +5,7 @@ import { cn } from "../libs/index";
 
 // Root wrapper (structural; Headless UI doesn't have an Accordion root)
 const Accordion = React.forwardRef<
-  React.ElementRef<"div">,
+  React.ComponentRef<"div">,
   React.ComponentPropsWithoutRef<"div">
 >(({ className, ...props }, ref) => (
   <div ref={ref} className={cn(className)} {...props} />
@@ -14,7 +14,7 @@ Accordion.displayName = "Accordion";
 
 // Each item provides a Disclosure context
 const AccordionItem = React.forwardRef<
-  React.ElementRef<"div">,
+  React.ComponentRef<"div">,
   React.ComponentPropsWithoutRef<"div">
 >(({ className, children, ...props }, ref) => (
   <Disclosure>
@@ -29,7 +29,7 @@ AccordionItem.displayName = "AccordionItem";
 
 // Trigger mapped to Disclosure.Button
 const AccordionTrigger = React.forwardRef<
-  React.ElementRef<"button">,
+  React.ComponentRef<"button">,
   React.ComponentPropsWithoutRef<"button">
 >(({ className, children, ...props }, ref) => (
   <DisclosureButton
@@ -49,7 +49,7 @@ AccordionTrigger.displayName = "AccordionTrigger";
 
 // Content mapped to Disclosure.Panel
 const AccordionContent = React.forwardRef<
-  React.ElementRef<"div">,
+  React.ComponentRef<"div">,
   React.ComponentPropsWithoutRef<"div">
 >(({ className, children, ...props }, ref) => (
   <DisclosurePanel

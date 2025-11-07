@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Dialog, Transition, Portal as HPortal, TransitionChild, DialogPanel } from "@headlessui/react";
+import { Dialog, Transition, Portal as HPortal, TransitionChild, DialogPanel, DialogTitle } from "@headlessui/react";
 
 import { cn } from "../libs";
 import { buttonVariants } from "./Button";
@@ -149,7 +149,7 @@ AlertDialogFooter.displayName = "AlertDialogFooter";
 
 const AlertDialogTitle = React.forwardRef<HTMLHeadingElement, React.ComponentPropsWithoutRef<"h2">>(
   ({ className, ...props }, ref) => (
-    <Dialog.Title ref={ref} className={cn("text-lg font-semibold", className)} {...props} />
+    <DialogTitle ref={ref} className={cn("text-lg font-semibold", className)} {...props} />
   )
 );
 AlertDialogTitle.displayName = "AlertDialogTitle";

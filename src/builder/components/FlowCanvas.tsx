@@ -12,6 +12,7 @@ import ReactFlow, {
   MarkerType,
   MiniMap,
   Node,
+  OnConnectStartParams,
   useReactFlow,
   useUpdateNodeInternals,
 } from "reactflow";
@@ -316,7 +317,10 @@ export default function FlowCanvas({ workflow }: any) {
   );
 
   const onConnectStart = useCallback(
-    (_, params) => {
+    (
+      _event: React.MouseEvent | React.TouchEvent,
+      params: OnConnectStartParams
+    ) => {
       const { nodeId, handleId } = params;
 
       // check if this handle already has a connected edge
@@ -335,7 +339,7 @@ export default function FlowCanvas({ workflow }: any) {
   );
 
   const onConnectEnd = useCallback(
-    (event) => {
+    (event: MouseEvent | TouchEvent) => {
       if (
         pendingConnection &&
         (event.target as HTMLElement).classList.contains("react-flow__pane")
@@ -357,7 +361,7 @@ export default function FlowCanvas({ workflow }: any) {
   );
 
   return (
-    <div className="w-full h-full bg-white relative">
+    <div className="w-full h-full relative bg-[var(--wf-background-base)] text-[var(--wf-text-default)]">
       {/* ReactFlow Canvas */}
       <ReactFlow
         nodes={nodesWithData}
@@ -372,23 +376,35 @@ export default function FlowCanvas({ workflow }: any) {
         onDrop={onDrop}
         onDragOver={onDragOver}
         fitView
-        className="bg-white"
-        connectionLineStyle={{ stroke: "#4b5563", strokeWidth: 2 }}
+        className="bg-[var(--wf-background-base)]"
+        // must be inline per ReactFlow API; still themeable via CSS var
+        connectionLineStyle={{
+          stroke: "var(--wf-border-default)",
+          strokeWidth: 2,
+        }}
         proOptions={{ hideAttribution: true }}
       >
-        <MiniMap />
-        <Controls />
-        <Background />
+        <MiniMap
+          nodeStrokeColor={() => "var(--wf-border-default)"}
+          nodeColor={() => "var(--wf-background-subtle)"}
+          maskColor="rgba(0,0,0,0.08)"
+        />
+        <Controls className="!bg-[var(--wf-background-subtle)] !text-[var(--wf-text-default)] !border !border-[var(--wf-border-default)]" />
+        <Background color="var(--wf-border-default)" />
       </ReactFlow>
 
       {/* Auto Layout Button - bottom left */}
-      <div className="absolute bottom-34 left-4 z-20">
-        <span
-          className="bg-white p-1 rounded-md shadow-xl w-6 h-6 flex items-center justify-center"
+      <div className="absolute bottom-8 left-4 z-20">
+        <button
           onClick={handleAutoLayout}
+          aria-label="Auto layout"
+          className="bg-[var(--wf-background-subtle)] text-[var(--wf-text-default)]
+                 border border-[var(--wf-border-default)]
+                 p-1 rounded-md shadow-xl w-8 h-8
+                 flex items-center justify-center hover:opacity-90"
         >
-          <Fullscreen />
-        </span>
+          <Fullscreen className="w-4 h-4" />
+        </button>
       </div>
 
       {/* Sidebar */}

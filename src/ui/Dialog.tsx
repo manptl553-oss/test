@@ -3,8 +3,9 @@ import {
   Dialog as HDialog,
   DialogPanel,
   DialogTitle as HDialogTitle,
+  Description as HDescription,
   Transition,
-  Portal as HPortal,
+  TransitionChild,
 } from "@headlessui/react";
 import { X } from "lucide-react";
 import { cn } from "@/libs";
@@ -54,6 +55,7 @@ const DialogTrigger = React.forwardRef<HTMLButtonElement, React.ComponentPropsWi
     return (
       <button
         ref={ref}
+        type="button"
         onClick={(e) => {
           onClick?.(e);
           if (!e.defaultPrevented) setOpen(true);
@@ -66,9 +68,11 @@ const DialogTrigger = React.forwardRef<HTMLButtonElement, React.ComponentPropsWi
 DialogTrigger.displayName = "DialogTrigger";
 
 /** -------------------------
- * Portal (API parity)
+ * Portal (wrapper for children - Radix API parity)
  * ------------------------ */
-const DialogPortal = ({ children }: { children?: React.ReactNode }) => <HPortal>{children}</HPortal>;
+const DialogPortal = ({ children }: { children?: React.ReactNode }) => {
+  return <>{children}</>;
+};
 DialogPortal.displayName = "DialogPortal";
 
 /** -------------------------
@@ -93,9 +97,7 @@ const DialogOverlay = React.forwardRef<HTMLDivElement, React.ComponentPropsWitho
           ref={ref}
           data-state={open ? "open" : "closed"}
           className={cn(
-            "fixed inset-0 z-50 bg-black/80",
-            // keep your Radix-like data-state utilities if you have them configured:
-            "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
+            "fixed inset-0 z-50 bg-black/80 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
             className
           )}
           {...props}
@@ -107,11 +109,16 @@ const DialogOverlay = React.forwardRef<HTMLDivElement, React.ComponentPropsWitho
 DialogOverlay.displayName = "DialogOverlay";
 
 /** -------------------------
- * Content (Dialog + Panel) + built-in Caret-close button parity
+ * Content (Dialog + Panel) + built-in Close button
  * ------------------------ */
 const DialogContent = React.forwardRef<HTMLDivElement, React.ComponentPropsWithoutRef<"div">>(
   ({ className, children, ...props }, ref) => {
     const { open, setOpen } = useDialogCtx();
+    const dialogContainerRef = React.useRef<HTMLDivElement>(null);
+
+    React.useEffect(() => {
+      (window as any).__dialogContainer = dialogContainerRef.current;
+    }, []);
 
     return (
       <DialogPortal>
@@ -119,37 +126,33 @@ const DialogContent = React.forwardRef<HTMLDivElement, React.ComponentPropsWitho
           <HDialog as="div" className="relative z-50" open={open} onClose={() => setOpen(false)}>
             <DialogOverlay />
 
-            <div className="fixed inset-0 overflow-y-auto">
-              <div className="flex min-h-full items-center justify-center p-4">
-                <Transition.Child
-                  as={React.Fragment}
-                  enter="ease-out duration-200"
-                  enterFrom="opacity-0 scale-95"
-                  enterTo="opacity-100 scale-100"
-                  leave="ease-in duration-150"
-                  leaveFrom="opacity-100 scale-100"
-                  leaveTo="opacity-0 scale-95"
+            <div ref={dialogContainerRef} className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto">
+              <TransitionChild
+                as={React.Fragment}
+                enter="ease-out duration-200"
+                enterFrom="opacity-0 scale-95"
+                enterTo="opacity-100 scale-100"
+                leave="ease-in duration-150"
+                leaveFrom="opacity-100 scale-100"
+                leaveTo="opacity-0 scale-95"
+              >
+                <DialogPanel
+                  ref={ref}
+                  data-state={open ? "open" : "closed"}
+                  className={cn(
+                    "relative z-[1000] w-full max-w-lg rounded-lg border bg-background p-6 shadow-lg transition-all duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95",
+                    className
+                  )}
+                  {...props}
                 >
-                  <DialogPanel
-                    ref={ref}
-                    data-state={open ? "open" : "closed"}
-                    className={cn(
-                      "relative w-full max-w-lg rounded-lg border bg-background p-6 shadow-lg transition-all duration-200",
-                      // keep your Radix data-state class hooks:
-                      "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95",
-                      className
-                    )}
-                    {...props}
-                  >
-                    {children}
-                    {/* Inline close button (like Radix Close in Content) */}
-                    <DialogClose className="absolute right-4 top-4 rounded-sm opacity-70 hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2">
-                      <X className="h-4 w-4" />
-                      <span className="sr-only">Close</span>
-                    </DialogClose>
-                  </DialogPanel>
-                </Transition.Child>
-              </div>
+                  {children}
+                  {/* Inline close button (like Radix Close in Content) */}
+                  <DialogClose className="absolute right-4 top-4 rounded-sm opacity-70 hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2">
+                    <X className="h-4 w-4" />
+                    <span className="sr-only">Close</span>
+                  </DialogClose>
+                </DialogPanel>
+              </TransitionChild>
             </div>
           </HDialog>
         </Transition>
@@ -168,6 +171,7 @@ const DialogClose = React.forwardRef<HTMLButtonElement, React.ComponentPropsWith
     return (
       <button
         ref={ref}
+        type="button"
         onClick={(e) => {
           onClick?.(e);
           if (!e.defaultPrevented) setOpen(false);
@@ -193,27 +197,34 @@ const DialogFooter = ({ className, ...props }: React.HTMLAttributes<HTMLDivEleme
 DialogFooter.displayName = "DialogFooter";
 
 /** -------------------------
- * Title / Description
+ * Title
  * ------------------------ */
 const DialogTitle = React.forwardRef<HTMLHeadingElement, React.ComponentPropsWithoutRef<"h2">>(
   ({ className, ...props }, ref) => (
-    <HDialogTitle ref={ref} as="h2" className={cn("text-lg font-semibold leading-none tracking-tight", className)} {...props} />
+    <HDialogTitle 
+      ref={ref} 
+      as="h2" 
+      className={cn("text-lg font-semibold leading-none tracking-tight", className)} 
+      {...props} 
+    />
   )
 );
 DialogTitle.displayName = "DialogTitle";
 
-const DialogDescription = React.forwardRef<
-  HTMLParagraphElement,
-  React.HTMLAttributes<HTMLParagraphElement>
->(({ className, ...props }, ref) => (
-  <p
-    ref={ref}
-    className={cn("text-sm text-muted-foreground", className)}
-    {...props}
-  />
-));
+/** -------------------------
+ * Description
+ * ------------------------ */
+const DialogDescription = React.forwardRef<HTMLParagraphElement, React.HTMLAttributes<HTMLParagraphElement>>(
+  ({ className, ...props }, ref) => (
+    <HDescription
+      ref={ref}
+      as="p"
+      className={cn("text-sm text-muted-foreground", className)}
+      {...props}
+    />
+  )
+);
 DialogDescription.displayName = "DialogDescription";
-
 
 export {
   Dialog,

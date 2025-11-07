@@ -1,10 +1,21 @@
 import { useEffect, useRef, useState } from "react";
+import { cn } from "../libs";
+
 interface EditableNodeNameProps {
   nodeName: string;
   onRename?: (newName: string) => void;
+  className?: string;
+  inputClassName?: string;
+  spanClassName?: string;
 }
 
-const EditableNodeName = ({ nodeName, onRename }: EditableNodeNameProps) => {
+const EditableNodeName = ({
+  nodeName,
+  onRename,
+  className,
+  inputClassName,
+  spanClassName,
+}: EditableNodeNameProps) => {
   const [isEditing, setIsEditing] = useState(false);
   const [value, setValue] = useState(nodeName);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -17,7 +28,7 @@ const EditableNodeName = ({ nodeName, onRename }: EditableNodeNameProps) => {
 
   return (
     <div
-      className="flex items-center gap-1"
+      className={cn("flex items-center gap-1", className)}
       onClick={() => !isEditing && setIsEditing(true)}
     >
       {isEditing ? (
@@ -36,10 +47,18 @@ const EditableNodeName = ({ nodeName, onRename }: EditableNodeNameProps) => {
               onRename?.(value);
             }
           }}
-          className="border border-gray-300 rounded px-1 py-0.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className={cn(
+            "border border-gray-300 rounded px-1 py-0.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500",
+            inputClassName
+          )}
         />
       ) : (
-        <span className="text-sm font-medium cursor-text hover:bg-gray-100 px-1 rounded transition">
+        <span
+          className={cn(
+            "text-sm font-medium cursor-text hover:bg-gray-100 px-1 rounded transition",
+            spanClassName
+          )}
+        >
           {nodeName}
         </span>
       )}
