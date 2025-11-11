@@ -1,3 +1,8 @@
+
+export type DeepPartial<T> = T extends object
+  ? { [K in keyof T]?: DeepPartial<T[K]> }
+  : T;
+
 export type ColorScale = {
   /** Brand / accent colors */
   brand: {
@@ -37,13 +42,13 @@ export type ColorScale = {
     strong: string;
   };
 
-  /** Feedback/semantic states */
-  feedback: {
-    success: string;
-    warning: string;
-    danger: string;
-    info: string;
-  };
+  // /** Feedback/semantic states */
+  // feedback: {
+  //   success: string;
+  //   warning: string;
+  //   danger: string;
+  //   info: string;
+  // };
 };
 
 /**
@@ -78,6 +83,10 @@ export type CommonTheme = {
 export type LightDarkTheme = CommonTheme & {
   /** Select the built-in theme variant. */
   theme: "light" | "dark";
+  /**
+   * We can override default theme colors
+   */
+  colors?: DeepPartial<ColorScale>;
 };
 
 /**
@@ -100,22 +109,6 @@ export type CustomTheme = CommonTheme & {
  * - `custom`: `colors` are required.
  */
 export type WorkflowTheme = LightDarkTheme | CustomTheme;
-
-/**
- * Theme shape exposed by the context/hooks to consumers.
- * Notes:
- * - `colors` may be present if the provider merges/normalizes defaults.
- * - Prefer to read tokens via CSS variables in components when possible.
- */
-export type WorkFlowThemeContext = CommonTheme & {
-  /** The active theme mode at runtime. */
-  theme: ThemeKind;
-  /**
-   * The resolved color palette (if provided/merged).
-   * May be undefined before initialization.
-   */
-  colors?: ColorScale;
-};
 
 /**
  * Generic width/height config used by canvas and nodes.

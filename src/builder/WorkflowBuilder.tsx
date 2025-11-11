@@ -22,7 +22,6 @@ export function WorkflowBuilder({
   handleSaveWorkflow: (workflow: Workflow) => void;
   workflow?: Workflow;
 }) {
-  const { theme } = useWorkflowContext();
   const [workflowName, setWorkflowName] = useState(workflow?.name || "");
   const normalizedData = useMemo(
     () => (workflow ? normalizeWorkflowData(workflow) : null),

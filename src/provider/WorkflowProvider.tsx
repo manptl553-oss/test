@@ -3,12 +3,11 @@ import {
   CanvasConfig,
   mergeTheme,
   NodeConfig,
-  WorkflowTheme,
-  WorkFlowThemeContext,
+  WorkflowTheme
 } from "../theme";
 
 type WorkflowContextValue = {
-  theme: WorkFlowThemeContext;
+  theme: WorkflowTheme;
   canvas?: CanvasConfig;
   node?: NodeConfig;
 };
