@@ -1,2 +1,2 @@
 import './index.css';
-export * from './public';
+export * from './export';
