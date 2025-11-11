@@ -1,157 +1,74 @@
-// import dagre from "dagre";
-import { getAutoLayoutedElements } from "@/shared/utils/layout";
-import { Fullscreen, Table2 } from "lucide-react";
+import { Webhook, Clock, Calendar, Globe } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import ReactFlow, {
   Background,
-  Controls,
-  Edge,
   MarkerType,
-  MiniMap,
   Node,
-  OnConnectStartParams,
   useReactFlow,
-  useUpdateNodeInternals,
 } from "reactflow";
 import "reactflow/dist/style.css";
-import { AddNodeButton } from "./AddNodeButton";
 import CustomEdge from "./CustomEdge";
 import CustomNode from "./CustomNode";
-import NodeSidebar from "./NodeSidebar";
-import { nodeTypeIcons, NodeTypeProps } from "@/shared";
 import { useFlowStore } from "@/store";
+import { PopoverPanel } from "./Popover";
 
-// ---------- MAIN COMPONENT ----------
+// ---------- TYPES ----------
+interface PopoverItem {
+  id: string;
+  name: string;
+  description?: string;
+  icon: React.ComponentType<any>;
+  color: string;
+  secondaryIcons?: React.ComponentType<any>[];
+}
+
+interface PopoverConfig {
+  title: string;
+  items: PopoverItem[];
+  showSearch?: boolean;
+  searchPlaceholder?: string;
+  variant?: "trigger" | "action";
+  onSelect?: (item: PopoverItem) => void;
+}
+
+// ---------- CONSTANTS ----------
 const nodeTypes = { custom: CustomNode };
 const edgeTypes = { custom: CustomEdge };
 
-// Map workflow data
-export function mapWorkflowToFlow(workflow: any, actions?: any) {
-  const nodes: Node[] = [];
-  const edges: Edge[] = [];
-  if (!workflow) return { nodes, edges };
+// ---------- TRIGGER MODULES ----------
+const triggerModules: PopoverItem[] = [
+  {
+    id: "webhook",
+    name: "Webhook",
+    description: "Triggers workflow on external webhook event",
+    icon: Webhook,
+    color: "text-pink-600 bg-pink-100",
+  },
+  {
+    id: "schedule",
+    name: "Schedule",
+    description: "Executes workflow at defined intervals or cron expressions",
+    icon: Clock,
+    color: "text-green-600 bg-green-100",
+  },
+  {
+    id: "event",
+    name: "Event",
+    description: "Reacts to system or app-level events",
+    icon: Calendar,
+    color: "text-yellow-600 bg-yellow-100",
+  },
+  {
+    id: "http",
+    name: "HTTP Request",
+    description: "Triggers when a specific HTTP request is made",
+    icon: Globe,
+    color: "text-blue-600 bg-blue-100",
+  },
+];
 
-  const xSpacing = 320;
-  const ySpacing = 180;
-
-  // Trigger node
-  if (workflow.triggers?.length > 0) {
-    const trigger = workflow.triggers[0];
-    const icon = trigger.icon || nodeTypeIcons[trigger.type as NodeTypeProps];
-    nodes.push({
-      id: trigger.id,
-      type: "custom",
-      data: {
-        id: trigger.id,
-        name: trigger.name || "Event Trigger",
-        type: trigger.type,
-        icon,
-        configuration: trigger.configuration,
-        outputs: ["next"],
-        backend_id: trigger.id, // ✅ store backend id
-        ...actions,
-      },
-      position: { x: 100, y: 200 },
-    });
-  }
-
-  // Workflow nodes
-  workflow.nodes?.forEach((wfNode: any, index: number) => {
-    const icon = wfNode.icon || nodeTypeIcons[wfNode.type as NodeTypeProps];
-    let outputs: string[] = [];
-
-    switch (wfNode.type) {
-      case "conditional":
-        outputs = ["on_true", "on_false"];
-        break;
-      case "rule_executor":
-        outputs = ["on_true", "on_false"];
-        break;
-      case "switch":
-        outputs =
-          wfNode.config?.switch_cases?.map((c: any) => c.condition) || [];
-        break;
-      case "loop":
-        outputs = ["next"];
-        break;
-      default:
-        outputs = ["next"];
-        break;
-    }
-
-    nodes.push({
-      id: wfNode.id,
-      type: "custom",
-      data: {
-        id: wfNode.id,
-        name: wfNode.name,
-        type: wfNode.type,
-        icon,
-        configuration: wfNode.config,
-        outputs,
-        ...actions,
-        backend_id: wfNode.id, // ✅ store backend id
-      },
-      position: {
-        x: 400 + (index % 3) * xSpacing,
-        y: 100 + Math.floor(index / 3) * ySpacing,
-      },
-    });
-  });
-
-  // Edges
-  const seenEdgeIds = new Set<string>();
-  workflow.edges?.forEach((e: any) => {
-    const edgeId = e.id || `${e.source}-${e.target}-${e.condition || "next"}`;
-    if (seenEdgeIds.has(edgeId)) return;
-    seenEdgeIds.add(edgeId);
-
-    edges.push({
-      id: edgeId,
-      source: e.source,
-      target: e.target,
-      sourceHandle: e.condition || "next",
-      targetHandle: "input",
-      type: "custom",
-      animated: true,
-      style: { strokeWidth: 2 },
-      markerEnd: { type: MarkerType.ArrowClosed },
-      label: e.condition || "",
-      labelStyle: { fontWeight: 600, fontSize: 12 },
-      data: e.data,
-    });
-  });
-
-  // Auto-connect Trigger
-  if (workflow.triggers?.length > 0 && workflow.nodes?.length > 0) {
-    const triggerId = workflow.triggers[0].id;
-    const existingTargets = new Set(workflow.edges?.map((e: any) => e.target));
-
-    const firstNodes = workflow.nodes.filter(
-      (n: any) => !existingTargets.has(n.id)
-    );
-    firstNodes.forEach((n: any) => {
-      const edgeId = `edge-trigger-${n.id}`;
-      if (!seenEdgeIds.has(edgeId)) {
-        edges.push({
-          id: edgeId,
-          source: triggerId,
-          target: n.id,
-          type: "custom",
-          animated: true,
-          style: { strokeWidth: 2 },
-          markerEnd: { type: MarkerType.ArrowClosed },
-          label: "trigger",
-          labelStyle: { fill: "#facc15", fontWeight: 600 },
-        });
-      }
-    });
-  }
-
-  return { nodes, edges };
-}
-
-export default function FlowCanvas({ workflow }: any) {
+// ---------- MAIN COMPONENT ----------
+export default function FlowCanvas() {
   const {
     setNodes,
     setEdges,
@@ -160,149 +77,107 @@ export default function FlowCanvas({ workflow }: any) {
     onNodesChange,
     onEdgesChange,
     onConnect,
-    setSourceNodeId,
-    setSourceHandleId,
-    setShowSidebar,
-    showSidebar,
     deleteNode,
-    renameNode,
   } = useFlowStore();
 
-  const { screenToFlowPosition, fitView } = useReactFlow();
-  const [pendingConnection, setPendingConnection] = useState<any>(null);
-  const [isLayouting, setIsLayouting] = useState(false);
+  const [popoverConfig, setPopoverConfig] = useState<PopoverConfig | null>(null);
+  const [popoverAnchor, setPopoverAnchor] = useState<{
+    nodeId: string;
+    position: { x: number; y: number };
+  } | null>(null);
 
-  const isEditMode = !!workflow?.id;
+  const { getNode, getViewport } = useReactFlow();
 
-  const handleDeleteClick = useCallback(
-    (nodeId: string) => deleteNode(nodeId),
-    [deleteNode]
-  );
-
-  const handleAddClick = useCallback(
-    (nodeId: string, handleId: string) => {
-      setSourceNodeId(nodeId);
-      setSourceHandleId(handleId);
-      setShowSidebar(true);
-    },
-    [setSourceNodeId, setSourceHandleId, setShowSidebar]
-  );
-  const updateNodeInternals = useUpdateNodeInternals();
-  const { setUpdateNodeInternals } = useFlowStore();
-
-  // hand the bridge to the store once
-  useEffect(() => {
-    setUpdateNodeInternals((id: string) => updateNodeInternals(id));
-  }, [setUpdateNodeInternals, updateNodeInternals]);
-  // Load workflow
-  useEffect(() => {
-    const { nodes, edges } = isEditMode
-      ? mapWorkflowToFlow(workflow, {
-          onAddClick: handleAddClick,
-          onDeleteClick: handleDeleteClick,
-          onRename: renameNode,
-        })
-      : { nodes: [], edges: [] };
-
-    setNodes(nodes);
-    setEdges(edges);
-  }, [
-    workflow,
-    isEditMode,
-    handleAddClick,
-    handleDeleteClick,
-    renameNode,
-    setNodes,
-    setEdges,
-  ]);
-
-  // Auto layout handler
-  const handleAutoLayout = useCallback(() => {
-    setIsLayouting(true);
-    setTimeout(() => {
-      const { nodes: layoutedNodes, edges: layoutedEdges } =
-        getAutoLayoutedElements(nodes, edges);
-      setNodes(layoutedNodes);
-      setEdges(layoutedEdges);
-      fitView({ padding: 0.2 });
-      setIsLayouting(false);
-    }, 100);
-  }, [nodes, edges, setNodes, setEdges, fitView]);
-
-  // Drag & drop logic
-  const onDragOver = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = "move";
+  // ✅ Close popover handler
+  const handleClosePopover = useCallback(() => {
+    setPopoverConfig(null);
+    setPopoverAnchor(null);
   }, []);
 
-  const onDrop = useCallback(
-    (e: React.DragEvent) => {
-      e.preventDefault();
+  // ✅ Toggle popover for Start Workflow node
+const openTriggerPopover = useCallback(
+  (nodeId: string) => {
+    const node = getNode(nodeId);
+    if (!node) return;
 
-      const type = e.dataTransfer.getData("application/reactflow");
-      const nodeType = e.dataTransfer.getData("nodeType");
-      const nodeName = e.dataTransfer.getData("nodeName");
+    // ✅ If popover is open for the same node → close (toggle)
+    setPopoverAnchor((prevAnchor) => {
+      if (prevAnchor?.nodeId === nodeId) {
+        handleClosePopover();
+        return null;
+      }
 
-      if (!type && !nodeType) return;
+      // ✅ Otherwise open new one
+      const newAnchor = { nodeId, position: node.position };
 
-      const position = screenToFlowPosition({ x: e.clientX, y: e.clientY });
-      const id = `${type || nodeType}-${crypto.randomUUID()}`;
+      setPopoverConfig({
+        title: "Select Trigger",
+        items: triggerModules,
+        showSearch: true,
+        searchPlaceholder: "Search triggers",
+        variant: "trigger",
+        onSelect: (item) => {
+          console.log("Selected trigger:", item);
+          handleClosePopover();
+        },
+      });
 
-      const Icon = nodeTypeIcons[nodeType as NodeTypeProps] || Table2;
+      return newAnchor;
+    });
+  },
+  [getNode, handleClosePopover]
+);
 
-      const sourceNodeId = e.dataTransfer.getData("sourceNodeId");
-      const sourceHandleId = e.dataTransfer.getData("sourceHandleId");
-      const sourceEdgeId = e.dataTransfer.getData("sourceEdgeId");
+  // ✅ Update popover anchor position when nodes move
+  useEffect(() => {
+    if (!popoverAnchor) return;
+    const node = getNode(popoverAnchor.nodeId);
+    if (!node) return;
 
-      const newNode: Node = {
-        id,
+    // Only update if position actually changed
+    if (
+      node.position.x !== popoverAnchor.position.x ||
+      node.position.y !== popoverAnchor.position.y
+    ) {
+      setPopoverAnchor({
+        nodeId: popoverAnchor.nodeId,
+        position: node.position,
+      });
+    }
+  }, [nodes, popoverAnchor, getNode]);
+
+  // ✅ Initial Start Node
+  useEffect(() => {
+    if (nodes.length === 0) {
+      const startNode: Node = {
+        id: "start_workflow",
         type: "custom",
-        position,
+        position: { x: 200, y: 250 },
         data: {
-          id,
-          name: nodeName || type,
-          type: nodeType,
-          icon: Icon,
-          onAddClick: handleAddClick,
-          onDeleteClick: deleteNode,
-          onRename: renameNode,
+          id: "start_workflow",
+          name: "Start Workflow",
+          type: "start_workflow",
+          outputs: ["next"],
+          onStartClick: (id: string) => openTriggerPopover(id),
         },
       };
+      setNodes([startNode]);
+    }
+  }, [nodes, setNodes, openTriggerPopover]);
 
-      const { addNode, addNodeAfter, addNodeBetweenEdge, clearSource } =
-        useFlowStore.getState();
-
-      if (sourceEdgeId && sourceNodeId) addNodeBetweenEdge(newNode);
-      else if (sourceNodeId)
-        addNodeAfter(newNode, sourceNodeId, sourceHandleId || "done");
-      else addNode(newNode);
-
-      clearSource?.();
-      setShowSidebar(false);
-    },
-    [
-      screenToFlowPosition,
-      handleAddClick,
-      deleteNode,
-      renameNode,
-      setShowSidebar,
-    ]
-  );
-
-  // Nodes + Edges with dynamic data
+  // ✅ Pass popover state to nodes for visual feedback
   const nodesWithData = useMemo(
     () =>
       nodes.map((node) => ({
         ...node,
         data: {
           ...node.data,
-          isLoop: node.data.type === "loop",
-          onAddClick: handleAddClick,
-          onDeleteClick: handleDeleteClick,
-          onRename: renameNode,
+          onDeleteClick: deleteNode,
+          // Pass whether popover is open for this specific node
+          isPopoverOpen: popoverAnchor?.nodeId === node.id && !!popoverConfig,
         },
       })),
-    [nodes, handleAddClick, handleDeleteClick, renameNode]
+    [nodes, deleteNode, popoverAnchor, popoverConfig]
   );
 
   const edgesWithData = useMemo(
@@ -315,53 +190,8 @@ export default function FlowCanvas({ workflow }: any) {
     [edges]
   );
 
-  const onConnectStart = useCallback(
-    (
-      _event: React.MouseEvent | React.TouchEvent,
-      params: OnConnectStartParams
-    ) => {
-      const { nodeId, handleId } = params;
-
-      // check if this handle already has a connected edge
-      const isConnected = edges.some(
-        (e) => e.source === nodeId && e.sourceHandle === handleId
-      );
-
-      if (isConnected) {
-        alert("This node is already connected to the next step.");
-        return;
-      }
-
-      setPendingConnection(params);
-    },
-    [edges]
-  );
-
-  const onConnectEnd = useCallback(
-    (event: MouseEvent | TouchEvent) => {
-      if (
-        pendingConnection &&
-        (event.target as HTMLElement).classList.contains("react-flow__pane")
-      ) {
-        setSourceNodeId(pendingConnection.nodeId);
-        setSourceHandleId(pendingConnection.handleId);
-        setShowSidebar(true);
-      }
-
-      setPendingConnection(null);
-    },
-    [
-      pendingConnection,
-      screenToFlowPosition,
-      setSourceNodeId,
-      setSourceHandleId,
-      setShowSidebar,
-    ]
-  );
-
   return (
-    <div className="w-full h-full relative bg-[var(--wf-background-base)] text-[var(--wf-text-default)]">
-      {/* ReactFlow Canvas */}
+    <div className="w-full h-full relative bg-white">
       <ReactFlow
         nodes={nodesWithData}
         edges={edgesWithData}
@@ -370,53 +200,21 @@ export default function FlowCanvas({ workflow }: any) {
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
-        onConnectStart={onConnectStart}
-        onConnectEnd={onConnectEnd}
-        onDrop={onDrop}
-        onDragOver={onDragOver}
         fitView
-        className="bg-[var(--wf-background-base)]"
-        // must be inline per ReactFlow API; still themeable via CSS var
-        connectionLineStyle={{
-          stroke: "var(--wf-border-default)",
-          strokeWidth: 2,
-        }}
+        className="bg-white"
         proOptions={{ hideAttribution: true }}
       >
-        <MiniMap
-          nodeStrokeColor={() => "var(--wf-border-default)"}
-          nodeColor={() => "var(--wf-background-subtle)"}
-          maskColor="rgba(0,0,0,0.08)"
-        />
-        <Controls className="!bg-[var(--wf-background-subtle)] !text-[var(--wf-text-default)] !border !border-[var(--wf-border-default)]" />
-        <Background color="var(--wf-border-default)" />
+        <Background color="#eee" />
       </ReactFlow>
 
-      {/* Auto Layout Button - bottom left */}
-      <div className="absolute bottom-8 left-4 z-20">
-        <button
-          onClick={handleAutoLayout}
-          aria-label="Auto layout"
-          className="bg-[var(--wf-background-subtle)] text-[var(--wf-text-default)]
-                 border border-[var(--wf-border-default)]
-                 p-1 rounded-md shadow-xl w-8 h-8
-                 flex items-center justify-center hover:opacity-90"
-        >
-          <Fullscreen className="w-4 h-4" />
-        </button>
-      </div>
-
-      {/* Sidebar */}
-      {showSidebar && (
-        <NodeSidebar
-          isOpen={showSidebar}
-          onClose={() => setShowSidebar(false)}
+      {/* ✅ Sticky Popover */}
+      {popoverConfig && popoverAnchor && (
+        <PopoverPanel
+          anchor={popoverAnchor}
+          viewport={getViewport()}
+          config={popoverConfig}
+          onClose={handleClosePopover}
         />
-      )}
-
-      {/* Add Node Button */}
-      {nodes.length === 0 && (
-        <AddNodeButton onClick={() => setShowSidebar(true)} />
       )}
     </div>
   );

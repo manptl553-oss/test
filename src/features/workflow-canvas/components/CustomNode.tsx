@@ -1,3 +1,7 @@
+// ============================================
+// CUSTOMNODE.TSX - FINAL UPDATED VERSION
+// ============================================
+
 import React, { memo, useCallback, useEffect, useRef, useState } from "react";
 import { Handle, Position, NodeProps, useStore, useStoreApi } from "reactflow";
 import { Plus, Trash2 } from "lucide-react";
@@ -37,29 +41,45 @@ const CustomNode = ({ data, id }: NodeProps) => {
   const store = useStoreApi();
   const edges = useStore((s) => s.edges);
   const Icon = data.icon;
+  const isStartNode = (data as any).type === "start_workflow";
+
+  // ✅ Report node ref to FlowCanvas (for popover anchor)
+  useEffect(() => {
+    if (isStartNode && nodeRef.current && (data as any).onStartNodeMount) {
+      (data as any).onStartNodeMount(nodeRef);
+    }
+  }, [isStartNode, data]);
+
 
   const handleAddClick = useCallback(
     (handleId?: string) => (data as any).onAddClick?.(id, handleId),
     [data, id]
   );
+
   const handleDeleteClick = useCallback(async () => {
     try {
       const backendId = (data as any)?.backend_id as string | undefined;
-      /* backend deletion hook goes here */ (data as any).onDeleteClick?.(id);
+      /* backend deletion hook could go here */
+      (data as any).onDeleteClick?.(id);
     } catch (e) {
       console.error("Failed to delete node", e);
     }
   }, [data, id]);
-
+const isPopoverOpen = (data as any).isPopoverOpen || false;
+console.log("🚀 ~ CustomNode ~ isPopoverOpen:", isPopoverOpen)
+const handleStartNodeClick = useCallback(() => {
+  if (isStartNode && (data as any).onStartClick) {
+    (data as any).onStartClick(id);
+  }
+}, [isStartNode, data, id]);
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (nodeRef.current && !nodeRef.current.contains(e.target as Node)) {
-        /*close menus*/
+        // Close modals or menus if any
       }
     };
     document.addEventListener("pointerdown", handleClickOutside);
-    return () =>
-      document.removeEventListener("pointerdown", handleClickOutside);
+    return () => document.removeEventListener("pointerdown", handleClickOutside);
   }, []);
 
   const handleDragStart = useCallback(
@@ -72,6 +92,7 @@ const CustomNode = ({ data, id }: NodeProps) => {
     },
     [store, id]
   );
+
   const handleDragEnd = useCallback(() => {
     store.setState({ connectionStartHandle: null });
   }, [store]);
@@ -102,6 +123,8 @@ const CustomNode = ({ data, id }: NodeProps) => {
   );
 
   const renderInputHandles = () => {
+    if (isStartNode) return null;
+
     if ((data as any).name?.toLowerCase() === "merge") {
       return Array.from({ length: 4 }).map((_, i) => (
         <div
@@ -134,14 +157,15 @@ const CustomNode = ({ data, id }: NodeProps) => {
     );
   };
 
-  const renderOutputHandles = () => {
-    return (data as any).outputs?.map((outputId: string, i: number) => {
+  const renderOutputHandles = () =>
+    (data as any).outputs?.map((outputId: string, i: number) => {
       const verticalPos = `${
         (i + 1) * (100 / ((data as any).outputs.length + 1))
       }%`;
       const isConnected = isHandleConnected(outputId);
       const handleIdForAdd = outputId === "done" ? "next" : outputId;
       const label = getLabel(outputId);
+
       return (
         <div
           key={outputId}
@@ -152,7 +176,10 @@ const CustomNode = ({ data, id }: NodeProps) => {
             transform: "translateY(-50%)",
           }}
         >
-          {label && <div className="text-xs font-semibold pr-4">{label}</div>}
+          {label && (
+            <div className="text-xs font-semibold pr-4">{label}</div>
+          )}
+
           <Handle
             type="source"
             position={Position.Right}
@@ -168,6 +195,7 @@ const CustomNode = ({ data, id }: NodeProps) => {
               pointerEvents: "all",
             }}
           />
+
           {!isConnected && (
             <div
               className="absolute flex items-center"
@@ -181,7 +209,7 @@ const CustomNode = ({ data, id }: NodeProps) => {
                   e.stopPropagation();
                   handleAddClick(handleIdForAdd);
                 }}
-                className="w-4 h-4 flex items-center justify-center rounded-full bg-[var(--wf--brand-primary)] hover:opacity-100 cursor-crosshair"
+                className="w-4 h-4 bg-[var(--wf--brand-primary)] flex items-center justify-center rounded-full hover:opacity-100 cursor-crosshair transition-all duration-200"
               >
                 <Plus className="w-3 h-3 text-white" />
               </div>
@@ -190,8 +218,86 @@ const CustomNode = ({ data, id }: NodeProps) => {
         </div>
       );
     });
-  };
 
+  // ========================================
+  // 🔥 Start Workflow Node Rendering
+  // ========================================
+if (isStartNode) {
+  return (
+    <div
+      className="relative group"
+      ref={nodeRef}
+      style={{ pointerEvents: "all" }}
+    >
+      <div
+        className={`w-32 h-32 rounded-full transition-all duration-200 shadow-lg hover:shadow-xl flex flex-col items-center justify-center gap-2 cursor-pointer ${
+          isPopoverOpen
+            ? "bg-[#16a34a] ring-4 ring-green-300 ring-opacity-50"
+            : "bg-[#22c55e] hover:bg-[#16a34a]"
+        }`}
+        onClick={handleStartNodeClick}
+      >
+        <svg
+          className="w-10 h-10 text-white"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+        >
+          <line x1="12" y1="5" x2="12" y2="19"></line>
+          <line x1="5" y1="12" x2="19" y2="12"></line>
+        </svg>
+        <div className="text-white font-medium text-sm">Start Workflow</div>
+      </div>
+
+      {/* Output Handle */}
+      <div
+        className="absolute"
+        style={{
+          right: "-12px",
+          top: "50%",
+          transform: "translateY(-50%)",
+        }}
+      >
+        <Handle
+          type="source"
+          position={Position.Right}
+          id="next"
+          className="w-3 h-3 bg-green-500 border-2 border-white"
+          style={{ pointerEvents: "all" }}
+        />
+
+        {/* Plus Button with toggle animation */}
+        <div
+          className="absolute flex items-center"
+          style={{
+            left: "8px",
+            top: "50%",
+            transform: "translateY(-50%)",
+            pointerEvents: "all",
+          }}
+        >
+          <div
+            onClick={(e) => {
+              e.stopPropagation();
+              handleStartNodeClick(); // This will trigger the toggle
+            }}
+            className={`w-5 h-5 border-2 border-white shadow-md hover:scale-110 flex items-center justify-center rounded-full cursor-pointer transition-all duration-200 ${
+              isPopoverOpen
+                ? "bg-white text-[#22c55e] rotate-45"
+                : "bg-[#22c55e] hover:bg-[#16a34a] text-white"
+            }`}
+          >
+            <Plus className="w-3 h-3" />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+  // ========================================
+  // Regular Node Rendering
+  // ========================================
   return (
     <div
       className="relative group"
@@ -214,15 +320,21 @@ const CustomNode = ({ data, id }: NodeProps) => {
         </div>
         {renderOutputHandles()}
       </div>
+
+      {/* Delete Button */}
       <div
         className="absolute -top-7 left-1/2 -translate-x-1/2 flex items-center gap-1 z-50 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
         onClick={(e) => e.stopPropagation()}
       >
-        <Button className="w-6 h-6 rounded-full bg-red-500">
-          {" "}
-          <Trash2 className="w-3 h-3 text-white" />{" "}
+        <Button
+          className="w-6 h-6 rounded-full bg-red-500"
+          onClick={handleDeleteClick}
+        >
+          <Trash2 className="w-3 h-3 text-white" />
         </Button>
       </div>
+
+      {/* Node Config Modal */}
       <NodeConfigModal
         open={showConfig}
         onOpenChange={setShowConfig}
@@ -232,4 +344,5 @@ const CustomNode = ({ data, id }: NodeProps) => {
     </div>
   );
 };
+
 export default memo(CustomNode);
