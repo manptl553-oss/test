@@ -2,11 +2,21 @@
 // CUSTOMNODE.TSX - FINAL UPDATED VERSION
 // ============================================
 
-import React, { memo, useCallback, useEffect, useRef, useState } from "react";
-import { Handle, Position, NodeProps, useStore, useStoreApi } from "reactflow";
+import { Button, isTriggerNode } from "@/shared";
+import { useFlowStore } from "@/store";
 import { Plus, Trash2 } from "lucide-react";
+import React, { memo, useCallback, useEffect, useRef, useState } from "react";
+import {
+  Handle,
+  NodeProps,
+  Position,
+  useReactFlow,
+  useStore,
+  useStoreApi,
+  XYPosition,
+} from "reactflow";
 import { NodeConfigModal } from "./NodeConfigModal";
-import { Button } from "@/shared";
+import { AddNodeButton } from "./AddNodeButton";
 
 const closedModel = ["vip_membership_invite", "pep_check_invite"];
 const normalizeHandle = (handle?: string | null) =>
@@ -36,12 +46,21 @@ const getLabel = (source: string | undefined) => {
 };
 
 const CustomNode = ({ data, id }: NodeProps) => {
+  const { project, getNode } = useReactFlow();
   const [showConfig, setShowConfig] = useState(false);
   const nodeRef = useRef<HTMLDivElement>(null);
   const store = useStoreApi();
   const edges = useStore((s) => s.edges);
   const Icon = data.icon;
   const isStartNode = (data as any).type === "start_workflow";
+  const isAddNode = (data as any).type === "addNode";
+
+  const { activeModelId, setActiveModelId } = useFlowStore();
+  const open = activeModelId === id;
+
+  const handleClick = () => {
+    setActiveModelId(open ? null : id);
+  };
 
   // ✅ Report node ref to FlowCanvas (for popover anchor)
   useEffect(() => {
@@ -50,9 +69,9 @@ const CustomNode = ({ data, id }: NodeProps) => {
     }
   }, [isStartNode, data]);
 
-
   const handleAddClick = useCallback(
-    (handleId?: string) => (data as any).onAddClick?.(id, handleId),
+    (position: XYPosition, handleId?: string) =>
+      (data as any).onAddClick?.(id, position, handleId),
     [data, id]
   );
 
@@ -65,13 +84,7 @@ const CustomNode = ({ data, id }: NodeProps) => {
       console.error("Failed to delete node", e);
     }
   }, [data, id]);
-const isPopoverOpen = (data as any).isPopoverOpen || false;
-console.log("🚀 ~ CustomNode ~ isPopoverOpen:", isPopoverOpen)
-const handleStartNodeClick = useCallback(() => {
-  if (isStartNode && (data as any).onStartClick) {
-    (data as any).onStartClick(id);
-  }
-}, [isStartNode, data, id]);
+
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (nodeRef.current && !nodeRef.current.contains(e.target as Node)) {
@@ -79,7 +92,8 @@ const handleStartNodeClick = useCallback(() => {
       }
     };
     document.addEventListener("pointerdown", handleClickOutside);
-    return () => document.removeEventListener("pointerdown", handleClickOutside);
+    return () =>
+      document.removeEventListener("pointerdown", handleClickOutside);
   }, []);
 
   const handleDragStart = useCallback(
@@ -123,7 +137,9 @@ const handleStartNodeClick = useCallback(() => {
   );
 
   const renderInputHandles = () => {
-    if (isStartNode) return null;
+    console.log(data.type);
+    if (isStartNode || isTriggerNode(data?.type)) return null;
+    console.log("after return");
 
     if ((data as any).name?.toLowerCase() === "merge") {
       return Array.from({ length: 4 }).map((_, i) => (
@@ -157,8 +173,9 @@ const handleStartNodeClick = useCallback(() => {
     );
   };
 
-  const renderOutputHandles = () =>
-    (data as any).outputs?.map((outputId: string, i: number) => {
+  const renderOutputHandles = () => {
+    if (isStartNode) return null;
+    return (data as any).outputs?.map((outputId: string, i: number) => {
       const verticalPos = `${
         (i + 1) * (100 / ((data as any).outputs.length + 1))
       }%`;
@@ -176,9 +193,7 @@ const handleStartNodeClick = useCallback(() => {
             transform: "translateY(-50%)",
           }}
         >
-          {label && (
-            <div className="text-xs font-semibold pr-4">{label}</div>
-          )}
+          {label && <div className="text-xs font-semibold pr-4">{label}</div>}
 
           <Handle
             type="source"
@@ -207,7 +222,9 @@ const handleStartNodeClick = useCallback(() => {
                 onDragEnd={handleDragEnd}
                 onClick={(e) => {
                   e.stopPropagation();
-                  handleAddClick(handleIdForAdd);
+                  const { clientX, clientY } = e;
+                  const position = project({ x: clientX, y: clientY });
+                  handleAddClick(position, handleIdForAdd);
                 }}
                 className="w-4 h-4 bg-[var(--wf--brand-primary)] flex items-center justify-center rounded-full hover:opacity-100 cursor-crosshair transition-all duration-200"
               >
@@ -218,86 +235,7 @@ const handleStartNodeClick = useCallback(() => {
         </div>
       );
     });
-
-  // ========================================
-  // 🔥 Start Workflow Node Rendering
-  // ========================================
-if (isStartNode) {
-  return (
-    <div
-      className="relative group"
-      ref={nodeRef}
-      style={{ pointerEvents: "all" }}
-    >
-      <div
-        className={`w-32 h-32 rounded-full transition-all duration-200 shadow-lg hover:shadow-xl flex flex-col items-center justify-center gap-2 cursor-pointer ${
-          isPopoverOpen
-            ? "bg-[#16a34a] ring-4 ring-green-300 ring-opacity-50"
-            : "bg-[#22c55e] hover:bg-[#16a34a]"
-        }`}
-        onClick={handleStartNodeClick}
-      >
-        <svg
-          className="w-10 h-10 text-white"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-        >
-          <line x1="12" y1="5" x2="12" y2="19"></line>
-          <line x1="5" y1="12" x2="19" y2="12"></line>
-        </svg>
-        <div className="text-white font-medium text-sm">Start Workflow</div>
-      </div>
-
-      {/* Output Handle */}
-      <div
-        className="absolute"
-        style={{
-          right: "-12px",
-          top: "50%",
-          transform: "translateY(-50%)",
-        }}
-      >
-        <Handle
-          type="source"
-          position={Position.Right}
-          id="next"
-          className="w-3 h-3 bg-green-500 border-2 border-white"
-          style={{ pointerEvents: "all" }}
-        />
-
-        {/* Plus Button with toggle animation */}
-        <div
-          className="absolute flex items-center"
-          style={{
-            left: "8px",
-            top: "50%",
-            transform: "translateY(-50%)",
-            pointerEvents: "all",
-          }}
-        >
-          <div
-            onClick={(e) => {
-              e.stopPropagation();
-              handleStartNodeClick(); // This will trigger the toggle
-            }}
-            className={`w-5 h-5 border-2 border-white shadow-md hover:scale-110 flex items-center justify-center rounded-full cursor-pointer transition-all duration-200 ${
-              isPopoverOpen
-                ? "bg-white text-[#22c55e] rotate-45"
-                : "bg-[#22c55e] hover:bg-[#16a34a] text-white"
-            }`}
-          >
-            <Plus className="w-3 h-3" />
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-  // ========================================
-  // Regular Node Rendering
-  // ========================================
+  };
   return (
     <div
       className="relative group"
@@ -306,41 +244,68 @@ if (isStartNode) {
         if (!closedModel.includes((data as any)?.type)) setShowConfig(true);
       }}
     >
-      <div className="rounded-lg border-2 min-w-[160px] bg-[#2a2d3a] border-[#3a3d4a] shadow-lg relative">
-        {renderInputHandles()}
-        <div className="p-4 flex flex-col items-center gap-2">
-          {Icon && (
-            <div className="text-[var(--wf--brand-primary)]">
-              <Icon className="w-8 h-8" />
+      {!isAddNode && !isStartNode ? (
+        <>
+          <div className="rounded-lg border-2 min-w-[160px] bg-[#2a2d3a] border-[#3a3d4a] shadow-lg relative">
+            {/* ✅ Always render input handles */}
+            {renderInputHandles()}
+
+            {/* ✅ Node content changes based on data.type */}
+            <div className="p-4 flex flex-col items-center gap-2">
+              {isAddNode ? (
+                <AddNodeButton
+                  onClick={handleClick}
+                  isStartNode={isStartNode}
+                />
+              ) : (
+                <>
+                  {Icon && (
+                    <div className="text-[var(--wf--brand-primary)]">
+                      <Icon className="w-8 h-8" />
+                    </div>
+                  )}
+                  <div className="font-medium text-sm text-white">
+                    {(data as any).name}
+                  </div>
+                </>
+              )}
             </div>
-          )}
-          <div className="font-medium text-sm text-white">
-            {(data as any).name}
+
+            {/* ✅ Always render output handles */}
+            {renderOutputHandles()}
           </div>
-        </div>
-        {renderOutputHandles()}
-      </div>
+
+          <NodeConfigModal
+            open={showConfig}
+            onOpenChange={setShowConfig}
+            nodeId={id}
+            nodeData={data}
+          />
+        </>
+      ) : (
+        <>
+          {renderInputHandles()}
+          <AddNodeButton onClick={handleClick} isStartNode={isStartNode} />
+          {renderOutputHandles()}
+        </>
+      )}
 
       {/* Delete Button */}
-      <div
-        className="absolute -top-7 left-1/2 -translate-x-1/2 flex items-center gap-1 z-50 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <Button
-          className="w-6 h-6 rounded-full bg-red-500"
-          onClick={handleDeleteClick}
+      {!isStartNode && (
+        <div
+          className="absolute -top-7 left-1/2 -translate-x-1/2 flex items-center gap-1 z-50 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+          onClick={(e) => e.stopPropagation()}
         >
-          <Trash2 className="w-3 h-3 text-white" />
-        </Button>
-      </div>
+          <Button
+            className="w-6 h-6 rounded-full bg-red-500"
+            onClick={handleDeleteClick}
+          >
+            <Trash2 className="w-3 h-3 text-white" />
+          </Button>
+        </div>
+      )}
 
-      {/* Node Config Modal */}
-      <NodeConfigModal
-        open={showConfig}
-        onOpenChange={setShowConfig}
-        nodeId={id}
-        nodeData={data}
-      />
+      {/* Config Modal also only for normal nodes */}
     </div>
   );
 };

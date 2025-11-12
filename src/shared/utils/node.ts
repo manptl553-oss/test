@@ -7,12 +7,13 @@ export const getNodeDefinition = (type?: string): NodeDefinition => {
     return { outputs: ["done"], defaultTarget: "input" };
   }
 
-  return NODE_DEFINITIONS[key as keyof typeof NODE_DEFINITIONS] ?? {
-    outputs: ["done"],
-    defaultTarget: "input",
-  };
+  return (
+    NODE_DEFINITIONS[key as keyof typeof NODE_DEFINITIONS] ?? {
+      outputs: ["done"],
+      defaultTarget: "input",
+    }
+  );
 };
-
 
 export const getOutputsForNode = (node: any): string[] => {
   const type = node?.data?.type?.toLowerCase();
@@ -34,7 +35,10 @@ export const getTargetHandleForNode = (node: any): string =>
 export const getSelfLoopHandle = (node: any): string | null =>
   getNodeDefinition(node?.data?.type).selfLoopHandle ?? null;
 
-export const getEdgeLabelForNode = (node: any, handle?: string): string | undefined => {
+export const getEdgeLabelForNode = (
+  node: any,
+  handle?: string
+): string | undefined => {
   if (!handle) return;
   const normalized = handle.toLowerCase().replace(/^on_/, "");
 
@@ -53,8 +57,8 @@ export const getEdgeLabelForNode = (node: any, handle?: string): string | undefi
 };
 
 // ✅ Includes old trigger logic + extended support
-export const isTriggerNode = (node?: any): boolean => {
-  if (!node) return false;
-  const type = node?.data?.type?.toLowerCase?.();
+export const isTriggerNode = (nodeType?: string): boolean => {
+  if (!nodeType) return false;
+  const type = nodeType.toLowerCase?.();
   return ["webhook", "event", "schedule", "trigger", "cron"].includes(type);
 };

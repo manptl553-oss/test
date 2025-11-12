@@ -293,7 +293,6 @@ export const DynamicForm = ({
   const right = visibleFields.filter((f) => f.type === "textarea");
 
   const onSubmitInternal = (data: Record<string, any>) => {
-    console.log(data);
     // Clean empty entries in tags arrays before forwarding
     const cleaned: Record<string, any> = { ...data };
     fields.forEach((f) => {

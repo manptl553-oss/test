@@ -1,9 +1,16 @@
-import  { useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useReactFlow } from "reactflow";
 import { DynamicForm } from "./DynamicForm";
 import { useFlowStore } from "@/store";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, EditableNodeName, nodeFieldsConfig, nodeValidationSchema } from "@/shared";
-
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  EditableNodeName,
+  nodeFieldsConfig,
+  nodeValidationSchema,
+} from "@/shared";
 
 export const getSourceHandle = (sourceHandle: string | undefined) => {
   switch (sourceHandle) {
@@ -79,19 +86,18 @@ export function NodeConfigModal({ open, onOpenChange, nodeId, nodeData }: any) {
     }
   };
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={false} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[750px] bg-white rounded-xl shadow-xl">
         <DialogHeader className="border-b border-gray-200 pb-4">
           <DialogTitle className="font-semibold text-lg text-gray-800">
             <EditableNodeName
               nodeName={nodeName}
-              onRename={(val: string) => {
-                setNodeName(val);
-              }}
+              onRename={(val: string) => setNodeName(val)}
             />
           </DialogTitle>
         </DialogHeader>
-        {isFormNode && (
+
+        {isFormNode ? (
           <DynamicForm
             key={nodeId}
             fields={fields as any}
@@ -100,11 +106,9 @@ export function NodeConfigModal({ open, onOpenChange, nodeId, nodeData }: any) {
             schema={schema as any}
             onClose={onOpenChange}
           />
-        )}
-        {!isFormNode && (
+        ) : (
           <div className="p-4 text-sm text-gray-600">
-            Custom UI for conditional/switch is not included in this package
-            build.
+            Custom UI for conditional/switch is not included.
           </div>
         )}
       </DialogContent>
