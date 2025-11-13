@@ -10,6 +10,7 @@ import ReactFlow, {
   MarkerType,
   Node,
   OnConnectStartParams,
+  useNodeId,
   useReactFlow,
   useUpdateNodeInternals,
   XYPosition,
@@ -213,10 +214,14 @@ export default function FlowCanvas({ workflow }: any) {
     onConnect,
     deleteNode,
     renameNode,
-    setActiveModelId,
-    activeModelId,
+    setActiveNode,
+    activeNode,
   } = useFlowStore();
 
+  const isPopoverOpen = useMemo(
+    () => ["start_workflow", "addNode"].includes(activeNode?.data?.type),
+    [activeNode]
+  );
   const containerRef = useRef<HTMLDivElement>(null);
   const [popoverConfig, setPopoverConfig] = useState<PopoverConfig | null>(
     null
@@ -239,7 +244,7 @@ export default function FlowCanvas({ workflow }: any) {
 
   const handleAddNode = useCallback(
     (nodeId: string, position: XYPosition, handleId: string) => {
-      const id = crypto.randomUUID();
+      const id = Date.now().toString();
       const newNode = {
         id,
         type: "custom",
@@ -253,7 +258,7 @@ export default function FlowCanvas({ workflow }: any) {
         },
       };
       addNodeAfter(newNode, nodeId, handleId);
-      setActiveModelId(newNode.id);
+      setActiveNode(newNode);
     },
     []
   );
@@ -469,7 +474,7 @@ export default function FlowCanvas({ workflow }: any) {
         onConnectStart={onConnectStart}
         onConnectEnd={onConnectEnd}
         onNodeClick={(_, node) => {
-          setActiveModelId(activeModelId ? null : node.id);
+          setActiveNode(activeNode ? null : node);
         }}
         fitView
         className="bg-white"
@@ -479,7 +484,7 @@ export default function FlowCanvas({ workflow }: any) {
       </ReactFlow>
 
       {/* ✅ Sticky Popover */}
-      {activeModelId && <Popover />}
+      {isPopoverOpen && <Popover />}
       {/* Auto Layout Button - bottom left */}
       <div className="absolute bottom-8 left-4 z-20">
         <button

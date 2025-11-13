@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import { cn } from "@/shared/utils";
 
@@ -72,7 +73,7 @@ const DialogOverlay = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTML
         ref={ref}
         data-state={open ? "open" : "closed"}
         className={cn(
-          "fixed inset-0 z-40 bg-black/80 backdrop-blur-sm opacity-100 transition-opacity duration-200 animate-in fade-in-0",
+          "fixed inset-0 z-[9998] bg-black/80 backdrop-blur-sm opacity-100 transition-opacity duration-200 animate-in fade-in-0",
           className
         )}
         {...props}
@@ -84,6 +85,7 @@ DialogOverlay.displayName = "DialogOverlay";
 
 /* ---------------------------------------------
  * Content (includes animation + ESC + click-outside)
+ * FIXED: Removed DialogOverlay from inside DialogContent
  * --------------------------------------------- */
 const DialogContent = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
   ({ className, children, ...props }, ref) => {
@@ -112,32 +114,38 @@ const DialogContent = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTML
 
     if (!open) return null;
 
-    return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto p-4">
+    // Render dialog using portal to escape ReactFlow's DOM hierarchy
+    const dialogContent = (
+      <>
         <DialogOverlay />
-        <div
-          ref={(node) => {
-            dialogRef.current = node;
-            if (typeof ref === "function") ref(node);
-            else if (ref) (ref as React.MutableRefObject<HTMLDivElement | null>).current = node;
-          }}
-          data-state={open ? "open" : "closed"}
-          className={cn(
-            "relative z-50 w-full max-w-lg rounded-lg border bg-background p-6 shadow-lg transition-all duration-200",
-            "animate-in fade-in-0 zoom-in-95",
-            className
-          )}
-          {...props}
-        >
-          {children}
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center overflow-y-auto p-4 pointer-events-none">
+          <div
+            ref={(node) => {
+              dialogRef.current = node;
+              if (typeof ref === "function") ref(node);
+              else if (ref) (ref as React.MutableRefObject<HTMLDivElement | null>).current = node;
+            }}
+            data-state={open ? "open" : "closed"}
+            className={cn(
+              "relative w-full max-w-lg rounded-lg border bg-white p-6 shadow-lg transition-all duration-200 pointer-events-auto",
+              "animate-in fade-in-0 zoom-in-95",
+              className
+            )}
+            {...props}
+          >
+            {children}
 
-          <DialogClose className="absolute right-4 top-4 rounded-sm opacity-70 hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2">
-            <X className="h-4 w-4" />
-            <span className="sr-only">Close</span>
-          </DialogClose>
+            <DialogClose className="absolute right-4 top-4 rounded-sm opacity-70 hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2">
+              <X className="h-4 w-4" />
+              <span className="sr-only">Close</span>
+            </DialogClose>
+          </div>
         </div>
-      </div>
+      </>
     );
+
+    // Use portal to render at document.body level
+    return createPortal(dialogContent, document.body);
   }
 );
 DialogContent.displayName = "DialogContent";

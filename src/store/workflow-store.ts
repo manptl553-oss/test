@@ -78,8 +78,8 @@ interface FlowState {
   refreshNodeHandles: (nodeId: string) => void;
   refreshManyHandles: (nodeIds: string[]) => void;
 
-  activeModelId: string | null;
-  setActiveModelId: (nodeId: string | null) => void;
+  activeNode: Node | null;
+  setActiveNode: (node: Node | null) => void;
 }
 
 //  Zustand Store
@@ -92,9 +92,9 @@ export const useFlowStore = create<FlowState>((set, get) => ({
   showSidebar: false,
   connectedHandles: {},
   workflowId: null,
-  activeModelId: null,
+  activeNode: null,
 
-  setActiveModelId: (id) => set({ activeModelId: id }),
+  setActiveNode: (node) => set({ activeNode: node }),
 
   setWorkflowId: (id) => set({ workflowId: id }),
 

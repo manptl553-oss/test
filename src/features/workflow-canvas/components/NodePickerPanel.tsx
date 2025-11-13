@@ -11,7 +11,7 @@ export default function NodePickerPanel({
   id: string;
   isStartNode?: boolean;
 }) {
-  const { updateNode, setActiveModelId } = useFlowStore();
+  const { updateNode, setActiveNode } = useFlowStore();
   const panelRef = useRef<HTMLDivElement>(null);
 
   const nodeCategory = useMemo(
@@ -29,8 +29,6 @@ export default function NodePickerPanel({
         : base;
     }
   );
-
-  console.log(navigationStack);
 
   const currentView = navigationStack[navigationStack.length - 1];
   const goBack = () => setNavigationStack((stack) => stack.slice(0, -1));
@@ -55,14 +53,14 @@ export default function NodePickerPanel({
       description: template.description,
     };
     updateNode(id, nodeData);
-    setActiveModelId(null);
+    setActiveNode(null);
     setNavigationStack([{ type: "root", data: nodeCategory }]);
   };
 
   useEffect(() => {
     const handleOutsideClick = (e: MouseEvent) => {
       if (panelRef.current && !panelRef.current.contains(e.target as Node)) {
-        setActiveModelId(null);
+        setActiveNode(null);
         setNavigationStack([{ type: "root", data: nodeCategory }]);
       }
     };
@@ -141,12 +139,11 @@ export default function NodePickerPanel({
   return (
     <div ref={panelRef} className="flex flex-col h-full">
       <div className="px-4 py-3 font-semibold text-gray-700 border-b flex items-center gap-2">
-        {navigationStack.length > 1 ||
-          (isStartNode && (
-            <button onClick={goBack} className="hover:bg-gray-100 p-1 rounded">
-              <ChevronLeft className="w-5 h-5" />
-            </button>
-          ))}
+        {navigationStack.length > 1 && !isStartNode && (
+          <button onClick={goBack} className="hover:bg-gray-100 p-1 rounded">
+            <ChevronLeft className="w-5 h-5" />
+          </button>
+        )}
         Select Trigger
       </div>
 

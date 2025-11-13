@@ -4,7 +4,7 @@
 
 import { Button, isTriggerNode } from "@/shared";
 import { useFlowStore } from "@/store";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, PlusIcon, Trash2 } from "lucide-react";
 import React, { memo, useCallback, useEffect, useRef, useState } from "react";
 import {
   Handle,
@@ -16,7 +16,6 @@ import {
   XYPosition,
 } from "reactflow";
 import { NodeConfigModal } from "./NodeConfigModal";
-import { AddNodeButton } from "./AddNodeButton";
 
 const closedModel = ["vip_membership_invite", "pep_check_invite"];
 const normalizeHandle = (handle?: string | null) =>
@@ -46,20 +45,23 @@ const getLabel = (source: string | undefined) => {
 };
 
 const CustomNode = ({ data, id }: NodeProps) => {
-  const { project, getNode } = useReactFlow();
+  const { project } = useReactFlow();
   const [showConfig, setShowConfig] = useState(false);
   const nodeRef = useRef<HTMLDivElement>(null);
   const store = useStoreApi();
   const edges = useStore((s) => s.edges);
-  const Icon = data.icon;
+  const Icon = data.icon || PlusIcon;
   const isStartNode = (data as any).type === "start_workflow";
   const isAddNode = (data as any).type === "addNode";
+  const name = data?.name || "start workflow";
 
-  const { activeModelId, setActiveModelId } = useFlowStore();
-  const open = activeModelId === id;
+  const { activeNode, setActiveNode } = useFlowStore();
+  const open = activeNode?.id === id;
+  const isNodeConfigModelOpen =
+    !isStartNode && !isAddNode && activeNode?.id === id;
 
   const handleClick = () => {
-    setActiveModelId(open ? null : id);
+    setActiveNode(open ? null : data);
   };
 
   // ✅ Report node ref to FlowCanvas (for popover anchor)
@@ -139,6 +141,7 @@ const CustomNode = ({ data, id }: NodeProps) => {
   const renderInputHandles = () => {
     if (isStartNode || isTriggerNode(data?.type)) return null;
 
+    // MERGE NODE (multiple inputs)
     if ((data as any).name?.toLowerCase() === "merge") {
       return Array.from({ length: 4 }).map((_, i) => (
         <div
@@ -150,24 +153,43 @@ const CustomNode = ({ data, id }: NodeProps) => {
             transform: "translateY(-50%)",
           }}
         >
-          <span className="text-xs text-gray-500">{`Input ${i + 1}`}</span>
-          <Handle
-            type="target"
-            position={Position.Left}
-            id={`input-${i + 1}`}
-            className="w-3 h-3 bg-gray-400 border-2 border-gray-600"
-          />
+          <span className="text-xs  text-gray-500">{`Input ${i + 1}`}</span>
+
+          {/* LEFT-facing styled handle */}
+          <div className="relative">
+            <Handle
+              type="target"
+              position={Position.Left}
+              id={`input-${i + 1}`}
+              className="
+              !w-6 !h-6
+              !bg-gray-400
+              !rounded-l-full 
+              !border-none
+            "
+            />
+          </div>
         </div>
       ));
     }
+
+    // SIMPLE SINGLE INPUT
     return (
-      <Handle
-        type="target"
-        position={Position.Left}
-        id="input"
-        className="w-3 h-3 bg-gray-400 border-2 border-gray-600"
-        style={{ top: "50%" }}
-      />
+     
+        <Handle
+          type="target"
+          position={Position.Left}
+          id="input"
+          className="
+          !top-1/3
+          !left-2
+          !w-4 !h-7 
+          !bg-green-500 
+          !rounded-l-full 
+          !border-none
+        "
+          style={{ top: "50%" }}
+        />
     );
   };
 
@@ -184,127 +206,107 @@ const CustomNode = ({ data, id }: NodeProps) => {
       return (
         <div
           key={outputId}
-          className="absolute right-0 flex items-center"
-          style={{
-            right: "0px",
-            top: verticalPos,
-            transform: "translateY(-50%)",
-          }}
+          className="absolute right-2 !top-2/6 flex items-center z-0 "
         >
           {label && <div className="text-xs font-semibold pr-4">{label}</div>}
 
-          <Handle
-            type="source"
-            position={Position.Right}
-            id={outputId}
-            isConnectable={!isConnected}
-            className={`w-3 h-3 border-2 border-gray-600 ${
-              isConnected ? "bg-green-500" : "bg-gray-400"
-            }`}
-            style={{
-              top: "50%",
-              right: -6,
-              transform: "translateY(-50%)",
-              pointerEvents: "all",
-            }}
-          />
+          <div className="relative">
+            <Handle
+              type="source"
+              position={Position.Right}
+              id={outputId}
+              isConnectable={!isConnected}
+              className="
+        !w-7 !h-7
+        !bg-green-500
+        !rounded-r-full
+        !border-2 border-white
+        !m-0
+        flex items-center justify-center
+        cursor-pointer
+      "
+              style={{
+                top: "50%",
+                right: -4,
+                transform: "translateY(-50%)",
+                pointerEvents: "all",
+              }}
+              onClick={(e) => {
+                e.stopPropagation();
+                if (isConnected) return;
+                const { clientX, clientY } = e;
+                const position = project({ x: clientX, y: clientY });
+                handleAddClick(position, handleIdForAdd);
+              }}
+            />
 
-          {!isConnected && (
-            <div
-              className="absolute flex items-center"
-              style={{ right: "-28px", pointerEvents: "all" }}
-            >
+            {/* + only if not connected */}
+            {!isConnected && (
               <div
-                draggable
-                onDragStart={(e) => handleDragStart(e, handleIdForAdd)}
-                onDragEnd={handleDragEnd}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  const { clientX, clientY } = e;
-                  const position = project({ x: clientX, y: clientY });
-                  handleAddClick(position, handleIdForAdd);
-                }}
-                className="w-4 h-4 bg-[var(--wf--brand-primary)] flex items-center justify-center rounded-full hover:opacity-100 cursor-crosshair transition-all duration-200"
+                className="
+        absolute inset-0 !-left-2
+        flex items-center justify-center 
+        text-white text-xs font-light
+        pointer-events-none
+      "
               >
-                <Plus className="w-3 h-3 text-white" />
+                +
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       );
     });
   };
   return (
-    <div
-      className="relative group"
-      ref={nodeRef}
-      onClick={() => {
-        if (!closedModel.includes((data as any)?.type)) setShowConfig(true);
-      }}
-    >
-      {!isAddNode && !isStartNode ? (
-        <>
-          <div className="rounded-lg border-2 min-w-[160px] bg-[#2a2d3a] border-[#3a3d4a] shadow-lg relative">
-            {/* ✅ Always render input handles */}
-            {renderInputHandles()}
-
-            {/* ✅ Node content changes based on data.type */}
-            <div className="p-4 flex flex-col items-center gap-2">
-              {isAddNode ? (
-                <AddNodeButton
-                  onClick={handleClick}
-                  isStartNode={isStartNode}
-                />
-              ) : (
-                <>
-                  {Icon && (
-                    <div className="text-[var(--wf--brand-primary)]">
-                      <Icon className="w-8 h-8" />
-                    </div>
-                  )}
-                  <div className="font-medium text-sm text-white">
-                    {(data as any).name}
-                  </div>
-                </>
-              )}
-            </div>
-
-            {/* ✅ Always render output handles */}
-            {renderOutputHandles()}
-          </div>
-
-          <NodeConfigModal
-            open={showConfig}
-            onOpenChange={setShowConfig}
-            nodeId={id}
-            nodeData={data}
-          />
-        </>
-      ) : (
-        <>
-          {renderInputHandles()}
-          <AddNodeButton onClick={handleClick} isStartNode={isStartNode} />
-          {renderOutputHandles()}
-        </>
-      )}
-
-      {/* Delete Button */}
-      {!isStartNode && (
-        <div
-          className="absolute -top-7 left-1/2 -translate-x-1/2 flex items-center gap-1 z-50 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
-          onClick={(e) => e.stopPropagation()}
-        >
-          <Button
-            className="w-6 h-6 rounded-full bg-red-500"
-            onClick={handleDeleteClick}
+    <>
+      <div
+        className="relative group space-y-4 text-center"
+        ref={nodeRef}
+        onClick={() => {
+          if (!closedModel.includes((data as any)?.type)) setShowConfig(true);
+        }}
+      >
+        <div className="w-28 h-28 mx-auto relative space-y-3">
+        {renderInputHandles()}
+          <div
+            className={`w-20 mx-auto h-20 border-4 border-white z-10 relative rounded-full transition-all duration-200  flex flex-col items-center justify-center gap-2 cursor-pointer bg-[#22c55e] hover:bg-[#16a34a]
+        `}
+            onClick={handleClick}
           >
-            <Trash2 className="w-3 h-3 text-white" />
-          </Button>
+            <Icon className="w-10 h-10" />
+          </div>
+          {renderOutputHandles()}
+          {!isAddNode && (
+            <div className="text-black font-medium text-sm text-center">
+              {name}
+            </div>
+          )}
         </div>
-      )}
 
-      {/* Config Modal also only for normal nodes */}
-    </div>
+        {!isStartNode && (
+          <div
+            className="absolute -top-7 left-1/2 -translate-x-1/2 flex items-center gap-1 z-50 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <Button
+              className="w-6 h-6 rounded-full bg-red-500"
+              onClick={handleDeleteClick}
+            >
+              <Trash2 className="w-3 h-3 text-white" />
+            </Button>
+          </div>
+        )}
+      </div>
+      {isNodeConfigModelOpen && (
+        <NodeConfigModal
+          open={showConfig}
+          onOpenChange={setShowConfig}
+          nodeId={id}
+          nodeData={data}
+        />
+      )}
+    </>
   );
 };
 

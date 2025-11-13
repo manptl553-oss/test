@@ -60,5 +60,5 @@ export const getEdgeLabelForNode = (
 export const isTriggerNode = (nodeType?: string): boolean => {
   if (!nodeType) return false;
   const type = nodeType.toLowerCase?.();
-  return ["webhook", "event", "schedule", "trigger", "cron"].includes(type);
+  return ["webhook", "event", "schedule", "trigger", "cron","http_request"].includes(type);
 };

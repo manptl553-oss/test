@@ -1,8 +1,8 @@
 import { useFlowStore } from "@/store";
-import { RefObject, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useReactFlow } from "reactflow";
 import "reactflow/dist/style.css";
 import NodePickerPanel from "./NodePickerPanel";
-import { useReactFlow } from "reactflow";
 
 export const Popover = () => {
   const popoverRef = useRef(null);
@@ -10,15 +10,15 @@ export const Popover = () => {
   const [style, setStyle] = useState({});
   const { getViewport, getNode } = useReactFlow();
   const rafRef = useRef(null);
-  const { activeModelId } = useFlowStore();
-  const isStartNode = activeModelId == "start_workflow";
+  const { activeNode } = useFlowStore();
+  const isStartNode = activeNode?.data?.type == "start_workflow";
 
   useEffect(() => {
-    if (!activeModelId || !popoverRef.current) return;
+    if (!activeNode || !popoverRef.current) return;
 
     const updatePosition = () => {
       const viewport = getViewport();
-      const reactFlowNode = getNode(activeModelId);
+      const reactFlowNode = getNode(activeNode.id);
 
       if (!reactFlowNode) {
         rafRef.current = requestAnimationFrame(updatePosition);
@@ -74,9 +74,9 @@ export const Popover = () => {
         cancelAnimationFrame(rafRef.current);
       }
     };
-  }, [activeModelId, getViewport, getNode]);
+  }, [activeNode, getViewport, getNode]);
 
-  if (!activeModelId) return null;
+  if (!activeNode) return null;
 
   return (
     <div
@@ -110,7 +110,7 @@ export const Popover = () => {
         }}
       />
 
-      <NodePickerPanel id={activeModelId} isStartNode={isStartNode} />
+      <NodePickerPanel id={activeNode.id} isStartNode={isStartNode} />
     </div>
   );
 };

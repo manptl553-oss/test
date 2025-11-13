@@ -86,7 +86,7 @@ export function NodeConfigModal({ open, onOpenChange, nodeId, nodeData }: any) {
     }
   };
   return (
-    <Dialog open={false} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[750px] bg-white rounded-xl shadow-xl">
         <DialogHeader className="border-b border-gray-200 pb-4">
           <DialogTitle className="font-semibold text-lg text-gray-800">
