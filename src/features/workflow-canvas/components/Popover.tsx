@@ -2,57 +2,79 @@ import { useFlowStore } from "@/store";
 import { RefObject, useEffect, useRef, useState } from "react";
 import "reactflow/dist/style.css";
 import NodePickerPanel from "./NodePickerPanel";
+import { useReactFlow } from "reactflow";
 
-export const Popover = ({
-  containerRef,
-}: {
-  containerRef: RefObject<HTMLDivElement | null>;
-}) => {
-  const popoverRef = useRef<HTMLDivElement>(null);
-  const [position, setPosition] = useState({ top: 0, left: 0 });
+export const Popover = () => {
+  const popoverRef = useRef(null);
+  const [side, setSide] = useState("right");
+  const [style, setStyle] = useState({});
+  const { getViewport, getNode } = useReactFlow();
+  const rafRef = useRef(null);
   const { activeModelId } = useFlowStore();
-  const isStartNode = activeModelId === "start_workflow";
+  const isStartNode = activeModelId == "start_workflow";
 
   useEffect(() => {
-    if (!activeModelId || !containerRef.current || !popoverRef.current) return;
+    if (!activeModelId || !popoverRef.current) return;
 
     const updatePosition = () => {
-      const containerRect = containerRef.current!.getBoundingClientRect();
-      const nodeRect = document
-        .querySelector(`[data-id='${activeModelId}']`)
-        ?.getBoundingClientRect();
-      const popoverRect = popoverRef.current!.getBoundingClientRect();
+      const viewport = getViewport();
+      const reactFlowNode = getNode(activeModelId);
 
-      if (!nodeRect) return;
-
-      let top = nodeRect.top - containerRect.top;
-      let left = nodeRect.right - containerRect.left + 10; // default right side
-
-      // Auto adjust when hitting right edge
-      if (left + popoverRect.width > containerRect.width) {
-        left = nodeRect.left - containerRect.left - popoverRect.width - 10;
+      if (!reactFlowNode) {
+        rafRef.current = requestAnimationFrame(updatePosition);
+        return;
       }
 
-      // Auto adjust when hitting bottom edge
-      if (top + popoverRect.height > containerRect.height) {
-        top = containerRect.height - popoverRect.height - 10;
+      const popoverRect = popoverRef.current.getBoundingClientRect();
+      const popoverWidth = 280;
+      const popoverHeight = popoverRect.height || 400;
+
+      // Calculate node's screen position using transform
+      const nodeScreenX = reactFlowNode.position.x * viewport.zoom + viewport.x;
+      const nodeScreenY = reactFlowNode.position.y * viewport.zoom + viewport.y;
+
+      // Node dimensions scaled by zoom
+      const nodeWidth = 150 * viewport.zoom;
+      const nodeHeight = 40 * viewport.zoom;
+
+      const margin = 12;
+      let newSide = "right";
+      let translateX = nodeScreenX + nodeWidth + margin;
+
+      // Check if popover overflows right edge
+      if (translateX + popoverWidth > window.innerWidth - 20) {
+        translateX = nodeScreenX - popoverWidth - margin;
+        newSide = "left";
       }
 
-      setPosition({ top, left });
+      // Center vertically with node
+      let translateY = nodeScreenY + nodeHeight / 2;
+
+      // Keep within viewport bounds
+      const maxY = window.innerHeight - popoverHeight / 2 - 20;
+      const minY = popoverHeight / 2 + 20;
+      translateY = Math.max(minY, Math.min(maxY, translateY));
+
+      setSide(newSide);
+      setStyle({
+        position: "fixed",
+        left: "0px",
+        top: "0px",
+        transform: `translate(${translateX}px, ${translateY}px) translateY(-50%)`,
+        willChange: "transform",
+      });
+
+      rafRef.current = requestAnimationFrame(updatePosition);
     };
 
     updatePosition();
 
-    const observer = new ResizeObserver(updatePosition);
-    observer.observe(containerRef.current);
-
-    const interval = setInterval(updatePosition, 50); // follow node movement
-
     return () => {
-      observer.disconnect();
-      clearInterval(interval);
+      if (rafRef.current) {
+        cancelAnimationFrame(rafRef.current);
+      }
     };
-  }, [activeModelId, containerRef]);
+  }, [activeModelId, getViewport, getNode]);
 
   if (!activeModelId) return null;
 
@@ -60,18 +82,34 @@ export const Popover = ({
     <div
       ref={popoverRef}
       style={{
-        position: "absolute",
-        top: position.top,
-        left: position.left,
-        background: "white",
-        border: "1px solid #ccc",
-        borderRadius: "8px",
-        padding: "10px",
-        boxShadow: "0 4px 10px rgba(0,0,0,0.1)",
-        transition: "top 0.05s, left 0.05s",
-        // pointerEvents: "none",
+        ...style,
+        background: "#fff",
+        border: "1px solid #e2e8f0",
+        borderRadius: "10px",
+        padding: "16px",
+        boxShadow: "0 4px 12px rgba(0,0,0,0.12)",
+        width: "280px",
+        pointerEvents: "auto",
+        zIndex: 1000,
+        transition: "none",
       }}
     >
+      {/* Arrow */}
+      <div
+        style={{
+          position: "absolute",
+          top: "50%",
+          transform: "translateY(-50%)",
+          [side === "right" ? "left" : "right"]: "-8px",
+          width: 0,
+          height: 0,
+          borderTop: "8px solid transparent",
+          borderBottom: "8px solid transparent",
+          borderLeft: side === "right" ? "8px solid #fff" : "none",
+          borderRight: side === "left" ? "8px solid #fff" : "none",
+        }}
+      />
+
       <NodePickerPanel id={activeModelId} isStartNode={isStartNode} />
     </div>
   );

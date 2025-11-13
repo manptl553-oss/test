@@ -214,6 +214,7 @@ export default function FlowCanvas({ workflow }: any) {
     deleteNode,
     renameNode,
     setActiveModelId,
+    activeModelId,
   } = useFlowStore();
 
   const containerRef = useRef<HTMLDivElement>(null);
@@ -467,6 +468,9 @@ export default function FlowCanvas({ workflow }: any) {
         onConnect={onConnect}
         onConnectStart={onConnectStart}
         onConnectEnd={onConnectEnd}
+        onNodeClick={(_, node) => {
+          setActiveModelId(activeModelId ? null : node.id);
+        }}
         fitView
         className="bg-white"
         proOptions={{ hideAttribution: true }}
@@ -475,7 +479,7 @@ export default function FlowCanvas({ workflow }: any) {
       </ReactFlow>
 
       {/* ✅ Sticky Popover */}
-      {<Popover containerRef={containerRef} />}
+      {activeModelId && <Popover />}
       {/* Auto Layout Button - bottom left */}
       <div className="absolute bottom-8 left-4 z-20">
         <button

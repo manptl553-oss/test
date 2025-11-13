@@ -137,9 +137,7 @@ const CustomNode = ({ data, id }: NodeProps) => {
   );
 
   const renderInputHandles = () => {
-    console.log(data.type);
     if (isStartNode || isTriggerNode(data?.type)) return null;
-    console.log("after return");
 
     if ((data as any).name?.toLowerCase() === "merge") {
       return Array.from({ length: 4 }).map((_, i) => (

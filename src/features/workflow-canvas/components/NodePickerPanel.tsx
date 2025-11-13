@@ -17,16 +17,22 @@ export default function NodePickerPanel({
   const nodeCategory = useMemo(
     () =>
       isStartNode
-        ? nodeCategoryConst.find((n) => n.name === "trigger")?.nodeTemplates ??
-          []
+        ? nodeCategoryConst.filter((n) => n.name === "trigger") ?? []
         : nodeCategoryConst,
     [isStartNode]
   );
-  const [navigationStack, setNavigationStack] = useState<NavigationItem[]>([
-    { type: "root", data: null },
-  ]);
-  const currentView = navigationStack[navigationStack.length - 1];
+  const [navigationStack, setNavigationStack] = useState<NavigationItem[]>(
+    () => {
+      const base = [{ type: "root", data: nodeCategory }];
+      return isStartNode
+        ? [...base, { type: "category", data: nodeCategory[0] }]
+        : base;
+    }
+  );
 
+  console.log(navigationStack);
+
+  const currentView = navigationStack[navigationStack.length - 1];
   const goBack = () => setNavigationStack((stack) => stack.slice(0, -1));
   const navigateToCategory = (category: any) =>
     setNavigationStack((stack) => [
@@ -50,59 +56,72 @@ export default function NodePickerPanel({
     };
     updateNode(id, nodeData);
     setActiveModelId(null);
-    setNavigationStack([{ type: "root", data: null }]);
+    setNavigationStack([{ type: "root", data: nodeCategory }]);
   };
 
   useEffect(() => {
     const handleOutsideClick = (e: MouseEvent) => {
       if (panelRef.current && !panelRef.current.contains(e.target as Node)) {
         setActiveModelId(null);
-        setNavigationStack([{ type: "root", data: null }]);
+        setNavigationStack([{ type: "root", data: nodeCategory }]);
       }
     };
     document.addEventListener("mousedown", handleOutsideClick);
     return () => document.removeEventListener("mousedown", handleOutsideClick);
   }, []);
 
-  const renderRootView = () =>
-    nodeCategory.map((category) => (
+  const renderRootView = () => {
+    const root = currentView.type === "root" ? currentView.data : [];
+    if (!root) return;
+    return root.map((category) => (
       <div
         key={category.id}
         className="flex items-center gap-2 px-3 py-2 rounded-md cursor-pointer hover:bg-gray-100 text-gray-700 text-sm"
-        onClick={() =>
-          isStartNode ? selectTemplate(category) : navigateToCategory(category)
-        }
+        onClick={() => navigateToCategory(category)}
       >
         <span className="w-3 h-3 bg-gray-400 rounded-full" />
         {category.name}
       </div>
     ));
+  };
 
   const renderCategoryView = () => {
     const category = currentView.data;
     if (!category) return;
-    if (!category.subCategories || category.subCategories.length === 0) {
-      return category.nodeTemplates?.map((template: any) => (
-        <div
-          key={template.id}
-          className="flex items-center gap-2 px-3 py-2 rounded-md cursor-pointer hover:bg-gray-100 text-gray-700 text-sm"
-          onClick={() => selectTemplate(template)}
-        >
-          <span className="w-3 h-3 bg-gray-400 rounded-full" />
-          {template.name}
-        </div>
-      ));
+    const categoryArray = [];
+    if (category?.nodeTemplates.length > 0) {
+      categoryArray.push(
+        ...category.nodeTemplates?.map((template: any) => (
+          <div
+            key={template.id}
+            className="flex items-center gap-2 px-3 py-2 rounded-md cursor-pointer hover:bg-gray-100 text-gray-700 text-sm"
+            onClick={() => selectTemplate(template)}
+          >
+            <span className="w-3 h-3 bg-gray-400 rounded-full" />
+            {template.name}
+          </div>
+        ))
+      );
     }
-    return category.subCategories.map((subCat: any) => (
-      <div
-        key={subCat.id}
-        className="flex items-center gap-2 px-3 py-2 rounded-md cursor-pointer hover:bg-gray-100 text-gray-700 text-sm"
-        onClick={() => navigateToSubCategory(subCat)}
-      >
-        <span className="w-3 h-3 bg-gray-400 rounded-full" />
-        {subCat.name}
-      </div>
-    ));
+    if (category?.subCategories?.length > 0) {
+      categoryArray.push(
+        ...category.subCategories.map((subCat: any) => (
+          <div
+            key={subCat.id}
+            className="flex items-center gap-2 px-3 py-2 rounded-md cursor-pointer hover:bg-gray-100 text-gray-700 text-sm"
+            onClick={() =>
+              subCat?.subCategories?.length > 0
+                ? navigateToCategory(subCat)
+                : navigateToSubCategory(subCat)
+            }
+          >
+            <span className="w-3 h-3 bg-gray-400 rounded-full" />
+            {subCat.name}
+          </div>
+        ))
+      );
+    }
+    return categoryArray;
   };
 
   const renderSubCategoryView = () => {
@@ -122,11 +141,12 @@ export default function NodePickerPanel({
   return (
     <div ref={panelRef} className="flex flex-col h-full">
       <div className="px-4 py-3 font-semibold text-gray-700 border-b flex items-center gap-2">
-        {navigationStack.length > 1 && (
-          <button onClick={goBack} className="hover:bg-gray-100 p-1 rounded">
-            <ChevronLeft className="w-5 h-5" />
-          </button>
-        )}
+        {navigationStack.length > 1 ||
+          (isStartNode && (
+            <button onClick={goBack} className="hover:bg-gray-100 p-1 rounded">
+              <ChevronLeft className="w-5 h-5" />
+            </button>
+          ))}
         Select Trigger
       </div>
 
