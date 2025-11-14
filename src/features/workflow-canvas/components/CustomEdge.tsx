@@ -6,7 +6,8 @@ import {
   getSmoothStepPath,
 } from "reactflow";
 import { Settings } from "lucide-react";
-const CustomEdge = memo((props: EdgeProps & { data?: any }) => {
+
+const CustomEdge = memo((props: EdgeProps) => {
   const {
     id,
     sourceX,
@@ -17,13 +18,12 @@ const CustomEdge = memo((props: EdgeProps & { data?: any }) => {
     targetPosition,
     style = {},
     selected,
+    markerEnd,
   } = props;
+
   const [showMenu, setShowMenu] = useState(false);
-  const strokeColor = selected
-    ? "#7EC040"
-    : (style as any)?.stroke || "#4b5563";
-  const strokeWidth = selected ? 3 : (style as any)?.strokeWidth || 2;
-  const markerId = useMemo(() => `arrow-${id}`, [id]);
+
+  // 🌟 Smooth curved path
   const [edgePath, midX, midY] = getSmoothStepPath({
     sourceX,
     sourceY,
@@ -31,7 +31,16 @@ const CustomEdge = memo((props: EdgeProps & { data?: any }) => {
     targetX,
     targetY,
     targetPosition,
+    borderRadius: 14,
   });
+
+  // 🌟 Stroke based on selection
+  const strokeColor = selected ? "#7EC040" : (style as any)?.stroke || "#4b5563";
+  const strokeWidth = selected ? 3 : (style as any)?.strokeWidth || 2;
+
+  // 🌟 Arrow marker
+  const markerId = useMemo(() => `arrow-${id}`, [id]);
+
   const ArrowMarker = () => (
     <marker
       id={markerId}
@@ -45,47 +54,61 @@ const CustomEdge = memo((props: EdgeProps & { data?: any }) => {
       <path d="M 0 0 L 10 5 L 0 10 z" fill={strokeColor} />
     </marker>
   );
+
+  // ----------------------------------------------------
+  // 🌟 DOTTED DECORATION (Gradient dots)
+  // ----------------------------------------------------
+
+  const dx = targetX - sourceX;
+  const dy = targetY - sourceY;
+  const pathLength = Math.sqrt(dx * dx + dy * dy);
+
+  const dotSpacing = 12;
+  const dotRadius = 4;
+  const dotCount = Math.max(5, Math.floor(pathLength / dotSpacing) - 1);
+
+  const startColor = { r: 111, g: 207, b: 151 }; // light green
+  const endColor = { r: 198, g: 230, b: 196 };   // pale green
+
+  const dots = [];
+
+  for (let i = 1; i <= dotCount; i++) {
+    const t = i / (dotCount + 1);
+
+    const x = sourceX + dx * t;
+    const y = sourceY + dy * t;
+
+    const r = Math.round(startColor.r * (1 - t) + endColor.r * t);
+    const g = Math.round(startColor.g * (1 - t) + endColor.g * t);
+    const b = Math.round(startColor.b * (1 - t) + endColor.b * t);
+
+    dots.push(<circle key={i} cx={x} cy={y} r={dotRadius} fill={`rgb(${r},${g},${b})`} />);
+  }
+
   return (
     <>
-      <defs>
-        <ArrowMarker />
-      </defs>
-      <BaseEdge
-        id={id}
-        path={edgePath}
-        markerEnd={`url(#${markerId})`}
-        style={{
-          ...style,
-          stroke: strokeColor,
-          strokeWidth,
-          fill: "none",
-          strokeDasharray: "none",
-        }}
-      />
-      <EdgeLabelRenderer>
-        <div
+
+
+      <g>
+        <BaseEdge
+          id={id}
+          path={edgePath}
           style={{
-            position: "absolute",
-            transform: `translate(${midX}px, ${midY}px) translateX(-50%)`,
-            pointerEvents: "all",
+            stroke: "transparent",
+            strokeWidth: 20,
+            pointerEvents: "stroke",
           }}
-          className="nodrag nopan flex flex-col items-center"
-        >
-          <button
-            className="flex items-center justify-center w-5 h-5 rounded-full bg-[var(--wf-brand-primary)] text-white shadow"
-            onClick={() => setShowMenu((p) => !p)}
-          >
-            <Settings className="w-3 h-3" />
-          </button>
-          {showMenu && (
-            <div className="mt-2 text-xs bg-white border border-[var(--wf-border-default)] rounded px-2 py-1">
-              Edge Settings
-            </div>
-          )}
-        </div>
-      </EdgeLabelRenderer>
+        />
+
+    
+
+        {dots}
+      </g>
+
+  
     </>
   );
 });
+
 CustomEdge.displayName = "CustomEdge";
 export default CustomEdge;

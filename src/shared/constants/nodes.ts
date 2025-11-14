@@ -65,7 +65,7 @@ export const nodeTypeIcons: Record<NodeTypeProps, any> = {
   [NodeTypeProps.RULE_EXECUTOR]: Scissors,
   [NodeTypeProps.HTTP_REQUEST]: Globe,
   [NodeTypeProps.WEBHOOK]: Webhook,
-  [NodeTypeProps.EVENT]: Bolt,
+  [NodeTypeProps.EVENT]: Webhook,
   [NodeTypeProps.SCHEDULE]: CalendarClock,
 };
 

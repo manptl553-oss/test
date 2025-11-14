@@ -15,6 +15,7 @@ import {
   getSelfLoopHandle,
   getTargetHandleForNode,
   isTriggerNode,
+  NodeTypeProps,
 } from "@/shared";
 
 interface NodeData {
@@ -26,6 +27,7 @@ interface NodeData {
   parentLoop?: string;
   config?: any;
   data?: any;
+  parent?:any
 }
 
 interface FlowState {
@@ -431,44 +433,110 @@ export const useFlowStore = create<FlowState>((set, get) => ({
     });
   },
 
-  updateNode: (nodeId, nodeData) =>
-    set((state) => {
-      const oldNode = state.nodes.find((n) => n.id === nodeId);
-      if (!oldNode) return state;
+updateNode: (nodeId, nodeData) =>
+  set((state) => {
+    const { nodes, edges } = state;
 
-      const tempNode = {
-        ...oldNode,
-        data: {
-          ...oldNode.data,
-          ...nodeData,
-        },
-      };
+    // 1️⃣ find existing node
+    const oldNode = nodes.find((n) => n.id === nodeId);
+    if (!oldNode) return state;
 
-      const newOutputs = getOutputsForNode(tempNode);
-      const normalizedNew = newOutputs.map((o: string) => o.toLowerCase());
+    // 2️⃣ merge incoming data into node.data
+    const mergedNode: Node<NodeData> = {
+      ...oldNode,
+      data: { ...oldNode.data, ...nodeData },
+    };
 
-      const updatedNode = {
-        ...tempNode,
-        data: {
-          ...tempNode.data,
-          outputs: newOutputs,
-        },
-      };
+    // 3️⃣ recompute outputs once
+    const newOutputs = getOutputsForNode(mergedNode);
+    const normalizedHandles = newOutputs.map((o) => o.toLowerCase());
+    mergedNode.data.outputs = newOutputs;
 
-      // ✅ Remove edges referencing removed handles
-      const cleanedEdges = state.edges.filter((edge) => {
-        if (edge.source !== nodeId) return true;
-        const handle = edge.sourceHandle?.toLowerCase();
-        if (!handle) return true; // single-output nodes
-        return normalizedNew.includes(handle);
-      });
+    // 4️⃣ remove only edges whose source handle no longer exists on this node
+    const cleanedEdges = edges.filter((edge) => {
+      if (edge.source !== nodeId) return true;
+      const h = edge.sourceHandle?.toLowerCase();
+      return h ? normalizedHandles.includes(h) : true;
+    });
 
+    // 5️⃣ remove old dummy/branch children using data.parent
+    const cleanedNodes = nodes.filter((n) => n.data?.parent !== nodeId);
+
+    // 6️⃣ determine conditional/rule-executor (ensure correct checks)
+    const isConditional =
+      mergedNode.data.type === NodeTypeProps.CONDITIONAL ||
+      mergedNode.data.type === NodeTypeProps.RULE_EXECUTOR ||
+      nodeData.type === NodeTypeProps.CONDITIONAL ||
+      nodeData.type === NodeTypeProps.RULE_EXECUTOR;
+
+    // 7️⃣ not conditional → simple update
+    if (!isConditional) {
       return {
-        nodes: state.nodes.map((n) => (n.id === nodeId ? updatedNode : n)),
+        ...state,
+        nodes: cleanedNodes.map((n) => (n.id === nodeId ? mergedNode : n)),
         edges: cleanedEdges,
         connectedHandles: computeConnectedHandles(cleanedEdges),
       };
-    }),
+    }
+
+    // 8️⃣ conditional → create typed dummy children (satisfy NodeData)
+    const baseX = oldNode.position.x + 250;
+    const baseY = oldNode.position.y;
+
+    const trueNode: Node<NodeData> = {
+      id: `${nodeId}-true`,
+      type: "custom",
+      position: { x: baseX, y: baseY - 100 },
+      data: {
+        id: `${nodeId}-true`,
+        name: "True",
+        type: "addNode",
+        backend_id: null,
+        parent: nodeId,
+        outputs: ["true"],
+      },
+    };
+
+    const falseNode: Node<NodeData> = {
+      id: `${nodeId}-false`,
+      type: "custom",
+      position: { x: baseX, y: baseY + 100 },
+      data: {
+        id: `${nodeId}-false`,
+        name: "False",
+        type: "addNode",
+        backend_id: null,
+        parent: nodeId,
+        outputs: ["false"],
+      },
+    };
+
+    const trueEdge: Edge = {
+      id: `${nodeId}-edge-true`,
+      source: nodeId,
+      sourceHandle: "true",
+      target: trueNode.id,
+      type: "custom",
+    };
+
+    const falseEdge: Edge = {
+      id: `${nodeId}-edge-false`,
+      source: nodeId,
+      sourceHandle: "false",
+      target: falseNode.id,
+      type: "custom",
+    };
+
+    const finalEdges = [...cleanedEdges, trueEdge, falseEdge];
+
+    return {
+      ...state,
+      nodes: [...cleanedNodes, mergedNode, trueNode, falseNode],
+      edges: finalEdges,
+      connectedHandles: computeConnectedHandles(finalEdges),
+    };
+  }),
+
 
   //  Misc Utilities
   setEdgeForSidebar: (edgeId, sourceNodeId) =>

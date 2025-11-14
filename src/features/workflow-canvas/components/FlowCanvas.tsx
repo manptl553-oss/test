@@ -387,11 +387,12 @@ export default function FlowCanvas({ workflow }: any) {
         data: {
           ...node.data,
           onDeleteClick: deleteNode,
+            onAddClick: handleAddClick,
           // Pass whether popover is open for this specific node
           isPopoverOpen: popoverAnchor?.nodeId === node.id && !!popoverConfig,
         },
       })),
-    [nodes, deleteNode, popoverAnchor, popoverConfig]
+    [nodes, deleteNode, popoverAnchor, popoverConfig, handleAddClick]
   );
 
   const edgesWithData = useMemo(
@@ -460,7 +461,7 @@ export default function FlowCanvas({ workflow }: any) {
       setIsLayouting(false);
     }, 100);
   }, [nodes, edges, setNodes, setEdges, fitView]);
-
+console.log(nodes, "-------------------nodes", edges,"------------------edges")
   return (
     <div className="w-full h-full relative bg-white" ref={containerRef}>
       <ReactFlow
@@ -475,6 +476,7 @@ export default function FlowCanvas({ workflow }: any) {
         onConnectEnd={onConnectEnd}
         onNodeClick={(_, node) => {
           setActiveNode(activeNode ? null : node);
+          
         }}
         fitView
         className="bg-white"

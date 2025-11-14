@@ -45,6 +45,7 @@ const getLabel = (source: string | undefined) => {
 };
 
 const CustomNode = ({ data, id }: NodeProps) => {
+  console.log("🚀 ~ CustomNode ~ data:", data)
   const { project } = useReactFlow();
   const [showConfig, setShowConfig] = useState(false);
   const nodeRef = useRef<HTMLDivElement>(null);
@@ -181,8 +182,8 @@ const CustomNode = ({ data, id }: NodeProps) => {
           position={Position.Left}
           id="input"
           className="
-          !top-1/3
-          !left-2
+          !top-12
+          !left-1
           !w-4 !h-7 
           !bg-green-500 
           !rounded-l-full 
@@ -217,7 +218,8 @@ const CustomNode = ({ data, id }: NodeProps) => {
               id={outputId}
               isConnectable={!isConnected}
               className="
-        !w-7 !h-7
+        !w-7 !h-8
+        !top-1
         !bg-green-500
         !rounded-r-full
         !border-2 border-white
@@ -227,7 +229,7 @@ const CustomNode = ({ data, id }: NodeProps) => {
       "
               style={{
                 top: "50%",
-                right: -4,
+                right: -8,
                 transform: "translateY(-50%)",
                 pointerEvents: "all",
               }}
@@ -244,7 +246,8 @@ const CustomNode = ({ data, id }: NodeProps) => {
             {!isConnected && (
               <div
                 className="
-        absolute inset-0 !-left-2
+                !top-[3px]
+        absolute inset-0 !-left-0
         flex items-center justify-center 
         text-white text-xs font-light
         pointer-events-none
@@ -267,14 +270,14 @@ const CustomNode = ({ data, id }: NodeProps) => {
           if (!closedModel.includes((data as any)?.type)) setShowConfig(true);
         }}
       >
-        <div className="w-28 h-28 mx-auto relative space-y-3">
+        <div className="w-30 h-30 mx-auto relative space-y-3">
         {renderInputHandles()}
           <div
-            className={`w-20 mx-auto h-20 border-4 border-white z-10 relative rounded-full transition-all duration-200  flex flex-col items-center justify-center gap-2 cursor-pointer bg-[#22c55e] hover:bg-[#16a34a]
+            className={`w-24 mx-auto h-24  ease-in-out border-4 border-white z-10 relative rounded-full transition-all duration-300 hover:scale-105 hover:border-red-400  flex flex-col items-center justify-center gap-2 cursor-pointer bg-[#c82344] 
         `}
             onClick={handleClick}
           >
-            <Icon className="w-10 h-10" />
+            <Icon className="w-12 h-12" />
           </div>
           {renderOutputHandles()}
           {!isAddNode && (
