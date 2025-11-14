@@ -19,28 +19,35 @@ export function PopoverItem({ category, onClick }: CategoryItemProps) {
   return (
     <div
       key={category.id}
-      className="flex items-center gap-2 px-3 py-2 rounded-md cursor-pointer hover:bg-gray-100 text-gray-700 text-sm font-semibold"
       onClick={onClick}
+      onKeyDown={(e) => e.key === "Enter" && onClick?.()}
+      className="w-full flex items-center gap-3 px-3 py-2 rounded-md cursor-pointer hover:bg-gray-100 transition-colors"
     >
-      {/* Icon bubble */}
       <span
-        className={`w-8 shrink-0 h-8 p-2 rounded-full flex items-center justify-center `}
-        style={{
-          background: style.bg,
-        }}
+        className="w-8 h-8 flex-none rounded-full flex items-center justify-center overflow-hidden"
+        style={{ background: style?.bg }}
+        aria-hidden
       >
         <Icon className="w-4 h-4 text-white" />
       </span>
 
-      {/* Text */}
-      <div className="relative space-y-1 max-w-[200px]">
-        <span className="block text-sm text-gray-800 font-semibold">
+      {/* Text (single- or two-line) */}
+      <div className="flex flex-col justify-center w-full min-w-0">
+        <span
+          className="text-sm text-gray-800 font-semibold truncate"
+          title={category.name}
+        >
           {category.name}
         </span>
-        {/* 
-        <span className="block text-sm text-black/60 font-normal line-clamp-2">
-          {category.description || ""}
-        </span> */}
+
+        {category?.type && (
+          <span
+            className="text-xs text-gray-500 truncate"
+            title={category.description || ""}
+          >
+            {category.description || ""}
+          </span>
+        )}
       </div>
     </div>
   );

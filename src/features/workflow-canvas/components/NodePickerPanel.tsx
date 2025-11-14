@@ -144,7 +144,7 @@ export default function NodePickerPanel({
 
   return (
     <div ref={panelRef} className="flex flex-col h-full ">
-      <div className="px-0 py-3 font-medium text-gray-700 border-b border-gray-300 flex items-center gap-2">
+      <div className="px-0 pb-2 font-medium text-gray-700 border-b border-gray-300 flex items-center gap-2">
         {navigationStack?.length > 1 && !isStartNode && (
           <button onClick={goBack} className="hover:bg-gray-100 p-1 rounded">
             <ChevronLeft className="w-5 h-5" />
@@ -155,13 +155,18 @@ export default function NodePickerPanel({
       {currentView.type !== "root" && (
         <div className="relative py-4 space-y-4">
           <div
-            className={`flex flex-col space-y-2 items-center justify-center border rounded-lg p-5`}
+            className={`flex flex-col space-y-2 items-center justify-center border-2 border-solid rounded-lg p-5 `}
             style={{
-              background: style.bg,
-              border: style.border,
+              background: `${style.bg}20 `,
+              border: `1px solid ${style.border}`,
             }}
           >
-            <div className="w-16 h-16 rounded-full flex items-center justify-center p-2 bg-black/20">
+            <div
+              className="w-16 h-16 rounded-full flex items-center justify-center p-2 bg-white/15"
+              style={{
+                background: style.bg,
+              }}
+            >
               <style.icon className="text-white w-8 h-8" />
             </div>
 

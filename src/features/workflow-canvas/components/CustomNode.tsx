@@ -45,7 +45,6 @@ const getLabel = (source: string | undefined) => {
 };
 
 const CustomNode = ({ data, id }: NodeProps) => {
-  console.log(data);
   const { project } = useReactFlow();
   const nodeRef = useRef<HTMLDivElement>(null);
   const store = useStoreApi();
