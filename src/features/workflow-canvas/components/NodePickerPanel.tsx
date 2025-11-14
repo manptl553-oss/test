@@ -1,8 +1,9 @@
-import { useState, useRef, useEffect, useMemo } from "react";
-import { ChevronLeft } from "lucide-react";
+import { nodeCategoryConst, NodeTypeProps, nodeTypeStyles } from "@/shared";
 import { useFlowStore } from "@/store";
-import { nodeCategoryConst, nodeTypeIcons, NodeTypeProps } from "@/shared";
+import { BugIcon, ChevronLeft } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { NavigationItem } from "../types";
+import { PopoverItem } from "./PopoverItem";
 
 export default function NodePickerPanel({
   id,
@@ -23,14 +24,24 @@ export default function NodePickerPanel({
   );
   const [navigationStack, setNavigationStack] = useState<NavigationItem[]>(
     () => {
-      const base = [{ type: "root", data: nodeCategory }];
       return isStartNode
-        ? [...base, { type: "category", data: nodeCategory[0] }]
-        : base;
+        ? [
+            { type: "root", data: nodeCategory },
+            { type: "category", data: nodeCategory[0] },
+          ]
+        : [{ type: "root", data: nodeCategory }];
     }
   );
+  // console.log(navigationStack);
 
   const currentView = navigationStack[navigationStack.length - 1];
+  const style = nodeTypeStyles[currentView?.data?.type as NodeTypeProps] ||
+    nodeTypeStyles[currentView?.data?.name as NodeTypeProps] || {
+      icon: BugIcon,
+      bg: "bg-gray-300",
+      border: "border-gray-500",
+    };
+
   const goBack = () => setNavigationStack((stack) => stack.slice(0, -1));
   const navigateToCategory = (category: any) =>
     setNavigationStack((stack) => [
@@ -45,9 +56,10 @@ export default function NodePickerPanel({
 
   const selectTemplate = (template: any) => {
     const nodeType = template.type as NodeTypeProps;
-    const Icon = nodeTypeIcons[nodeType];
+    const Icon = nodeTypeStyles[nodeType]?.icon;
     const nodeData = {
       name: template.name,
+      templateId: template?.id,
       type: nodeType,
       icon: Icon,
       description: template.description,
@@ -71,83 +83,103 @@ export default function NodePickerPanel({
   const renderRootView = () => {
     const root = currentView.type === "root" ? currentView.data : [];
     if (!root) return;
-    return root.map((category) => (
-      <div
-        key={category.id}
-        className="flex items-center gap-2 px-3 py-2 rounded-md cursor-pointer hover:bg-gray-100 text-gray-700 text-sm"
-        onClick={() => navigateToCategory(category)}
-      >
-        <span className="w-3 h-3 bg-gray-400 rounded-full" />
-        {category.name}
-      </div>
-    ));
+    return root.map((category) => {
+      return (
+        <PopoverItem
+          key={category.id}
+          category={category}
+          onClick={() => navigateToCategory(category)}
+        />
+      );
+    });
   };
 
   const renderCategoryView = () => {
     const category = currentView.data;
     if (!category) return;
     const categoryArray = [];
-    if (category?.nodeTemplates.length > 0) {
-      categoryArray.push(
-        ...category.nodeTemplates?.map((template: any) => (
-          <div
+    if (category?.nodeTemplates?.length > 0) {
+      const tempData = category.nodeTemplates?.map((template: any) => {
+        return (
+          <PopoverItem
             key={template.id}
-            className="flex items-center gap-2 px-3 py-2 rounded-md cursor-pointer hover:bg-gray-100 text-gray-700 text-sm"
+            category={template}
             onClick={() => selectTemplate(template)}
-          >
-            <span className="w-3 h-3 bg-gray-400 rounded-full" />
-            {template.name}
-          </div>
-        ))
-      );
+          />
+        );
+      });
+      categoryArray.push(...tempData);
     }
     if (category?.subCategories?.length > 0) {
-      categoryArray.push(
-        ...category.subCategories.map((subCat: any) => (
-          <div
+      const tempData = category.subCategories.map((subCat: any) => {
+        return (
+          <PopoverItem
             key={subCat.id}
-            className="flex items-center gap-2 px-3 py-2 rounded-md cursor-pointer hover:bg-gray-100 text-gray-700 text-sm"
+            category={subCat}
             onClick={() =>
               subCat?.subCategories?.length > 0
                 ? navigateToCategory(subCat)
                 : navigateToSubCategory(subCat)
             }
-          >
-            <span className="w-3 h-3 bg-gray-400 rounded-full" />
-            {subCat.name}
-          </div>
-        ))
-      );
+          />
+        );
+      });
+      categoryArray.push(...tempData);
     }
     return categoryArray;
   };
 
   const renderSubCategoryView = () => {
     const subCategory = currentView.data;
-    return subCategory.nodeTemplates?.map((template: any) => (
-      <div
-        key={template.id}
-        className="flex items-center gap-2 px-3 py-2 rounded-md cursor-pointer hover:bg-gray-100 text-gray-700 text-sm"
-        onClick={() => selectTemplate(template)}
-      >
-        <span className="w-3 h-3 bg-gray-400 rounded-full" />
-        {template.name}
-      </div>
-    ));
+    return subCategory.nodeTemplates?.map((template: any) => {
+      return (
+        <PopoverItem
+          key={template.id}
+          category={template}
+          onClick={() => selectTemplate(template)}
+        />
+      );
+    });
   };
 
   return (
-    <div ref={panelRef} className="flex flex-col h-full">
-      <div className="px-4 py-3 font-semibold text-gray-700 border-b flex items-center gap-2">
-        {navigationStack.length > 1 && !isStartNode && (
+    <div ref={panelRef} className="flex flex-col h-full ">
+      <div className="px-0 py-3 font-medium text-gray-700 border-b border-gray-300 flex items-center gap-2">
+        {navigationStack?.length > 1 && !isStartNode && (
           <button onClick={goBack} className="hover:bg-gray-100 p-1 rounded">
             <ChevronLeft className="w-5 h-5" />
           </button>
         )}
-        Select Trigger
+        {currentView?.data?.name || "Start"}
       </div>
+      {currentView.type !== "root" && (
+        <div className="relative py-4 space-y-4">
+          <div
+            className={`flex flex-col space-y-2 items-center justify-center border rounded-lg p-5`}
+            style={{
+              background: style.bg,
+              border: style.border,
+            }}
+          >
+            <div className="w-16 h-16 rounded-full flex items-center justify-center p-2 bg-black/20">
+              <style.icon className="text-white w-8 h-8" />
+            </div>
 
-      <div className="flex-1 overflow-y-auto px-2 py-2 space-y-1">
+            <span className="text-black text-sm font-medium">
+              {currentView?.data?.name || "Start"}
+            </span>
+            {/* <div className="rounded-md relative pl-8 pr-3.5 py-2 bg-white border border-black/15">
+              <input
+                type="search"
+                placeholder="Search Your Inputs"
+                className="placeholder:text-gray-600 text-sm font-medium text-black"
+              />
+            </div> */}
+          </div>
+        </div>
+      )}
+
+      <div className="flex-1 overflow-y-auto px-2 py-2 h-full max-h-60 space-y-1 ">
         {currentView.type === "root" && renderRootView()}
         {currentView.type === "category" && renderCategoryView()}
         {currentView.type === "subcategory" && renderSubCategoryView()}

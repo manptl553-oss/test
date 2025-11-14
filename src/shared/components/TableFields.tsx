@@ -46,7 +46,7 @@ function TableField({
     rowIndex: number,
     errorMsg?: string
   ) => {
-    const filedName = isTag
+    const filedName = !isTag
       ? `${name}.${rowIndex}.${column.name}`
       : `${name}.${rowIndex}`;
     switch (column.type) {

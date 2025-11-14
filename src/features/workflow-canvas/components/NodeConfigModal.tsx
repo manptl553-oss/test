@@ -22,11 +22,11 @@ export const getSourceHandle = (sourceHandle: string | undefined) => {
       return sourceHandle;
   }
 };
-export function NodeConfigModal({ open, onOpenChange, nodeId, nodeData }: any) {
+export function NodeConfigModal() {
   const { setNodes, getEdges } = useReactFlow();
-  const { workflowId } = useFlowStore();
-  // const { api } = useWorkflowContext();
-  // const service = createWorkflowService(api);
+  const { activeNode, setActiveNode } = useFlowStore();
+  const nodeData = activeNode?.data;
+  const nodeId = nodeData?.id;
   const nodeType = nodeData?.type as string;
   const [nodeName, setNodeName] = useState(
     nodeData?.name || nodeType?.toUpperCase()
@@ -65,8 +65,8 @@ export function NodeConfigModal({ open, onOpenChange, nodeId, nodeData }: any) {
         type: nodeType,
         name: nodeName,
         configuration: isTrigger ? { [nodeType]: values } : values,
-        ...(!nodeData.backend_id && prevNodeId && { prev_node_id: prevNodeId }),
-        ...(!nodeData.backend_id && nextNodeId && { next_node_id: nextNodeId }),
+        // ...(!nodeData.backend_id && prevNodeId && { prev_node_id: prevNodeId }),
+        // ...(!nodeData.backend_id && nextNodeId && { next_node_id: nextNodeId }),
       };
       // const resp = await service.saveNode(nodeData?.backend_id || null, { workflow_id: workflowId, ...payload });
       // (nodeData as any).backend_id = (resp as any)?.data?.data?.id || (nodeData as any).backend_id;
@@ -80,13 +80,16 @@ export function NodeConfigModal({ open, onOpenChange, nodeId, nodeData }: any) {
             : node
         )
       );
-      onOpenChange(false);
+      setActiveNode(null);
     } catch (e) {
       console.error("Save failed", e);
     }
   };
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog
+      open={nodeData ? true : false}
+      onOpenChange={() => setActiveNode(null)}
+    >
       <DialogContent className="sm:max-w-[750px] bg-white rounded-xl shadow-xl">
         <DialogHeader className="border-b border-gray-200 pb-4">
           <DialogTitle className="font-semibold text-lg text-gray-800">
@@ -104,7 +107,7 @@ export function NodeConfigModal({ open, onOpenChange, nodeId, nodeData }: any) {
             defaultValues={defaultValues}
             onSubmit={handleFormSubmit}
             schema={schema as any}
-            onClose={onOpenChange}
+            onClose={() => setActiveNode(null)}
           />
         ) : (
           <div className="p-4 text-sm text-gray-600">

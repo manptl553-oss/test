@@ -38,171 +38,241 @@ const Dialog = ({ open, defaultOpen, onOpenChange, children }: RootProps) => {
     [isControlled, onOpenChange]
   );
 
-  return <DialogCtx.Provider value={{ open: actualOpen, setOpen }}>{children}</DialogCtx.Provider>;
+  return (
+    <DialogCtx.Provider value={{ open: actualOpen, setOpen }}>
+      {children}
+    </DialogCtx.Provider>
+  );
 };
 
 /* ---------------------------------------------
  * Trigger
  * --------------------------------------------- */
-const DialogTrigger = React.forwardRef<HTMLButtonElement, React.ButtonHTMLAttributes<HTMLButtonElement>>(
-  ({ onClick, ...props }, ref) => {
-    const { setOpen } = useDialogCtx();
-    return (
-      <button
-        ref={ref}
-        type="button"
-        onClick={(e) => {
-          onClick?.(e);
-          if (!e.defaultPrevented) setOpen(true);
-        }}
-        {...props}
-      />
-    );
-  }
-);
+const DialogTrigger = React.forwardRef<
+  HTMLButtonElement,
+  React.ButtonHTMLAttributes<HTMLButtonElement>
+>(({ onClick, ...props }, ref) => {
+  const { setOpen } = useDialogCtx();
+  return (
+    <button
+      ref={ref}
+      type="button"
+      onClick={(e) => {
+        onClick?.(e);
+        if (!e.defaultPrevented) setOpen(true);
+      }}
+      {...props}
+    />
+  );
+});
 DialogTrigger.displayName = "DialogTrigger";
 
 /* ---------------------------------------------
  * Overlay
  * --------------------------------------------- */
-const DialogOverlay = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
-  ({ className, ...props }, ref) => {
-    const { open } = useDialogCtx();
-    return open ? (
-      <div
-        ref={ref}
-        data-state={open ? "open" : "closed"}
-        className={cn(
-          "fixed inset-0 z-[9998] bg-black/80 backdrop-blur-sm opacity-100 transition-opacity duration-200 animate-in fade-in-0",
-          className
-        )}
-        {...props}
-      />
-    ) : null;
-  }
-);
+const DialogOverlay = React.forwardRef<
+  HTMLDivElement,
+  React.HTMLAttributes<HTMLDivElement>
+>(({ className, onClick, ...props }, ref) => {
+  const { open, setOpen } = useDialogCtx();
+
+  const handleClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    onClick?.(e);
+    if (!e.defaultPrevented) {
+      setOpen(false);
+    }
+  };
+
+  return open ? (
+    <div
+      ref={ref}
+      onClick={handleClick}
+      data-state={open ? "open" : "closed"}
+      className={cn(
+        "fixed inset-0 z-[9998] bg-black/80 backdrop-blur-sm opacity-100 transition-opacity duration-200 animate-in fade-in-0",
+        className
+      )}
+      {...props}
+    />
+  ) : null;
+});
 DialogOverlay.displayName = "DialogOverlay";
 
 /* ---------------------------------------------
- * Content (includes animation + ESC + click-outside)
- * FIXED: Removed DialogOverlay from inside DialogContent
+ * Content (with fixed race condition handling)
  * --------------------------------------------- */
-const DialogContent = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
-  ({ className, children, ...props }, ref) => {
-    const { open, setOpen } = useDialogCtx();
-    const dialogRef = useRef<HTMLDivElement>(null);
+const DialogContent = React.forwardRef<
+  HTMLDivElement,
+  React.HTMLAttributes<HTMLDivElement>
+>(({ className, children, ...props }, ref) => {
+  const { open, setOpen } = useDialogCtx();
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const [isReadyForOutsideClick, setIsReadyForOutsideClick] = useState(false);
 
-    // Close on ESC
-    useEffect(() => {
-      const onKeyDown = (e: KeyboardEvent) => {
-        if (e.key === "Escape") setOpen(false);
-      };
-      if (open) document.addEventListener("keydown", onKeyDown);
-      return () => document.removeEventListener("keydown", onKeyDown);
-    }, [open, setOpen]);
+  // Reset ready state when dialog opens
+  useEffect(() => {
+    if (open) {
+      setIsReadyForOutsideClick(false);
+      // Small delay to prevent immediate closing from the same click that opened it
+      const timer = setTimeout(() => {
+        setIsReadyForOutsideClick(true);
+      }, 100);
+      return () => clearTimeout(timer);
+    } else {
+      setIsReadyForOutsideClick(false);
+    }
+  }, [open]);
 
-    // Close on outside click
-    useEffect(() => {
-      const onClickOutside = (e: MouseEvent) => {
-        if (dialogRef.current && !dialogRef.current.contains(e.target as Node)) {
-          setOpen(false);
-        }
-      };
-      if (open) document.addEventListener("mousedown", onClickOutside);
-      return () => document.removeEventListener("mousedown", onClickOutside);
-    }, [open, setOpen]);
+  // Close on ESC
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    if (open) document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [open, setOpen]);
 
-    if (!open) return null;
+  // Close on outside click (with race condition protection)
+  useEffect(() => {
+    if (!open || !isReadyForOutsideClick) return;
 
-    // Render dialog using portal to escape ReactFlow's DOM hierarchy
-    const dialogContent = (
-      <>
-        <DialogOverlay />
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center overflow-y-auto p-4 pointer-events-none">
-          <div
-            ref={(node) => {
-              dialogRef.current = node;
-              if (typeof ref === "function") ref(node);
-              else if (ref) (ref as React.MutableRefObject<HTMLDivElement | null>).current = node;
-            }}
-            data-state={open ? "open" : "closed"}
-            className={cn(
-              "relative w-full max-w-lg rounded-lg border bg-white p-6 shadow-lg transition-all duration-200 pointer-events-auto",
-              "animate-in fade-in-0 zoom-in-95",
-              className
-            )}
-            {...props}
-          >
-            {children}
+    const onClickOutside = (e: MouseEvent) => {
+      const target = e.target as Node;
 
-            <DialogClose className="absolute right-4 top-4 rounded-sm opacity-70 hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2">
-              <X className="h-4 w-4" />
-              <span className="sr-only">Close</span>
-            </DialogClose>
-          </div>
+      // Only close if clicking outside the dialog content
+      if (dialogRef.current && !dialogRef.current.contains(target)) {
+        setOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", onClickOutside);
+    return () => document.removeEventListener("mousedown", onClickOutside);
+  }, [open, isReadyForOutsideClick, setOpen]);
+
+  if (!open) return null;
+
+  // Render dialog using portal to escape ReactFlow's DOM hierarchy
+  const dialogContent = (
+    <>
+      <DialogOverlay />
+      <div className="fixed inset-0 z-[9999] flex items-center justify-center overflow-y-auto p-4 pointer-events-none">
+        <div
+          ref={(node) => {
+            dialogRef.current = node;
+            if (typeof ref === "function") ref(node);
+            else if (ref)
+              (ref as React.MutableRefObject<HTMLDivElement | null>).current =
+                node;
+          }}
+          onClick={(e) => {
+            // Prevent clicks inside dialog from propagating to overlay
+            e.stopPropagation();
+          }}
+          data-state={open ? "open" : "closed"}
+          className={cn(
+            "relative w-full max-w-lg rounded-lg border bg-white p-6 shadow-lg transition-all duration-200 pointer-events-auto",
+            "animate-in fade-in-0 zoom-in-95",
+            className
+          )}
+          {...props}
+        >
+          {children}
+
+          <DialogClose className="absolute right-4 top-4 rounded-sm opacity-70 hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2">
+            <X className="h-4 w-4" />
+            <span className="sr-only">Close</span>
+          </DialogClose>
         </div>
-      </>
-    );
+      </div>
+    </>
+  );
 
-    // Use portal to render at document.body level
-    return createPortal(dialogContent, document.body);
-  }
-);
+  // Use portal to render at document.body level
+  return createPortal(dialogContent, document.body);
+});
 DialogContent.displayName = "DialogContent";
 
 /* ---------------------------------------------
  * Close button
  * --------------------------------------------- */
-const DialogClose = React.forwardRef<HTMLButtonElement, React.ButtonHTMLAttributes<HTMLButtonElement>>(
-  ({ onClick, ...props }, ref) => {
-    const { setOpen } = useDialogCtx();
-    return (
-      <button
-        ref={ref}
-        type="button"
-        onClick={(e) => {
-          onClick?.(e);
-          if (!e.defaultPrevented) setOpen(false);
-        }}
-        {...props}
-      />
-    );
-  }
-);
+const DialogClose = React.forwardRef<
+  HTMLButtonElement,
+  React.ButtonHTMLAttributes<HTMLButtonElement>
+>(({ onClick, ...props }, ref) => {
+  const { setOpen } = useDialogCtx();
+  return (
+    <button
+      ref={ref}
+      type="button"
+      onClick={(e) => {
+        onClick?.(e);
+        if (!e.defaultPrevented) setOpen(false);
+      }}
+      {...props}
+    />
+  );
+});
 DialogClose.displayName = "DialogClose";
 
 /* ---------------------------------------------
  * Layout helpers
  * --------------------------------------------- */
-const DialogHeader = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
-  <div className={cn("flex flex-col space-y-1.5 text-center sm:text-left", className)} {...props} />
+const DialogHeader = ({
+  className,
+  ...props
+}: React.HTMLAttributes<HTMLDivElement>) => (
+  <div
+    className={cn(
+      "flex flex-col space-y-1.5 text-center sm:text-left",
+      className
+    )}
+    {...props}
+  />
 );
 DialogHeader.displayName = "DialogHeader";
 
-const DialogFooter = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
-  <div className={cn("flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2", className)} {...props} />
+const DialogFooter = ({
+  className,
+  ...props
+}: React.HTMLAttributes<HTMLDivElement>) => (
+  <div
+    className={cn(
+      "flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2",
+      className
+    )}
+    {...props}
+  />
 );
 DialogFooter.displayName = "DialogFooter";
 
 /* ---------------------------------------------
  * Title & Description
  * --------------------------------------------- */
-const DialogTitle = React.forwardRef<HTMLHeadingElement, React.HTMLAttributes<HTMLHeadingElement>>(
-  ({ className, ...props }, ref) => (
-    <h2
-      ref={ref}
-      className={cn("text-lg font-semibold leading-none tracking-tight", className)}
-      {...props}
-    />
-  )
-);
+const DialogTitle = React.forwardRef<
+  HTMLHeadingElement,
+  React.HTMLAttributes<HTMLHeadingElement>
+>(({ className, ...props }, ref) => (
+  <h2
+    ref={ref}
+    className={cn(
+      "text-lg font-semibold leading-none tracking-tight",
+      className
+    )}
+    {...props}
+  />
+));
 DialogTitle.displayName = "DialogTitle";
 
-const DialogDescription = React.forwardRef<HTMLParagraphElement, React.HTMLAttributes<HTMLParagraphElement>>(
-  ({ className, ...props }, ref) => (
-    <p ref={ref} className={cn("text-sm text-muted-foreground", className)} {...props} />
-  )
-);
+const DialogDescription = React.forwardRef<
+  HTMLParagraphElement,
+  React.HTMLAttributes<HTMLParagraphElement>
+>(({ className, ...props }, ref) => (
+  <p
+    ref={ref}
+    className={cn("text-sm text-muted-foreground", className)}
+    {...props}
+  />
+));
 DialogDescription.displayName = "DialogDescription";
 
 /* ---------------------------------------------

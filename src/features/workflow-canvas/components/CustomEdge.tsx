@@ -1,11 +1,35 @@
-import  { memo } from "react";
-import {
-  BaseEdge,
-  EdgeProps,
-  getSmoothStepPath,
-} from "reactflow";
+import { NodeTypeProps, nodeTypeStyles } from "@/shared";
+import { memo } from "react";
+import { BaseEdge, EdgeProps, getSmoothStepPath, useReactFlow } from "reactflow";
 
-const CustomEdge = memo((props: EdgeProps) => {
+const DOT_SPACING = 18;  // distance between dots
+const DOT_RADIUS = 4;    // size of dots
+
+function lerpColor(color1: string, color2: string, t: number) {
+  const c1 = parseInt(color1?.slice(1), 16);
+  const c2 = parseInt(color2?.slice(1), 16);
+
+  const r1 = (c1 >> 16) & 0xff;
+  const g1 = (c1 >> 8) & 0xff;
+  const b1 = c1 & 0xff;
+
+  const r2 = (c2 >> 16) & 0xff;
+  const g2 = (c2 >> 8) & 0xff;
+  const b2 = c2 & 0xff;
+
+  const r = Math.round(r1 + (r2 - r1) * t);
+  const g = Math.round(g1 + (g2 - g1) * t);
+  const b = Math.round(b1 + (b2 - b1) * t);
+
+  return `rgb(${r},${g},${b})`;
+}
+
+export default memo(function CustomEdge(props: EdgeProps) {
+const { getNode } = useReactFlow();
+const sourceNode = getNode(props.source);
+const targetNode = getNode(props.target);
+const sourceColor = nodeTypeStyles[sourceNode?.data?.type as NodeTypeProps]?.bg;
+const targetColor = nodeTypeStyles[targetNode?.data?.type as NodeTypeProps]?.bg;
   const {
     id,
     sourceX,
@@ -14,67 +38,58 @@ const CustomEdge = memo((props: EdgeProps) => {
     targetY,
     sourcePosition,
     targetPosition,
-    style = {},
-    selected,
   } = props;
 
-
-
-  const [edgePath, midX, midY] = getSmoothStepPath({
+  // 1️⃣ Use a smooth curve path
+  const [edgePath] = getSmoothStepPath({
     sourceX,
     sourceY,
-    sourcePosition,
     targetX,
     targetY,
+    sourcePosition,
     targetPosition,
-    borderRadius: 14,
+    borderRadius: 30,
   });
 
-
-
+  // 2️⃣ Compute direction + spacing manually
   const dx = targetX - sourceX;
   const dy = targetY - sourceY;
-  const pathLength = Math.sqrt(dx * dx + dy * dy);
-
-  const dotSpacing = 12;
-  const dotRadius = 4;
-  const dotCount = Math.max(5, Math.floor(pathLength / dotSpacing) - 1);
-
-  const startColor = { r: 111, g: 207, b: 151 }; // light green
-  const endColor = { r: 198, g: 230, b: 196 };   // pale green
+  const length = Math.sqrt(dx * dx + dy * dy);
+  const dotCount = Math.floor(length / DOT_SPACING);
 
   const dots = [];
-
-  for (let i = 1; i <= dotCount; i++) {
-    const t = i / (dotCount + 1);
-
+  for (let i = 1; i < dotCount; i++) {
+    const t = i / dotCount;            // 0 → 1
+    const color = lerpColor(sourceColor, targetColor, t);
     const x = sourceX + dx * t;
     const y = sourceY + dy * t;
 
-    const r = Math.round(startColor.r * (1 - t) + endColor.r * t);
-    const g = Math.round(startColor.g * (1 - t) + endColor.g * t);
-    const b = Math.round(startColor.b * (1 - t) + endColor.b * t);
-
-    dots.push(<circle key={i} cx={x} cy={y} r={dotRadius} fill={`rgb(${r},${g},${b})`} />);
+    dots.push(
+      <circle
+        key={i}
+        cx={x}
+        cy={y}
+        r={DOT_RADIUS}
+        fill={color}     
+      />
+    );
   }
 
   return (
-    <>
-      <g>
-        <BaseEdge
-          id={id}
-          path={edgePath}
-          style={{
-            stroke: "transparent",
-            strokeWidth: 20,
-            pointerEvents: "stroke",
-          }}
-        />
-        {dots}
-      </g>
-    </>
+    <g>
+      {/* Invisible path for hit detection */}
+      <BaseEdge
+        id={id}
+        path={edgePath}
+        style={{
+          stroke: "transparent",
+          strokeWidth: 25,
+          pointerEvents: "stroke",
+        }}
+      />
+
+      {/* Render each dot */}
+      {dots}
+    </g>
   );
 });
-
-CustomEdge.displayName = "CustomEdge";
-export default CustomEdge;

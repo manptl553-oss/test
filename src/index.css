@@ -10,3 +10,10 @@
 .card-gradient-color {
   background: linear-gradient(177deg, #6db92a 1%, #487c19 95%);
 }
+.text-eclipscs{
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2; 
+  -webkit-box-orient: vertical;
+  text-overflow: ellipsis;
+}

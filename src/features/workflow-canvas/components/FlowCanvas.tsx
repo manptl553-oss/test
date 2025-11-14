@@ -1,7 +1,8 @@
-import { Webhook, Clock, Calendar, Globe } from "lucide-react";
+import { Calendar, Clock, Globe, Webhook } from "lucide-react";
 // import dagre from "dagre";
-import { nodeTypeIcons, NodeTypeProps } from "@/shared";
+import { NodeTypeProps, nodeTypeStyles } from "@/shared";
 import { getAutoLayoutedElements } from "@/shared/utils/layout";
+import { useFlowStore } from "@/store";
 import { Fullscreen } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import ReactFlow, {
@@ -10,15 +11,12 @@ import ReactFlow, {
   MarkerType,
   Node,
   OnConnectStartParams,
-  useNodeId,
   useReactFlow,
-  useUpdateNodeInternals,
-  XYPosition,
+  XYPosition
 } from "reactflow";
 import "reactflow/dist/style.css";
 import CustomEdge from "./CustomEdge";
 import CustomNode from "./CustomNode";
-import { useFlowStore } from "@/store";
 import { Popover } from "./Popover";
 
 // ---------- TYPES ----------
@@ -51,7 +49,7 @@ export function mapWorkflowToFlow(workflow: any, actions?: any) {
   // Trigger node
   if (workflow.triggers?.length > 0) {
     const trigger = workflow.triggers[0];
-    const icon = trigger.icon || nodeTypeIcons[trigger.type as NodeTypeProps];
+    const icon = trigger.icon || nodeTypeStyles[trigger.type as NodeTypeProps].icon;
     nodes.push({
       id: trigger.id,
       type: "custom",
@@ -62,7 +60,7 @@ export function mapWorkflowToFlow(workflow: any, actions?: any) {
         icon,
         configuration: trigger.configuration,
         outputs: ["next"],
-        backend_id: trigger.id, // ✅ store backend id
+        backend_id: trigger.id, // store backend id
         ...actions,
       },
       position: { x: 100, y: 200 },
@@ -71,7 +69,7 @@ export function mapWorkflowToFlow(workflow: any, actions?: any) {
 
   // Workflow nodes
   workflow.nodes?.forEach((wfNode: any, index: number) => {
-    const icon = wfNode.icon || nodeTypeIcons[wfNode.type as NodeTypeProps];
+    const icon = wfNode.icon || nodeTypeStyles[wfNode.type as NodeTypeProps].icon;
     let outputs: string[] = [];
 
     switch (wfNode.type) {
@@ -342,7 +340,7 @@ export default function FlowCanvas({ workflow }: any) {
     [getNode, handleClosePopover]
   );
 
-  // ✅ OPTIMIZATION 3: Debounce popover position updates during drag
+  //  OPTIMIZATION 3: Debounce popover position updates during drag
   const debouncedNodes = useDebounce(nodes, 100); // Only update every 100ms
 
   useEffect(() => {
@@ -384,7 +382,7 @@ export default function FlowCanvas({ workflow }: any) {
     }
   }, [nodes.length, isEditMode, workflow?.triggers?.length, workflow?.nodes?.length, setNodes, openTriggerPopover]);
 
-  // ✅ OPTIMIZATION 4: Create stable node data object
+  //  OPTIMIZATION 4: Create stable node data object
   const nodeDataCallbacks = useMemo(
     () => ({
       onDeleteClick: handleDeleteClick,

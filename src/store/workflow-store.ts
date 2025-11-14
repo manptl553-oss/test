@@ -19,7 +19,6 @@ import {
 } from "@/shared";
 
 interface NodeData {
-  backend_id?: null;
   id: string;
   name: string;
   type: string;
@@ -246,13 +245,11 @@ export const useFlowStore = create<FlowState>((set, get) => ({
       ...node,
       data: {
         ...node.data,
-        backend_id: null,
         outputs: getOutputsForNode(node),
       },
     };
 
     const sourceNode = nodes.find((n) => n.id === sourceNodeId);
-    const prevNodeUUID = sourceNode?.data?.backend_id || null;
 
     const filteredEdges = edges.filter(
       (e) => !(e.source === sourceNodeId && e.sourceHandle === sourceHandleId)
@@ -267,15 +264,9 @@ export const useFlowStore = create<FlowState>((set, get) => ({
           target: newNode.id,
           sourceHandle: sourceHandleId,
           targetHandle: getTargetHandleForNode(newNode),
-          data: {
-            prev_node_id: prevNodeUUID,
-            prev_node_type: sourceNode?.data?.type,
-          },
         })
       );
     }
-
-    newNode.data.prev_node_id = prevNodeUUID;
 
     set({
       nodes: [...nodes, newNode],
@@ -299,9 +290,9 @@ export const useFlowStore = create<FlowState>((set, get) => ({
     newNode.data.outputs = getOutputsForNode(newNode);
 
     // Extract metadata
-    const prevId = sourceNode?.data?.backend_id ?? null;
+    const prevId = sourceNode?.data?.id ?? null;
     const prevType = sourceNode?.data?.type ?? null;
-    const nextId = targetNode?.data?.backend_id ?? null;
+    const nextId = targetNode?.data?.id ?? null;
     const nextType = targetNode?.data?.type ?? null;
 
     // Store meta on new node
@@ -329,12 +320,6 @@ export const useFlowStore = create<FlowState>((set, get) => ({
       target: newNode.id,
       sourceHandle: edge.sourceHandle ?? "done",
       targetHandle: getTargetHandleForNode(newNode),
-      data: {
-        prev_node_id: prevId,
-        prev_node_type: prevType,
-        next_node_id: newNode.data.backend_id ?? null,
-        next_node_type: newNode.data.type,
-      },
     });
 
     const edgeFromNew = makeEdge({
@@ -342,12 +327,6 @@ export const useFlowStore = create<FlowState>((set, get) => ({
       target: targetNode.id,
       sourceHandle: getOutputsForNode(newNode)[0],
       targetHandle: edge.targetHandle ?? "input",
-      data: {
-        prev_node_id: newNode.data.backend_id ?? null,
-        prev_node_type: newNode.data.type,
-        next_node_id: nextId,
-        next_node_type: nextType,
-      },
     });
 
     newEdges.push(edgeToNew, edgeFromNew);
@@ -387,12 +366,12 @@ export const useFlowStore = create<FlowState>((set, get) => ({
       (e) => e.source !== nodeId && e.target !== nodeId
     );
 
-    //  Special handling for loop nodes
+    // Special handling for loop nodes
     if (isLoop) {
       const childNodes = nodes.filter((n) => n.parentNode === nodeId);
       const childIds = new Set(childNodes.map((n) => n.id));
 
-      //  Remove all edges between loop ↔ its children or self
+      // Remove all edges between loop ↔ its children or self
       updatedEdges = updatedEdges.filter(
         (e) => !(e.source === nodeId || e.target === nodeId)
       );
@@ -400,7 +379,7 @@ export const useFlowStore = create<FlowState>((set, get) => ({
         (e) => !(childIds.has(e.source) && e.target === nodeId)
       );
     } else {
-      //  For normal nodes, reconnect previous → next
+      // For normal nodes, reconnect previous → next
       if (incoming.length > 0 && outgoing.length > 0) {
         const reconnectedEdges = incoming.map((inEdge) => {
           const outEdge = outgoing[0]; // only one forward connection
@@ -419,7 +398,7 @@ export const useFlowStore = create<FlowState>((set, get) => ({
     //  Remove the deleted node
     const updatedNodes = nodes.filter((n) => n.id !== nodeId);
 
-    //  Clean invalid edges (source/target missing)
+    // Clean invalid edges (source/target missing)
     const validNodeIds = new Set(updatedNodes.map((n) => n.id));
     const cleanedEdges = updatedEdges.filter(
       (e) => validNodeIds.has(e.source) && validNodeIds.has(e.target)
