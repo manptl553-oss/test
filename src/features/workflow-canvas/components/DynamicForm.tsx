@@ -4,7 +4,21 @@ import { Controller, useForm } from "react-hook-form";
 
 import { cn } from "@/shared/utils";
 import { DynamicFormProps, FieldConfig } from "../types";
-import { Button, Checkbox, CodeEditor, DynamicFiledOptions, Input, Label, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, TableField, Textarea } from "@/shared";
+import {
+  Button,
+  Checkbox,
+  CodeEditor,
+  DynamicFiledOptions,
+  Input,
+  Label,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  TableField,
+  Textarea,
+} from "@/shared";
 import RichTextEditor from "@/shared/components/TextEditor";
 
 /* ------------------------------- Main ------------------------------- */

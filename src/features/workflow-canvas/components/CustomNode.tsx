@@ -2,10 +2,10 @@
 // CUSTOMNODE.TSX - FINAL UPDATED VERSION
 // ============================================
 
-import { Button, isTriggerNode } from "@/shared";
+import { Button, isTriggerNode, NodeTypeProps, nodeTypeStyles } from "@/shared";
 import { useFlowStore } from "@/store";
-import { Plus, PlusIcon, Trash2 } from "lucide-react";
-import React, { memo, useCallback, useEffect, useRef, useState } from "react";
+import { PlusIcon, Trash2 } from "lucide-react";
+import React, { memo, useCallback, useEffect, useRef } from "react";
 import {
   Handle,
   NodeProps,
@@ -45,8 +45,8 @@ const getLabel = (source: string | undefined) => {
 };
 
 const CustomNode = ({ data, id }: NodeProps) => {
+  console.log(data);
   const { project } = useReactFlow();
-  const [showConfig, setShowConfig] = useState(false);
   const nodeRef = useRef<HTMLDivElement>(null);
   const store = useStoreApi();
   const edges = useStore((s) => s.edges);
@@ -54,6 +54,11 @@ const CustomNode = ({ data, id }: NodeProps) => {
   const isStartNode = (data as any).type === "start_workflow";
   const isAddNode = (data as any).type === "addNode";
   const name = data?.name || "start workflow";
+  const style = nodeTypeStyles[data?.type as NodeTypeProps] ||
+    nodeTypeStyles[data?.name as NodeTypeProps] || {
+      bg: "#22c55e",
+      border: "#15803d", // gray-400
+    };
 
   const { activeNode, setActiveNode } = useFlowStore();
   const open = activeNode?.id === id;
@@ -163,10 +168,10 @@ const CustomNode = ({ data, id }: NodeProps) => {
               id={`input-${i + 1}`}
               className="
               !w-6 !h-6
-              !bg-gray-400
               !rounded-l-full 
               !border-none
             "
+              style={{ background: style.bg }}
             />
           </div>
         </div>
@@ -175,21 +180,19 @@ const CustomNode = ({ data, id }: NodeProps) => {
 
     // SIMPLE SINGLE INPUT
     return (
-     
-        <Handle
-          type="target"
-          position={Position.Left}
-          id="input"
-          className="
+      <Handle
+        type="target"
+        position={Position.Left}
+        id="input"
+        className="
           !top-1/3
           !left-2
           !w-4 !h-7 
-          !bg-green-500 
           !rounded-l-full 
           !border-none
         "
-          style={{ top: "50%" }}
-        />
+        style={{ top: "50%", background: style.bg }}
+      />
     );
   };
 
@@ -218,9 +221,8 @@ const CustomNode = ({ data, id }: NodeProps) => {
               isConnectable={!isConnected}
               className="
         !w-7 !h-7
-        !bg-green-500
-        !rounded-r-full
-        !border-2 border-white
+  !rounded-r-full
+  !${style.border} border-2
         !m-0
         flex items-center justify-center
         cursor-pointer
@@ -230,6 +232,7 @@ const CustomNode = ({ data, id }: NodeProps) => {
                 right: -4,
                 transform: "translateY(-50%)",
                 pointerEvents: "all",
+                background: style.bg,
               }}
               onClick={(e) => {
                 e.stopPropagation();
@@ -260,21 +263,18 @@ const CustomNode = ({ data, id }: NodeProps) => {
   };
   return (
     <>
-      <div
-        className="relative group space-y-4 text-center"
-        ref={nodeRef}
-        onClick={() => {
-          if (!closedModel.includes((data as any)?.type)) setShowConfig(true);
-        }}
-      >
+      <div className="relative group space-y-4 text-center" ref={nodeRef}>
         <div className="w-28 h-28 mx-auto relative space-y-3">
-        {renderInputHandles()}
+          {renderInputHandles()}
           <div
-            className={`w-20 mx-auto h-20 border-4 border-white z-10 relative rounded-full transition-all duration-200  flex flex-col items-center justify-center gap-2 cursor-pointer bg-[#22c55e] hover:bg-[#16a34a]
-        `}
+            className={`w-20 mx-auto h-20 border-white border-4 z-10 relative rounded-full transition-all duration-200  flex flex-col items-center justify-center gap-2 cursor-pointer`}
+            style={{
+              background: style.bg,
+              // border: style.border,
+            }}
             onClick={handleClick}
           >
-            <Icon className="w-10 h-10" />
+            <Icon className="w-10 h-10 text-white" />
           </div>
           {renderOutputHandles()}
           {!isAddNode && (
@@ -298,14 +298,7 @@ const CustomNode = ({ data, id }: NodeProps) => {
           </div>
         )}
       </div>
-      {isNodeConfigModelOpen && (
-        <NodeConfigModal
-          open={showConfig}
-          onOpenChange={setShowConfig}
-          nodeId={id}
-          nodeData={data}
-        />
-      )}
+      {isNodeConfigModelOpen && <NodeConfigModal />}
     </>
   );
 };

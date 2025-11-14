@@ -80,9 +80,10 @@ export function WorkflowCanvas({
           <div>
             <Button
               className="bg-(--wf-brand-primary) hover:bg-(--wf-brand-secondary) text-(--wf-text-inverted) "
-              onClick={() =>
-                normalizedData && handleSaveWorkflow(normalizedData)
-              }
+              onClick={() => {
+                console.log(normalizedData);
+                if (normalizedData) handleSaveWorkflow(normalizedData);
+              }}
             >
               Save
             </Button>
