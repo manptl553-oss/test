@@ -202,6 +202,20 @@ const triggerModules: PopoverItem[] = [
 ];
 
 // ---------- MAIN COMPONENT ----------
+function useDebounce<T>(value: T, delay: number): T {
+  const [debouncedValue, setDebouncedValue] = useState(value);
+  
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedValue(value);
+    }, delay);
+    
+    return () => clearTimeout(handler);
+  }, [value, delay]);
+  
+  return debouncedValue;
+}
+
 export default function FlowCanvas({ workflow }: any) {
   const {
     setNodes,
@@ -220,23 +234,23 @@ export default function FlowCanvas({ workflow }: any) {
 
   const isPopoverOpen = useMemo(
     () => ["start_workflow", "addNode"].includes(activeNode?.data?.type),
-    [activeNode]
+    [activeNode?.data?.type] // ✅ More specific dependency
   );
+  
   const containerRef = useRef<HTMLDivElement>(null);
-  const [popoverConfig, setPopoverConfig] = useState<PopoverConfig | null>(
-    null
-  );
+  const [popoverConfig, setPopoverConfig] = useState<PopoverConfig | null>(null);
   const [popoverAnchor, setPopoverAnchor] = useState<{
     nodeId: string;
     position: { x: number; y: number };
   } | null>(null);
 
-  const { screenToFlowPosition, fitView } = useReactFlow();
+  const { screenToFlowPosition, fitView, getNode } = useReactFlow();
   const [pendingConnection, setPendingConnection] = useState<any>(null);
   const [isLayouting, setIsLayouting] = useState(false);
 
   const isEditMode = !!workflow?.id;
 
+  // ✅ OPTIMIZATION 2: Memoize all callbacks properly
   const handleDeleteClick = useCallback(
     (nodeId: string) => deleteNode(nodeId),
     [deleteNode]
@@ -260,21 +274,16 @@ export default function FlowCanvas({ workflow }: any) {
       addNodeAfter(newNode, nodeId, handleId);
       setActiveNode(newNode);
     },
-    []
+    [addNodeAfter, deleteNode, renameNode, setActiveNode]
   );
+
   const handleAddClick = useCallback(
     (nodeId: string, position: XYPosition, handleId: string) => {
       handleAddNode(nodeId, position, handleId);
     },
-    []
+    [handleAddNode]
   );
-  const updateNodeInternals = useUpdateNodeInternals();
-  const { setUpdateNodeInternals } = useFlowStore();
 
-  // hand the bridge to the store once
-  useEffect(() => {
-    setUpdateNodeInternals((id: string) => updateNodeInternals(id));
-  }, [setUpdateNodeInternals, updateNodeInternals]);
   // Load workflow
   useEffect(() => {
     const { nodes, edges } = isEditMode
@@ -297,28 +306,22 @@ export default function FlowCanvas({ workflow }: any) {
     setEdges,
   ]);
 
-  const { getNode } = useReactFlow();
-
-  // ✅ Close popover handler
   const handleClosePopover = useCallback(() => {
     setPopoverConfig(null);
     setPopoverAnchor(null);
   }, []);
 
-  // ✅ Toggle popover for Start Workflow node
   const openTriggerPopover = useCallback(
     (nodeId: string) => {
       const node = getNode(nodeId);
       if (!node) return;
 
-      // ✅ If popover is open for the same node → close (toggle)
       setPopoverAnchor((prevAnchor) => {
         if (prevAnchor?.nodeId === nodeId) {
           handleClosePopover();
           return null;
         }
 
-        // ✅ Otherwise open new one
         const newAnchor = { nodeId, position: node.position };
 
         setPopoverConfig({
@@ -339,13 +342,14 @@ export default function FlowCanvas({ workflow }: any) {
     [getNode, handleClosePopover]
   );
 
-  // ✅ Update popover anchor position when nodes move
+  // ✅ OPTIMIZATION 3: Debounce popover position updates during drag
+  const debouncedNodes = useDebounce(nodes, 100); // Only update every 100ms
+
   useEffect(() => {
     if (!popoverAnchor) return;
     const node = getNode(popoverAnchor.nodeId);
     if (!node) return;
 
-    // Only update if position actually changed
     if (
       node.position.x !== popoverAnchor.position.x ||
       node.position.y !== popoverAnchor.position.y
@@ -355,13 +359,14 @@ export default function FlowCanvas({ workflow }: any) {
         position: node.position,
       });
     }
-  }, [nodes, popoverAnchor, getNode]);
+  }, [debouncedNodes, popoverAnchor, getNode]); // Use debounced nodes
 
-  // ✅ Initial Start Node
+  // Initial Start Node
   useEffect(() => {
     const isWorkflowEmpty = isEditMode
       ? workflow?.triggers?.length === 0 && workflow?.nodes?.length === 0
       : nodes.length === 0;
+    
     if (isWorkflowEmpty) {
       const startNode: Node = {
         id: "start_workflow",
@@ -377,23 +382,30 @@ export default function FlowCanvas({ workflow }: any) {
       };
       setNodes([startNode]);
     }
-  }, [nodes, setNodes, openTriggerPopover]);
+  }, [nodes.length, isEditMode, workflow?.triggers?.length, workflow?.nodes?.length, setNodes, openTriggerPopover]);
 
-  // ✅ Pass popover state to nodes for visual feedback
-  const nodesWithData = useMemo(
-    () =>
-      nodes.map((node) => ({
-        ...node,
-        data: {
-          ...node.data,
-          onDeleteClick: deleteNode,
-            onAddClick: handleAddClick,
-          // Pass whether popover is open for this specific node
-          isPopoverOpen: popoverAnchor?.nodeId === node.id && !!popoverConfig,
-        },
-      })),
-    [nodes, deleteNode, popoverAnchor, popoverConfig, handleAddClick]
+  // ✅ OPTIMIZATION 4: Create stable node data object
+  const nodeDataCallbacks = useMemo(
+    () => ({
+      onDeleteClick: handleDeleteClick,
+      onAddClick: handleAddClick,
+    }),
+    [handleDeleteClick, handleAddClick]
   );
+
+  const nodesWithData = useMemo(() => {
+    const popoverNodeId = popoverAnchor?.nodeId;
+    const hasConfig = !!popoverConfig;
+    
+    return nodes.map((node) => ({
+      ...node,
+      data: {
+        ...node.data,
+        ...nodeDataCallbacks,
+        isPopoverOpen: popoverNodeId === node.id && hasConfig,
+      },
+    }));
+  }, [nodes, popoverAnchor?.nodeId, popoverConfig, nodeDataCallbacks]);
 
   const edgesWithData = useMemo(
     () =>
@@ -406,13 +418,9 @@ export default function FlowCanvas({ workflow }: any) {
   );
 
   const onConnectStart = useCallback(
-    (
-      _event: React.MouseEvent | React.TouchEvent,
-      params: OnConnectStartParams
-    ) => {
+    (_event: React.MouseEvent | React.TouchEvent, params: OnConnectStartParams) => {
       const { nodeId, handleId } = params;
 
-      // check if this handle already has a connected edge
       const isConnected = edges.some(
         (e) => e.source === nodeId && e.sourceHandle === handleId
       );
@@ -435,10 +443,7 @@ export default function FlowCanvas({ workflow }: any) {
       ) {
         const x = "clientX" in event ? event.clientX : event.touches[0].clientX;
         const y = "clientY" in event ? event.clientY : event.touches[0].clientY;
-        const position = screenToFlowPosition({
-          x,
-          y,
-        });
+        const position = screenToFlowPosition({ x, y });
         handleAddNode(
           pendingConnection.nodeId,
           position,
@@ -447,7 +452,7 @@ export default function FlowCanvas({ workflow }: any) {
       }
       setPendingConnection(null);
     },
-    [pendingConnection]
+    [pendingConnection, screenToFlowPosition, handleAddNode]
   );
 
   const handleAutoLayout = useCallback(() => {
@@ -461,7 +466,14 @@ export default function FlowCanvas({ workflow }: any) {
       setIsLayouting(false);
     }, 100);
   }, [nodes, edges, setNodes, setEdges, fitView]);
-console.log(nodes, "-------------------nodes", edges,"------------------edges")
+
+  const handleNodeClick = useCallback(
+    (_: any, node: Node) => {
+      setActiveNode(activeNode ? null : node);
+    },
+    [activeNode, setActiveNode]
+  );
+
   return (
     <div className="w-full h-full relative bg-white" ref={containerRef}>
       <ReactFlow
@@ -474,10 +486,7 @@ console.log(nodes, "-------------------nodes", edges,"------------------edges")
         onConnect={onConnect}
         onConnectStart={onConnectStart}
         onConnectEnd={onConnectEnd}
-        onNodeClick={(_, node) => {
-          setActiveNode(activeNode ? null : node);
-          
-        }}
+        onNodeClick={handleNodeClick}
         fitView
         className="bg-white"
         proOptions={{ hideAttribution: true }}
@@ -485,9 +494,8 @@ console.log(nodes, "-------------------nodes", edges,"------------------edges")
         <Background color="#eee" />
       </ReactFlow>
 
-      {/* ✅ Sticky Popover */}
       {isPopoverOpen && <Popover />}
-      {/* Auto Layout Button - bottom left */}
+      
       <div className="absolute bottom-8 left-4 z-20">
         <button
           onClick={handleAutoLayout}

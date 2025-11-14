@@ -1,11 +1,9 @@
-import React, { memo, useMemo, useState } from "react";
+import  { memo } from "react";
 import {
   BaseEdge,
-  EdgeLabelRenderer,
   EdgeProps,
   getSmoothStepPath,
 } from "reactflow";
-import { Settings } from "lucide-react";
 
 const CustomEdge = memo((props: EdgeProps) => {
   const {
@@ -18,12 +16,10 @@ const CustomEdge = memo((props: EdgeProps) => {
     targetPosition,
     style = {},
     selected,
-    markerEnd,
   } = props;
 
-  const [showMenu, setShowMenu] = useState(false);
 
-  // 🌟 Smooth curved path
+
   const [edgePath, midX, midY] = getSmoothStepPath({
     sourceX,
     sourceY,
@@ -34,30 +30,7 @@ const CustomEdge = memo((props: EdgeProps) => {
     borderRadius: 14,
   });
 
-  // 🌟 Stroke based on selection
-  const strokeColor = selected ? "#7EC040" : (style as any)?.stroke || "#4b5563";
-  const strokeWidth = selected ? 3 : (style as any)?.strokeWidth || 2;
 
-  // 🌟 Arrow marker
-  const markerId = useMemo(() => `arrow-${id}`, [id]);
-
-  const ArrowMarker = () => (
-    <marker
-      id={markerId}
-      viewBox="0 0 10 10"
-      refX="8"
-      refY="5"
-      markerWidth="6"
-      markerHeight="6"
-      orient="auto-start-reverse"
-    >
-      <path d="M 0 0 L 10 5 L 0 10 z" fill={strokeColor} />
-    </marker>
-  );
-
-  // ----------------------------------------------------
-  // 🌟 DOTTED DECORATION (Gradient dots)
-  // ----------------------------------------------------
 
   const dx = targetX - sourceX;
   const dy = targetY - sourceY;
@@ -87,8 +60,6 @@ const CustomEdge = memo((props: EdgeProps) => {
 
   return (
     <>
-
-
       <g>
         <BaseEdge
           id={id}
@@ -99,13 +70,8 @@ const CustomEdge = memo((props: EdgeProps) => {
             pointerEvents: "stroke",
           }}
         />
-
-    
-
         {dots}
       </g>
-
-  
     </>
   );
 });

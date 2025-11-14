@@ -19,7 +19,7 @@ import {
 } from "@/shared";
 
 interface NodeData {
-  backend_id: null;
+  backend_id?: null;
   id: string;
   name: string;
   type: string;
@@ -27,7 +27,7 @@ interface NodeData {
   parentLoop?: string;
   config?: any;
   data?: any;
-  parent?:any
+  parent?: any;
 }
 
 interface FlowState {
@@ -433,110 +433,121 @@ export const useFlowStore = create<FlowState>((set, get) => ({
     });
   },
 
-updateNode: (nodeId, nodeData) =>
-  set((state) => {
-    const { nodes, edges } = state;
+  updateNode: (nodeId, nodeData) =>
+    set((state) => {
+      let { nodes, edges } = state;
 
-    // 1️⃣ find existing node
-    const oldNode = nodes.find((n) => n.id === nodeId);
-    if (!oldNode) return state;
+      //  Find existing node
+      const oldNode = nodes.find((n) => n.id === nodeId);
+      if (!oldNode) return state;
 
-    // 2️⃣ merge incoming data into node.data
-    const mergedNode: Node<NodeData> = {
-      ...oldNode,
-      data: { ...oldNode.data, ...nodeData },
-    };
+      const oldType = oldNode.data.type;
+      const newType = nodeData.type ?? oldType;
+      const typeChanged = oldType !== newType;
 
-    // 3️⃣ recompute outputs once
-    const newOutputs = getOutputsForNode(mergedNode);
-    const normalizedHandles = newOutputs.map((o) => o.toLowerCase());
-    mergedNode.data.outputs = newOutputs;
+      //  Merge or reset data
+      const mergedData = typeChanged
+        ? { ...nodeData } // FULL RESET
+        : { ...oldNode.data, ...nodeData }; // merge for same type
 
-    // 4️⃣ remove only edges whose source handle no longer exists on this node
-    const cleanedEdges = edges.filter((edge) => {
-      if (edge.source !== nodeId) return true;
-      const h = edge.sourceHandle?.toLowerCase();
-      return h ? normalizedHandles.includes(h) : true;
-    });
+      const mergedNode = {
+        ...oldNode,
+        data: mergedData,
+      };
 
-    // 5️⃣ remove old dummy/branch children using data.parent
-    const cleanedNodes = nodes.filter((n) => n.data?.parent !== nodeId);
+      //  Recompute outputs
+      const newOutputs = getOutputsForNode(mergedNode);
+      mergedNode.data.outputs = newOutputs;
 
-    // 6️⃣ determine conditional/rule-executor (ensure correct checks)
-    const isConditional =
-      mergedNode.data.type === NodeTypeProps.CONDITIONAL ||
-      mergedNode.data.type === NodeTypeProps.RULE_EXECUTOR ||
-      nodeData.type === NodeTypeProps.CONDITIONAL ||
-      nodeData.type === NodeTypeProps.RULE_EXECUTOR;
+      const normalizedOutputs = newOutputs.map((o) => o.toLowerCase());
 
-    // 7️⃣ not conditional → simple update
-    if (!isConditional) {
+      //  SPECIAL RULE:
+      //    If the node is a TRIGGER → remove all incoming edges
+      if (isTriggerNode(newType)) {
+        edges = edges.filter((edge) => edge.target !== nodeId);
+      }
+
+      //  Remove invalid edges for this node (only outgoing)
+      edges = edges.filter((edge) => {
+        if (edge.source !== nodeId) return true;
+        const h = edge.sourceHandle?.toLowerCase();
+        return h ? normalizedOutputs.includes(h) : true;
+      });
+
+      //  Remove old branch children + old node
+      nodes = nodes.filter((n) => n.data?.parent !== nodeId && n.id !== nodeId);
+
+      //  If NOT conditional/rule → simple update
+      const isConditional =
+        newType === NodeTypeProps.CONDITIONAL ||
+        newType === NodeTypeProps.RULE_EXECUTOR;
+
+      // If TRIGGER node → also behave like simple node
+      if (!isConditional || isTriggerNode(newType)) {
+        return {
+          ...state,
+          nodes: [...nodes, mergedNode],
+          edges,
+          connectedHandles: computeConnectedHandles(edges),
+        };
+      }
+
+      // ------------------------------------------------------------
+      //  CONDITIONAL or RULE EXECUTOR → Create branch children
+      // ------------------------------------------------------------
+      const x = oldNode.position.x;
+      const y = oldNode.position.y;
+
+      const fixedOffsets = {
+        true: -100,
+        false: 100,
+      } as const;
+
+      const branchNodes: Node<NodeData>[] = [];
+      const branchEdges: Edge[] = [];
+
+      newOutputs.forEach((out, index) => {
+        const handle = out.toLowerCase();
+
+        const offsetY =
+          fixedOffsets[handle as keyof typeof fixedOffsets] ??
+          index * 160 - (newOutputs.length - 1) * 80;
+
+        const childId = `${nodeId}-${handle}`;
+
+        // Branch child node
+        branchNodes.push({
+          id: childId,
+          type: "custom",
+          position: { x: x + 250, y: y + offsetY },
+          data: {
+            id: childId,
+            name: handle.charAt(0).toUpperCase() + handle.slice(1),
+            type: "addNode",
+            parent: nodeId,
+            outputs: [handle],
+          },
+        });
+
+        // Branch edge
+        branchEdges.push({
+          id: `${nodeId}-edge-${handle}`,
+          type: "custom",
+          source: nodeId,
+          sourceHandle: handle,
+          target: childId,
+          targetHandle: "input",
+        });
+      });
+      const finalEdges = [...edges, ...branchEdges];
+
       return {
         ...state,
-        nodes: cleanedNodes.map((n) => (n.id === nodeId ? mergedNode : n)),
-        edges: cleanedEdges,
-        connectedHandles: computeConnectedHandles(cleanedEdges),
+        nodes: [...nodes, mergedNode, ...branchNodes],
+        edges: finalEdges,
+        connectedHandles: computeConnectedHandles(finalEdges),
       };
-    }
-
-    // 8️⃣ conditional → create typed dummy children (satisfy NodeData)
-    const baseX = oldNode.position.x + 250;
-    const baseY = oldNode.position.y;
-
-    const trueNode: Node<NodeData> = {
-      id: `${nodeId}-true`,
-      type: "custom",
-      position: { x: baseX, y: baseY - 100 },
-      data: {
-        id: `${nodeId}-true`,
-        name: "True",
-        type: "addNode",
-        backend_id: null,
-        parent: nodeId,
-        outputs: ["true"],
-      },
-    };
-
-    const falseNode: Node<NodeData> = {
-      id: `${nodeId}-false`,
-      type: "custom",
-      position: { x: baseX, y: baseY + 100 },
-      data: {
-        id: `${nodeId}-false`,
-        name: "False",
-        type: "addNode",
-        backend_id: null,
-        parent: nodeId,
-        outputs: ["false"],
-      },
-    };
-
-    const trueEdge: Edge = {
-      id: `${nodeId}-edge-true`,
-      source: nodeId,
-      sourceHandle: "true",
-      target: trueNode.id,
-      type: "custom",
-    };
-
-    const falseEdge: Edge = {
-      id: `${nodeId}-edge-false`,
-      source: nodeId,
-      sourceHandle: "false",
-      target: falseNode.id,
-      type: "custom",
-    };
-
-    const finalEdges = [...cleanedEdges, trueEdge, falseEdge];
-
-    return {
-      ...state,
-      nodes: [...cleanedNodes, mergedNode, trueNode, falseNode],
-      edges: finalEdges,
-      connectedHandles: computeConnectedHandles(finalEdges),
-    };
-  }),
-
+    }),
 
   //  Misc Utilities
   setEdgeForSidebar: (edgeId, sourceNodeId) =>
