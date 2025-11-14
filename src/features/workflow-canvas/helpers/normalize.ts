@@ -1,6 +1,7 @@
 import { getEdgeLabelForNode, getNodeDefinition } from "@/shared";
 import { Workflow, WorkflowEdge } from "@/shared/types/workflow.types";
-
+import { NodeData } from "@/store";
+import { Edge, Node } from "reactflow";
 
 /**
  *  normalizeWorkflowData
@@ -26,7 +27,9 @@ export const normalizeWorkflowData = (workflow: Workflow): Workflow => {
 
     //  Loop node handling (handles both parentNode & group_id cases)
     if (sourceType === "loop") {
-      const isLoopBody = targetNode?.parent_id === sourceNode?.id || edge.group_id === sourceNode?.id;
+      const isLoopBody =
+        targetNode?.parent_id === sourceNode?.id ||
+        edge.group_id === sourceNode?.id;
 
       if (isLoopBody) sourceHandle = "body";
       else sourceHandle = "end";
@@ -37,7 +40,9 @@ export const normalizeWorkflowData = (workflow: Workflow): Workflow => {
       if (outputs.includes(cleanCondition)) {
         sourceHandle = cleanCondition;
       } else {
-        const matched = outputs.find((out) => cleanCondition.includes(out.toLowerCase()));
+        const matched = outputs.find((out) =>
+          cleanCondition.includes(out.toLowerCase())
+        );
         sourceHandle = matched || outputs[0] || "done";
       }
     }
@@ -62,3 +67,53 @@ export const normalizeWorkflowData = (workflow: Workflow): Workflow => {
     edges: normalizedEdges,
   };
 };
+
+function mapHandleToCondition(sourceHandle: string | null | undefined): string {
+  if (
+    !sourceHandle ||
+    sourceHandle === "next" ||
+    sourceHandle === "done" ||
+    sourceHandle === "success"
+  ) {
+    return "none";
+  }
+  if (sourceHandle === "true") return "on_true";
+  if (sourceHandle === "false") return "on_false";
+  if (sourceHandle.startsWith("case_")) return sourceHandle;
+  return "none";
+}
+
+// 3. Transform a single node
+function transformNode(node: Node<NodeData>, versionId: string): any {
+  const nodeData = node?.data;
+
+  return {
+    id: nodeData?.id, // Use the id from data
+    versionId: versionId,
+    name: nodeData.name,
+    description: nodeData?.description || "",
+    type: nodeData.type,
+    parentId: nodeData.parentLoop || null,
+    templateId: nodeData.templateId, // Already present in your node
+    config: nodeData.configuration || {},
+    retryAttempts: 0,
+    retryDelayMs: 0,
+    position: {
+      x: node?.position.x,
+      y: node?.position.y,
+    },
+  };
+}
+
+// 4. Transform a single edge
+function transformEdge(edge: Edge, versionId: string): any {
+  return {
+    id: edge.id,
+    versionId: versionId,
+    sourceId: edge.source, // Use source directly (it's already the node's data.id)
+    targetId: edge.target, // Use target directly
+    groupId: null,
+    condition: mapHandleToCondition(edge.sourceHandle),
+    expression: "",
+  };
+}

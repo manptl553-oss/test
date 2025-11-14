@@ -9,7 +9,7 @@ export const Popover = () => {
   const rafRef = useRef<number | null>(null);
 
   const { activeNode } = useFlowStore();
-  const isStartNode = activeNode?.id === "start_workflow";
+  const isStartNode = activeNode?.data?.type === "start_workflow";
 
   const [side, setSide] = useState<"right" | "left">("right");
   const [style, setStyle] = useState<React.CSSProperties>({});
@@ -21,7 +21,6 @@ export const Popover = () => {
   // POSITION UPDATE LOOP
   // -------------------------------
   const updatePosition = () => {
-    const viewport = getViewport();
     const rfNode = getNode(activeNode.id);
 
     if (!rfNode) {
@@ -67,7 +66,7 @@ export const Popover = () => {
     // -------------------------------
     // ARROW POSITION (Relative to popover)
     // -------------------------------
-    const arrowPos = nodeRect.top + nodeRect.height / 2 - top;
+    const arrowPos = nodeRect.top + nodeRect.height / 2 - top ;
 
     setArrowY(arrowPos);
     setSide(newSide);
@@ -99,7 +98,7 @@ export const Popover = () => {
       ref={popoverRef}
       style={{
         ...style,
-        width: 280,
+        width: 360,
         background: "#fff",
         border: "1px solid #e2e8f0",
         borderRadius: 12,
@@ -119,8 +118,8 @@ export const Popover = () => {
           height: 0,
           borderTop: "8px solid transparent",
           borderBottom: "8px solid transparent",
-          borderLeft: side === "right" ? "8px solid #fff" : "none",
-          borderRight: side === "left" ? "8px solid #fff" : "none",
+          borderLeft: side === "left" ? "8px solid #fff" : "none",
+          borderRight: side === "right" ? "8px solid #fff" : "none",
         }}
       />
 

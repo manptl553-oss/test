@@ -18,7 +18,7 @@ import {
   NodeTypeProps,
 } from "@/shared";
 
-interface NodeData {
+export interface NodeData {
   id: string;
   name: string;
   type: string;
@@ -248,8 +248,6 @@ export const useFlowStore = create<FlowState>((set, get) => ({
         outputs: getOutputsForNode(node),
       },
     };
-
-    const sourceNode = nodes.find((n) => n.id === sourceNodeId);
 
     const filteredEdges = edges.filter(
       (e) => !(e.source === sourceNodeId && e.sourceHandle === sourceHandleId)
