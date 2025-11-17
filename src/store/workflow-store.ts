@@ -410,82 +410,118 @@ export const useFlowStore = create<FlowState>((set, get) => ({
     });
   },
 
-  updateNode: (nodeId, nodeData) =>
-    set((state) => {
-      let { nodes, edges } = state;
+updateNode: (nodeId, nodeData) =>
+  set((state) => {
+    let { nodes, edges } = state;
 
-      //  Find existing node
-      const oldNode = nodes.find((n) => n.id === nodeId);
-      if (!oldNode) return state;
+    // Find existing node
+    const oldNode = nodes.find((n) => n.id === nodeId);
+    if (!oldNode) return state;
 
-      const oldType = oldNode.data.type;
-      const newType = nodeData.type ?? oldType;
-      const typeChanged = oldType !== newType;
+    const oldType = oldNode.data.type;
+    const newType = nodeData.type ?? oldType;
+    const typeChanged = oldType !== newType;
 
-      //  Merge or reset data
-      const mergedData = typeChanged
-        ? { ...nodeData } // FULL RESET
-        : { ...oldNode.data, ...nodeData }; // merge for same type
+    // Merge or reset data
+    const mergedData = typeChanged
+      ? { ...nodeData } // FULL RESET
+      : { ...oldNode.data, ...nodeData }; // merge for same type
 
-      const mergedNode = {
-        ...oldNode,
-        data: mergedData,
+    const mergedNode = {
+      ...oldNode,
+      data: mergedData,
+    };
+
+    // Recompute outputs
+    const newOutputs = getOutputsForNode(mergedNode);
+    mergedNode.data.outputs = newOutputs;
+
+    const normalizedOutputs = newOutputs.map((o) => o.toLowerCase());
+
+    // SPECIAL RULE: If the node is a TRIGGER → remove all incoming edges
+    if (isTriggerNode(newType)) {
+      edges = edges.filter((edge) => edge.target !== nodeId);
+    }
+
+    // Remove invalid edges for this node (only outgoing)
+    edges = edges.filter((edge) => {
+      if (edge.source !== nodeId) return true;
+      const h = edge.sourceHandle?.toLowerCase();
+      return h ? normalizedOutputs.includes(h) : true;
+    });
+
+    // Remove old branch children + old node
+    nodes = nodes.filter((n) => n.data?.parent !== nodeId && n.id !== nodeId);
+
+    // If NOT conditional/rule/switch → simple update
+    const isConditional =
+      newType === NodeTypeProps.CONDITIONAL ||
+      newType === NodeTypeProps.RULE_EXECUTOR ||
+      newType === NodeTypeProps.SWITCH;
+
+    // If TRIGGER node → also behave like simple node
+    if (!isConditional || isTriggerNode(newType)) {
+      return {
+        ...state,
+        nodes: [...nodes, mergedNode],
+        edges,
+        connectedHandles: computeConnectedHandles(edges),
       };
+    }
 
-      //  Recompute outputs
-      const newOutputs = getOutputsForNode(mergedNode);
-      mergedNode.data.outputs = newOutputs;
+    // ------------------------------------------------------------
+    // CONDITIONAL, RULE EXECUTOR, or SWITCH → Create branch children
+    // ------------------------------------------------------------
+    const x = oldNode.position.x;
+    const y = oldNode.position.y;
 
-      const normalizedOutputs = newOutputs.map((o) => o.toLowerCase());
+    let branchNodes: Node<NodeData>[] = [];
+    let branchEdges: Edge[] = [];
 
-      //  SPECIAL RULE:
-      //    If the node is a TRIGGER → remove all incoming edges
-      if (isTriggerNode(newType)) {
-        edges = edges.filter((edge) => edge.target !== nodeId);
-      }
+    // Handle SWITCH node differently
+    if (newType === NodeTypeProps.SWITCH) {
+      const cases = newOutputs; // ["case_1", "case_2", ...]
 
-      //  Remove invalid edges for this node (only outgoing)
-      edges = edges.filter((edge) => {
-        if (edge.source !== nodeId) return true;
-        const h = edge.sourceHandle?.toLowerCase();
-        return h ? normalizedOutputs.includes(h) : true;
+      cases.forEach((caseName, index) => {
+        const handle = caseName.toLowerCase();
+        const offsetY = index * 120 - (cases.length - 1) * 60;
+        const childId = `${nodeId}-${handle}`;
+
+        // Child switch case node
+        branchNodes.push({
+          id: childId,
+          type: "custom",
+          position: { x: x + 250, y: y + offsetY },
+          data: {
+            id: childId,
+            name: caseName.replace(/_/g, " ").toUpperCase(), // CASE 1
+            type: "addNode",
+            parent: nodeId,
+            outputs: [caseName],
+          },
+        });
+
+        // Branch edge
+        branchEdges.push({
+          id: `${nodeId}-edge-${handle}`,
+          type: "custom",
+          source: nodeId,
+          sourceHandle: handle,
+          target: childId,
+          targetHandle: "input",
+          label: caseName.replace(/_/g, " ").toUpperCase(), // Case 1, Case 2
+          labelStyle: { fontSize: 12, fontWeight: 600 },
+        });
       });
-
-      //  Remove old branch children + old node
-      nodes = nodes.filter((n) => n.data?.parent !== nodeId && n.id !== nodeId);
-
-      //  If NOT conditional/rule → simple update
-      const isConditional =
-        newType === NodeTypeProps.CONDITIONAL ||
-        newType === NodeTypeProps.RULE_EXECUTOR;
-
-      // If TRIGGER node → also behave like simple node
-      if (!isConditional || isTriggerNode(newType)) {
-        return {
-          ...state,
-          nodes: [...nodes, mergedNode],
-          edges,
-          connectedHandles: computeConnectedHandles(edges),
-        };
-      }
-
-      // ------------------------------------------------------------
-      //  CONDITIONAL or RULE EXECUTOR → Create branch children
-      // ------------------------------------------------------------
-      const x = oldNode.position.x;
-      const y = oldNode.position.y;
-
+    } else {
+      // Handle CONDITIONAL or RULE_EXECUTOR
       const fixedOffsets = {
         true: -100,
         false: 100,
       } as const;
 
-      const branchNodes: Node<NodeData>[] = [];
-      const branchEdges: Edge[] = [];
-
       newOutputs.forEach((out, index) => {
         const handle = out.toLowerCase();
-
         const offsetY =
           fixedOffsets[handle as keyof typeof fixedOffsets] ??
           index * 160 - (newOutputs.length - 1) * 80;
@@ -516,15 +552,17 @@ export const useFlowStore = create<FlowState>((set, get) => ({
           targetHandle: "input",
         });
       });
-      const finalEdges = [...edges, ...branchEdges];
+    }
 
-      return {
-        ...state,
-        nodes: [...nodes, mergedNode, ...branchNodes],
-        edges: finalEdges,
-        connectedHandles: computeConnectedHandles(finalEdges),
-      };
-    }),
+    const finalEdges = [...edges, ...branchEdges];
+
+    return {
+      ...state,
+      nodes: [...nodes, mergedNode, ...branchNodes],
+      edges: finalEdges,
+      connectedHandles: computeConnectedHandles(finalEdges),
+    };
+  }),
 
   //  Misc Utilities
   setEdgeForSidebar: (edgeId, sourceNodeId) =>

@@ -22,36 +22,26 @@ export const getSourceHandle = (sourceHandle: string | undefined) => {
       return sourceHandle;
   }
 };
+
 export function NodeConfigModal() {
-  const { setNodes, getEdges } = useReactFlow();
-  const { activeNode, setActiveNode } = useFlowStore();
+  const { setNodes } = useReactFlow();
+  const { activeNode, setActiveNode, updateNode } = useFlowStore(); // Add updateNode from store
   const nodeData = activeNode?.data;
   const nodeId = nodeData?.id;
   const nodeType = nodeData?.type as string;
+
   const [nodeName, setNodeName] = useState(
     nodeData?.name || nodeType?.toUpperCase()
   );
-  const incomingEdge = getEdges().find((e) => e.target === nodeId);
-  const prevNodeId = ["webhook", "event"].includes(
-    incomingEdge?.data?.prev_node_type
-  )
-    ? null
-    : incomingEdge?.data?.prev_node_id ?? null;
-  const outgoingEdge = getEdges().find((e) => e.source === nodeId);
-  const nextNodeId = outgoingEdge?.data?.next_node_id;
-  const isConditional =
-    nodeType === "conditional" || nodeType === "rule_executor";
-  const isSwitch = nodeType === "switch";
+
   const isTrigger = ["webhook", "event"].includes(nodeType);
-  const isFormNode = !isConditional && !isSwitch;
   const fields = nodeFieldsConfig[nodeType] ?? [];
   const schema = nodeValidationSchema[nodeType];
+
   const defaultValues = useMemo(() => {
-    if (!isFormNode) return {};
-    const saved =
-      (isTrigger
-        ? nodeData?.configuration?.[nodeType]
-        : nodeData?.configuration) ?? {};
+    const saved = (isTrigger
+      ? nodeData?.configuration?.[nodeType]
+      : nodeData?.configuration) ?? {};
     const result: any = {};
     fields.forEach((f: any) => {
       const val = saved[f.name];
@@ -59,32 +49,61 @@ export function NodeConfigModal() {
     });
     return result;
   }, [nodeData, nodeType]);
+
   const handleFormSubmit = async (values: Record<string, any>) => {
     try {
+      let finalConfig = { ...values };
+
+      // Process conditions for CONDITIONAL/RULE_EXECUTOR
+      if (Array.isArray(values.conditions)) {
+        finalConfig.conditions = values.conditions.map((c: any, index: number) => ({
+          expression: `${c.field} ${c.operator} ${c.value}`,
+          operator: "&&",
+        }));
+      }
+
+      // Process cases for SWITCH
+      if (Array.isArray(values.cases)) {
+        finalConfig.cases = values.cases.map((c: any, index: number) => ({
+          condition: `case_${index + 1}`,
+          expression: `${c.field} ${c.operator} ${c.value}`,
+        }));
+      }
+
       const payload = {
         type: nodeType,
         name: nodeName,
-        configuration: isTrigger ? { [nodeType]: values } : values,
-        // ...(!nodeData.backend_id && prevNodeId && { prev_node_id: prevNodeId }),
-        // ...(!nodeData.backend_id && nextNodeId && { next_node_id: nextNodeId }),
+        configuration: isTrigger ? { [nodeType]: finalConfig } : finalConfig,
       };
-      // const resp = await service.saveNode(nodeData?.backend_id || null, { workflow_id: workflowId, ...payload });
-      // (nodeData as any).backend_id = (resp as any)?.data?.data?.id || (nodeData as any).backend_id;
-      setNodes((nodes) =>
-        nodes.map((node) =>
-          node.id === nodeId
-            ? {
-                ...node,
-                data: { ...node.data, name: nodeName, configuration: values },
-              }
-            : node
-        )
-      );
+
+      // IMPORTANT: Use updateNode from store instead of setNodes
+      // This will trigger the branch node/edge creation logic
+      if (updateNode) {
+        updateNode(nodeId, payload);
+      } else {
+        // Fallback: direct node update (won't create branches)
+        setNodes((nodes) =>
+          nodes.map((node) =>
+            node.id === nodeId
+              ? {
+                  ...node,
+                  data: {
+                    ...node.data,
+                    name: nodeName,
+                    configuration: finalConfig,
+                  },
+                }
+              : node
+          )
+        );
+      }
+
       setActiveNode(null);
     } catch (e) {
       console.error("Save failed", e);
     }
   };
+
   return (
     <Dialog
       open={nodeData ? true : false}
@@ -99,23 +118,17 @@ export function NodeConfigModal() {
             />
           </DialogTitle>
         </DialogHeader>
-
-        {isFormNode ? (
-          <DynamicForm
-            key={nodeId}
-            fields={fields as any}
-            defaultValues={defaultValues}
-            onSubmit={handleFormSubmit}
-            schema={schema as any}
-            onClose={() => setActiveNode(null)}
-          />
-        ) : (
-          <div className="p-4 text-sm text-gray-600">
-            Custom UI for conditional/switch is not included.
-          </div>
-        )}
+        <DynamicForm
+          key={nodeId}
+          fields={fields as any}
+          defaultValues={defaultValues}
+          onSubmit={handleFormSubmit}
+          schema={schema as any}
+          onClose={() => setActiveNode(null)}
+        />
       </DialogContent>
     </Dialog>
   );
 }
+
 NodeConfigModal.displayName = "NodeConfigModal";

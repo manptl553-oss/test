@@ -20,6 +20,7 @@ import {
   Textarea,
 } from "@/shared";
 import RichTextEditor from "@/shared/components/TextEditor";
+import { LogicRulesField } from "./ConditionalConfig";
 
 /* ------------------------------- Main ------------------------------- */
 
@@ -47,6 +48,10 @@ export const DynamicForm = ({
         case "checkbox":
           defaults[field.name] = false;
           break;
+        case "conditions":
+        case "cases":
+          defaults[field.name] = [{ field: "", operator: "==", value: "" }];
+          break;
         default:
           defaults[field.name] = "";
       }
@@ -73,22 +78,33 @@ export const DynamicForm = ({
   useEffect(() => {
     const merged: Record<string, any> = {};
     fields.forEach((field) => {
-      switch (field.type) {
-        case "select":
-          merged[field.name] = field.options?.[0]?.value ?? "";
-          break;
-        case "tags":
-          merged[field.name] = [""];
-          break;
-        case "checkbox":
-          merged[field.name] = false;
-          break;
-        default:
-          merged[field.name] = "";
-      }
-    });
-    Object.assign(merged, defaultValues);
-    reset(merged);
+  switch (field.type) {
+    case "select":
+      merged[field.name] = field.options?.[0]?.value ?? "";
+      break;
+    case "tags":
+      merged[field.name] = [""];
+      break;
+    case "checkbox":
+      merged[field.name] = false;
+      break;
+    case "conditions":
+    case "cases":
+      merged[field.name] = [{ field: "", operator: "==", value: "" }];
+      break;
+    default:
+      merged[field.name] = "";
+  }
+});
+
+// Apply defaults only if meaningful values exist
+for (const key in defaultValues) {
+  if (defaultValues[key] !== "" && defaultValues[key] !== undefined) {
+    merged[key] = defaultValues[key];
+  }
+}
+
+reset(merged);
   }, [defaultValues, reset, fields]);
 
   // Old trigger-only visibility (kept for backward-compat)
@@ -297,6 +313,19 @@ export const DynamicForm = ({
           </div>
         );
       }
+
+     case "conditions":
+     case "cases":
+      return (
+        <LogicRulesField
+          key={field.name}
+          name={field.name}
+          control={control}
+          mode={field.type === "cases" ? "switch" : "conditional"}
+          label={field.label}
+          errors={errors[field.name]}
+        />
+  );
 
       default:
         return null;

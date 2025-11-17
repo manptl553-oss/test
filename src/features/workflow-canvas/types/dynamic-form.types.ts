@@ -6,7 +6,9 @@ export type BaseFieldType =
   | "richtext"
   | "checkbox"
   | "tags"
-  | "code";
+  | "code"
+  | "conditions"
+  | "cases";   
 
 interface FieldBaseConfig {
   name: string;
@@ -38,4 +40,5 @@ export type FieldConfig =
   | (FieldBaseConfig & {
       type: "table";
       options: DynamicFiledOptions[];
-    });
+    })
+

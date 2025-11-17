@@ -380,6 +380,16 @@ export const nodeFieldsConfig: Record<string, FieldConfig[]> = {
       type: "code",
     },
   ],
+  conditional: [
+  {
+    name: "conditions",
+    label: "Conditions",
+    type: "conditions",
+    required: true,
+  },
+],
+  switch: [
+  { name: "cases", type: "cases", label: "Switch Cases" }]
 };
 
 /* -------------------------------------------------------
