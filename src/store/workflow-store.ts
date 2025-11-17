@@ -416,7 +416,9 @@ updateNode: (nodeId, nodeData) =>
 
     // Find existing node
     const oldNode = nodes.find((n) => n.id === nodeId);
-    if (!oldNode) return state;
+    if (!oldNode) {
+      return state;
+    }
 
     const oldType = oldNode.data.type;
     const newType = nodeData.type ?? oldType;
@@ -427,6 +429,7 @@ updateNode: (nodeId, nodeData) =>
       ? { ...nodeData } // FULL RESET
       : { ...oldNode.data, ...nodeData }; // merge for same type
 
+
     const mergedNode = {
       ...oldNode,
       data: mergedData,
@@ -434,6 +437,7 @@ updateNode: (nodeId, nodeData) =>
 
     // Recompute outputs
     const newOutputs = getOutputsForNode(mergedNode);
+    
     mergedNode.data.outputs = newOutputs;
 
     const normalizedOutputs = newOutputs.map((o) => o.toLowerCase());
@@ -448,6 +452,25 @@ updateNode: (nodeId, nodeData) =>
       if (edge.source !== nodeId) return true;
       const h = edge.sourceHandle?.toLowerCase();
       return h ? normalizedOutputs.includes(h) : true;
+    });
+
+    // CRITICAL FIX: Remove ALL edges connected to old branch children
+    const oldBranchChildIds = nodes
+      .filter((n) => n.data?.parent === nodeId)
+      .map((n) => n.id);
+    
+    
+    edges = edges.filter((edge) => {
+      // Remove edges where source or target is an old branch child
+      const isConnectedToOldBranch = 
+        oldBranchChildIds.includes(edge.source) || 
+        oldBranchChildIds.includes(edge.target);
+      
+      // Also remove edges from the parent to old branch children
+      const isParentToOldBranch = 
+        edge.source === nodeId && oldBranchChildIds.includes(edge.target);
+      
+      return !isConnectedToOldBranch && !isParentToOldBranch;
     });
 
     // Remove old branch children + old node
@@ -472,6 +495,7 @@ updateNode: (nodeId, nodeData) =>
     // ------------------------------------------------------------
     // CONDITIONAL, RULE EXECUTOR, or SWITCH → Create branch children
     // ------------------------------------------------------------
+    
     const x = oldNode.position.x;
     const y = oldNode.position.y;
 
@@ -479,86 +503,66 @@ updateNode: (nodeId, nodeData) =>
     let branchEdges: Edge[] = [];
 
     // Handle SWITCH node differently
-    if (newType === NodeTypeProps.SWITCH) {
-      const cases = newOutputs; // ["case_1", "case_2", ...]
+const isSwitch = newType === NodeTypeProps.SWITCH;
 
-      cases.forEach((caseName, index) => {
-        const handle = caseName.toLowerCase();
-        const offsetY = index * 120 - (cases.length - 1) * 60;
-        const childId = `${nodeId}-${handle}`;
+const branchNames = isSwitch
+  ? newOutputs // e.g. ["case_1", "case_2", ...]
+  : newOutputs.map((out) => out.toLowerCase()); // ["true","false"] etc.
 
-        // Child switch case node
-        branchNodes.push({
-          id: childId,
-          type: "custom",
-          position: { x: x + 250, y: y + offsetY },
-          data: {
-            id: childId,
-            name: caseName.replace(/_/g, " ").toUpperCase(), // CASE 1
-            type: "addNode",
-            parent: nodeId,
-            outputs: [caseName],
-          },
-        });
+// Offset logic (clean)
+const getOffsetY = (idx: number, total: number, handle: string) => {
+  if (!isSwitch) {
+    // Conditional → True/False custom spacing
+    const fixedOffsets: Record<string, number> = { true: -100, false: 100 };
+    if (fixedOffsets[handle] !== undefined) return fixedOffsets[handle];
+  }
+  // Switch or generic fallback
+  return idx * 140 - ((total - 1) * 140) / 2;
+};
 
-        // Branch edge
-        branchEdges.push({
-          id: `${nodeId}-edge-${handle}`,
-          type: "custom",
-          source: nodeId,
-          sourceHandle: handle,
-          target: childId,
-          targetHandle: "input",
-          label: caseName.replace(/_/g, " ").toUpperCase(), // Case 1, Case 2
-          labelStyle: { fontSize: 12, fontWeight: 600 },
-        });
-      });
-    } else {
-      // Handle CONDITIONAL or RULE_EXECUTOR
-      const fixedOffsets = {
-        true: -100,
-        false: 100,
-      } as const;
+branchNames.forEach((handle, index) => {
+  const normalized = handle.toLowerCase();
+  const childId = `${nodeId}-${normalized}`;
 
-      newOutputs.forEach((out, index) => {
-        const handle = out.toLowerCase();
-        const offsetY =
-          fixedOffsets[handle as keyof typeof fixedOffsets] ??
-          index * 160 - (newOutputs.length - 1) * 80;
+  const offsetY = getOffsetY(index, branchNames.length, normalized);
 
-        const childId = `${nodeId}-${handle}`;
+  // Child node
+  branchNodes.push({
+    id: childId,
+    type: "custom",
+    position: { x: x + 250, y: y + offsetY },
+    data: {
+      id: childId,
+      name: isSwitch
+        ? handle.replace(/_/g, " ").toUpperCase() // CASE 1
+        : normalized.charAt(0).toUpperCase() + normalized.slice(1), // True, False
+      type: "addNode",
+      parent: nodeId,
+      outputs: isSwitch ? ["done"] : [normalized],
+    },
+  });
 
-        // Branch child node
-        branchNodes.push({
-          id: childId,
-          type: "custom",
-          position: { x: x + 250, y: y + offsetY },
-          data: {
-            id: childId,
-            name: handle.charAt(0).toUpperCase() + handle.slice(1),
-            type: "addNode",
-            parent: nodeId,
-            outputs: [handle],
-          },
-        });
-
-        // Branch edge
-        branchEdges.push({
-          id: `${nodeId}-edge-${handle}`,
-          type: "custom",
-          source: nodeId,
-          sourceHandle: handle,
-          target: childId,
-          targetHandle: "input",
-        });
-      });
-    }
+  // Edge
+  branchEdges.push({
+    id: `${nodeId}-edge-${normalized}`,
+    type: "custom",
+    source: nodeId,
+    sourceHandle: normalized,
+    target: childId,
+    targetHandle: "input",
+    ...(isSwitch && {
+      label: handle.replace(/_/g, " ").toUpperCase(),
+      labelStyle: { fontWeight: 600, fontSize: 12 },
+    }),
+  });
+});
 
     const finalEdges = [...edges, ...branchEdges];
+    const finalNodes = [...nodes, mergedNode, ...branchNodes];
 
     return {
       ...state,
-      nodes: [...nodes, mergedNode, ...branchNodes],
+      nodes: finalNodes,
       edges: finalEdges,
       connectedHandles: computeConnectedHandles(finalEdges),
     };

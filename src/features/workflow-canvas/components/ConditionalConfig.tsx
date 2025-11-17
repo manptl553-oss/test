@@ -20,18 +20,21 @@ const operators = [
   { label: "LESS OR EQUAL", value: "<=" },
 ];
 
+
 export const LogicRulesField = ({
   control,
   name,
   label,
   errors,
-  mode = "conditional", // "conditional" | "switch"
+  mode = "conditional", 
 }: any) => {
 
-  const { fields, append, remove } = useFieldArray({
+  const { fields, append, remove, } = useFieldArray({
     name,
     control,
   });
+
+
 
   return (
     <div className="w-full space-y-2">

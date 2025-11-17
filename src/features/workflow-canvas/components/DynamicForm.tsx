@@ -1,5 +1,5 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useEffect, useMemo } from "react";
+import { useMemo } from "react";
 import { Controller, useForm } from "react-hook-form";
 
 import { cn } from "@/shared/utils";
@@ -22,7 +22,16 @@ import {
 import RichTextEditor from "@/shared/components/TextEditor";
 import { LogicRulesField } from "./ConditionalConfig";
 
-/* ------------------------------- Main ------------------------------- */
+/* ------------------------------------------------------------------
+   Helper to convert "a == b" → { field: "a", operator: "==", value: "b" }
+-------------------------------------------------------------------*/
+const splitExpression = (expr = "") => {
+  const regex = /(.+?)\s*(==|!=|===|>=|<=|>|<)\s*(.+)/;
+  const m = expr.match(regex);
+  if (!m) return { field: "", operator: "==", value: "" };
+  return { field: m[1].trim(), operator: m[2], value: m[3].trim() };
+};
+
 
 export const DynamicForm = ({
   fields,
@@ -33,117 +42,87 @@ export const DynamicForm = ({
   twoPane = false,
   onClose,
 }: DynamicFormProps) => {
-  // Build deterministic defaults for all configured fields
-  const initialDefaults = useMemo(() => {
-    const defaults: Record<string, any> = {};
+  const cleanedDefaults = useMemo(() => {
+    const d: any = { ...defaultValues };
 
-    fields.forEach((field) => {
-      switch (field.type) {
-        case "select":
-          defaults[field.name] = field.options?.[0]?.value ?? "";
-          break;
-        case "tags":
-          defaults[field.name] = [""];
-          break;
-        case "checkbox":
-          defaults[field.name] = false;
-          break;
-        case "conditions":
-        case "cases":
-          defaults[field.name] = [{ field: "", operator: "==", value: "" }];
-          break;
-        default:
-          defaults[field.name] = "";
+    // Parse conditions
+    if (!Array.isArray(d.conditions) || d.conditions.length === 0) {
+      d.conditions = [{ field: "", operator: "==", value: "" }];
+    } else {
+      d.conditions = d.conditions.map((c: any) =>
+        c.expression ? splitExpression(c.expression) : c
+      );
+    }
+
+    // Parse switch cases
+    if (!Array.isArray(d.cases) || d.cases.length === 0) {
+      d.cases = [{ field: "", operator: "==", value: "" }];
+    } else {
+      d.cases = d.cases.map((c: any) =>
+        c.expression ? splitExpression(c.expression) : c
+      );
+    }
+
+    // Add empty defaults for missing fields
+    fields.forEach((f) => {
+      if (d[f.name] === undefined) {
+        if (f.type === "conditions" || f.type === "cases") {
+          d[f.name] = [{ field: "", operator: "==", value: "" }];
+        } else if (f.type === "tags") {
+          d[f.name] = [""];
+        } else if (f.type === "checkbox") {
+          d[f.name] = false;
+        } else if (f.type === "select") {
+          d[f.name] = f.options?.[0]?.value ?? "";
+        } else {
+          d[f.name] = "";
+        }
       }
     });
 
-    // Merge provided defaults (editing) last
-    return { ...defaults, ...defaultValues };
+    return d;
   }, [defaultValues, fields]);
+
 
   const {
     handleSubmit,
     control,
-    reset,
     watch,
     formState: { errors },
   } = useForm({
     resolver: schema ? zodResolver(schema) : undefined,
-    defaultValues: initialDefaults,
+    defaultValues: cleanedDefaults,
     mode: "onSubmit",
     shouldUnregister: false,
   });
 
-  // Keep form in sync when defaultValues change
-  useEffect(() => {
-    const merged: Record<string, any> = {};
-    fields.forEach((field) => {
-  switch (field.type) {
-    case "select":
-      merged[field.name] = field.options?.[0]?.value ?? "";
-      break;
-    case "tags":
-      merged[field.name] = [""];
-      break;
-    case "checkbox":
-      merged[field.name] = false;
-      break;
-    case "conditions":
-    case "cases":
-      merged[field.name] = [{ field: "", operator: "==", value: "" }];
-      break;
-    default:
-      merged[field.name] = "";
-  }
-});
 
-// Apply defaults only if meaningful values exist
-for (const key in defaultValues) {
-  if (defaultValues[key] !== "" && defaultValues[key] !== undefined) {
-    merged[key] = defaultValues[key];
-  }
-}
-
-reset(merged);
-  }, [defaultValues, reset, fields]);
-
-  // Old trigger-only visibility (kept for backward-compat)
   const authType = watch("auth_type");
+
   const visibleFields = useMemo(() => {
     if (!twoPane) return fields;
+
     return fields.filter((f) => {
-      // const isHeader = f.type === "keyvalue";
       const isBasicCred = f.name === "username" || f.name === "password";
-      // if (authType === "none") return !isHeader && !isBasicCred;
-      // if (authType === "basic") return !isHeader;
       if (authType === "header") return !isBasicCred;
       return true;
     });
   }, [fields, twoPane, authType]);
 
+
   const renderField = (field: FieldConfig) => {
-    const errorMsg = (errors as any)?.[field.name]?.message as
-      | string
-      | undefined;
+    const errorMsg = (errors as any)?.[field.name]?.message;
 
     switch (field.type) {
       case "input":
         return (
           <div key={field.name} className="space-y-2 w-full">
-            <Label className="block font-medium text-sm text-gray-700">
-              {field.label}
-            </Label>
+            <Label>{field.label}</Label>
             <Controller
               control={control}
               name={field.name}
               render={({ field: rhf }) => (
-                <Input
-                  disabled={field.readOnly}
-                  {...rhf}
-                  value={rhf.value ?? ""}
-                  placeholder={field.placeholder}
-                  className="border border-gray-300 focus-visible:ring-0"
-                />
+                <Input {...rhf} placeholder={field.placeholder} />
               )}
             />
             {errorMsg && <p className="text-red-500 text-xs">{errorMsg}</p>}
@@ -153,19 +132,12 @@ reset(merged);
       case "textarea":
         return (
           <div key={field.name} className="space-y-2 w-full">
-            <Label className="block font-medium text-sm text-gray-700">
-              {field.label}
-            </Label>
+            <Label>{field.label}</Label>
             <Controller
               control={control}
               name={field.name}
               render={({ field: rhf }) => (
-                <Textarea
-                  {...rhf}
-                  value={rhf.value ?? ""}
-                  placeholder={field.placeholder}
-                  className="border border-gray-300 focus-visible:ring-0"
-                />
+                <Textarea {...rhf} placeholder={field.placeholder} />
               )}
             />
             {errorMsg && <p className="text-red-500 text-xs">{errorMsg}</p>}
@@ -175,34 +147,18 @@ reset(merged);
       case "select":
         return (
           <div key={field.name} className="space-y-2 w-full">
-            <Label className="block font-medium text-sm text-gray-700">
-              {field.label}
-            </Label>
-
+            <Label>{field.label}</Label>
             <Controller
               control={control}
               name={field.name}
               render={({ field: { value, onChange } }) => (
-                <Select
-                  value={value ?? ""}
-                  onValueChange={(val) => onChange(val)}
-                  disabled={field.readOnly}
-                >
-                  <SelectTrigger className="border border-gray-300 focus-visible:ring-0 focus:border-gray-400">
+                <Select value={value} onValueChange={onChange}>
+                  <SelectTrigger>
                     <SelectValue placeholder="Select" />
                   </SelectTrigger>
-
-                  <SelectContent className="bg-white border border-gray-300 rounded-md shadow-md">
+                  <SelectContent>
                     {field.options?.map((opt) => (
-                      <SelectItem
-                        key={opt.value}
-                        value={opt.value}
-                        className={cn(
-                          "cursor-pointer text-sm transition-colors duration-150",
-                          "hover:bg-primary/20 hover:text-primary",
-                          "data-[state=checked]:bg-primary/20 data-[state=checked]:text-primary"
-                        )}
-                      >
+                      <SelectItem key={opt.value} value={opt.value}>
                         {opt.label}
                       </SelectItem>
                     ))}
@@ -217,21 +173,33 @@ reset(merged);
       case "richtext":
         return (
           <div key={field.name} className="space-y-2 w-full">
-            <Label className="block font-medium text-sm text-gray-700">
-              {field.label}
-            </Label>
+            <Label>{field.label}</Label>
             <Controller
               control={control}
               name={field.name}
               render={({ field: { value, onChange } }) => (
                 <RichTextEditor
-                  value={value ?? ""}
+                  value={value}
                   onChange={onChange}
                   height={300}
                 />
               )}
             />
             {errorMsg && <p className="text-red-500 text-xs">{errorMsg}</p>}
+          </div>
+        );
+
+      case "checkbox":
+        return (
+          <div key={field.name} className="flex items-center gap-3">
+            <Controller
+              control={control}
+              name={field.name}
+              render={({ field: rhf }) => (
+                <Checkbox checked={rhf.value} onCheckedChange={rhf.onChange} />
+              )}
+            />
+            <Label>{field.label}</Label>
           </div>
         );
 
@@ -247,30 +215,6 @@ reset(merged);
           />
         );
 
-      case "checkbox":
-        return (
-          <div key={field.name} className="flex items-center gap-3 w-full">
-            <Controller
-              control={control}
-              name={field.name}
-              render={({ field: rhf }) => (
-                <Checkbox
-                  {...rhf}
-                  checked={!!rhf.value}
-                  className="border border-gray-300 focus-visible:ring-0"
-                  onCheckedChange={(e) => {
-                    rhf.onChange(e);
-                  }}
-                />
-              )}
-            />
-            <Label className="block font-medium text-sm text-gray-700">
-              {field.label}
-            </Label>
-            {errorMsg && <p className="text-red-500 text-xs">{errorMsg}</p>}{" "}
-          </div>
-        );
-
       case "tags":
         return (
           <TableField
@@ -283,71 +227,31 @@ reset(merged);
           />
         );
 
-      case "code": {
-        const selectedLanguage = watch("language");
+
+      case "conditions":
+      case "cases":
         return (
-          <div key={field.name} className="space-y-2 w-full">
-            <Label className="block font-medium text-sm text-gray-700 mt-4">
-              {field.label}
-            </Label>
-            <Controller
-              control={control}
-              name={field.name}
-              render={({ field: { value, onChange } }) => (
-                <div
-                  className="border border-gray-300 rounded-md overflow-hidden shadow-sm focus-within:ring-2 focus-within:ring-primary/30"
-                  onKeyDown={(e) => {
-                    if (e.key === " ") e.stopPropagation();
-                  }}
-                >
-                  <CodeEditor
-                    onChange={() => {}}
-                    selectedLanguage={selectedLanguage}
-                    value={value ?? ""}
-                  />
-                </div>
-              )}
-            />
-
-            {errorMsg && <p className="text-red-500 text-xs">{errorMsg}</p>}
-          </div>
+          <LogicRulesField
+            key={field.name}
+            control={control}
+            name={field.name}
+            label={field.label}
+            mode={field.type === "cases" ? "switch" : "conditional"}
+            errors={errors[field.name]}
+          />
         );
-      }
-
-     case "conditions":
-     case "cases":
-      return (
-        <LogicRulesField
-          key={field.name}
-          name={field.name}
-          control={control}
-          mode={field.type === "cases" ? "switch" : "conditional"}
-          label={field.label}
-          errors={errors[field.name]}
-        />
-  );
-
-      default:
-        return null;
     }
   };
 
   const left = visibleFields.filter((f) => f.type !== "textarea");
   const right = visibleFields.filter((f) => f.type === "textarea");
 
+
   const onSubmitInternal = (data: Record<string, any>) => {
-    // Clean empty entries in tags arrays before forwarding
-    const cleaned: Record<string, any> = { ...data };
-    fields.forEach((f) => {
-      if (f.type === "tags" && Array.isArray(cleaned[f.name])) {
-        cleaned[f.name] = cleaned[f.name].filter(
-          (s: string) => String(s).trim() !== ""
-        );
-      }
-    });
-    onSubmit?.(cleaned);
+    onSubmit?.(data);
     onClose?.();
   };
+
 
   return (
     <form onSubmit={handleSubmit(onSubmitInternal)} className="space-y-4">

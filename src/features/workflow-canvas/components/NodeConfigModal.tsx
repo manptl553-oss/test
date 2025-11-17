@@ -27,7 +27,8 @@ export function NodeConfigModal() {
   const { setNodes } = useReactFlow();
   const { activeNode, setActiveNode, updateNode } = useFlowStore(); // Add updateNode from store
   const nodeData = activeNode?.data;
-  const nodeId = nodeData?.id;
+  const nodeId = activeNode?.id as string;
+
   const nodeType = nodeData?.type as string;
 
   const [nodeName, setNodeName] = useState(
@@ -39,13 +40,20 @@ export function NodeConfigModal() {
   const schema = nodeValidationSchema[nodeType];
 
   const defaultValues = useMemo(() => {
-    const saved = (isTrigger
-      ? nodeData?.configuration?.[nodeType]
-      : nodeData?.configuration) ?? {};
+    const saved =
+      (isTrigger
+        ? nodeData?.configuration?.[nodeType]
+        : nodeData?.configuration) ?? {};
     const result: any = {};
     fields.forEach((f: any) => {
       const val = saved[f.name];
-      result[f.name] = val ?? "";
+      if (f.type === "conditions") {
+        result[f.name] = Array.isArray(val) ? val : [];
+      } else if (f.type === "cases") {
+        result[f.name] = Array.isArray(val) ? val : [];
+      } else {
+        result[f.name] = val ?? "";
+      }
     });
     return result;
   }, [nodeData, nodeType]);
@@ -56,10 +64,12 @@ export function NodeConfigModal() {
 
       // Process conditions for CONDITIONAL/RULE_EXECUTOR
       if (Array.isArray(values.conditions)) {
-        finalConfig.conditions = values.conditions.map((c: any, index: number) => ({
-          expression: `${c.field} ${c.operator} ${c.value}`,
-          operator: "&&",
-        }));
+        finalConfig.conditions = values.conditions.map(
+          (c: any, index: number) => ({
+            expression: `${c.field} ${c.operator} ${c.value}`,
+            operator: "&&",
+          })
+        );
       }
 
       // Process cases for SWITCH

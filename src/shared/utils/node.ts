@@ -20,7 +20,7 @@ export const getOutputsForNode = (node: any): string[] => {
   const def = getNodeDefinition(type);
 
   if (type === "switch") {
-    const cases = node?.data?.configuration?.switch_cases;
+    const cases = node?.data?.configuration?.cases;
     if (Array.isArray(cases) && cases.length > 0)
       return cases.map((c: any, i: number) => c?.condition || `case_${i + 1}`);
     return ["case_1"];
