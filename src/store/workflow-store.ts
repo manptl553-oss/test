@@ -102,7 +102,7 @@ interface FlowState {
   setShowSidebar: (value: boolean) => void;
 
   // Node operations
-  addNode: (node: Node, shouldConnect?: boolean) => void;
+  // addNode: (node: Node, shouldConnect?: boolean) => void;
   addNodeAfter: (
     node: Node,
     sourceNodeId: string,
@@ -404,61 +404,61 @@ export const useFlowStore = create<FlowState>((set, get) => ({
   },
 
   // Node Operations
-  addNode: (node, shouldConnect = true) => {
-    const { nodes, edges, versionId } = get();
-    const newNode = {
-      ...node,
+  // addNode: (node, shouldConnect = true) => {
+  //   const { nodes, edges, versionId } = get();
+  //   const newNode = {
+  //     ...node,
 
-      data: {
-        ...node.data,
-        outputs: getOutputsForNode(node),
-        versionId: versionId,
-      },
-    };
-    let newEdges = edges;
+  //     data: {
+  //       ...node.data,
+  //       outputs: getOutputsForNode(node),
+  //       versionId: versionId,
+  //     },
+  //   };
+  //   let newEdges = edges;
 
-    const previousNode = nodes.at(-1);
-    if (
-      shouldConnect &&
-      previousNode &&
-      !isTriggerNode(newNode?.data?.type?.toLowerCase?.())
-    ) {
-      newEdges = addEdge(
-        makeEdge({
-          source: previousNode.id,
-          target: newNode.id,
-          sourceHandle: "none",
-          targetHandle: getTargetHandleForNode(newNode),
-        }),
-        newEdges
-      );
-    }
+  //   const previousNode = nodes.at(-1);
+  //   if (
+  //     shouldConnect &&
+  //     previousNode &&
+  //     !isTriggerNode(newNode?.data?.type?.toLowerCase?.())
+  //   ) {
+  //     newEdges = addEdge(
+  //       makeEdge({
+  //         source: previousNode.id,
+  //         target: newNode.id,
+  //         sourceHandle: "none",
+  //         targetHandle: getTargetHandleForNode(newNode),
+  //       }),
+  //       newEdges
+  //     );
+  //   }
 
-    const loopHandle = getSelfLoopHandle(newNode);
-    if (loopHandle) {
-      queueMicrotask(() => {
-        const { edges: curEdges } = get();
-        const selfEdge = makeEdge({
-          source: newNode.id,
-          target: newNode.id,
-          sourceHandle: loopHandle,
-          targetHandle: getTargetHandleForNode(newNode),
-        });
-        const updatedEdges = addEdge(selfEdge, curEdges);
-        set({
-          edges: updatedEdges,
-          connectedHandles: computeConnectedHandles(updatedEdges),
-        });
-      });
-    }
+  //   const loopHandle = getSelfLoopHandle(newNode);
+  //   if (loopHandle) {
+  //     queueMicrotask(() => {
+  //       const { edges: curEdges } = get();
+  //       const selfEdge = makeEdge({
+  //         source: newNode.id,
+  //         target: newNode.id,
+  //         sourceHandle: loopHandle,
+  //         targetHandle: getTargetHandleForNode(newNode),
+  //       });
+  //       const updatedEdges = addEdge(selfEdge, curEdges);
+  //       set({
+  //         edges: updatedEdges,
+  //         connectedHandles: computeConnectedHandles(updatedEdges),
+  //       });
+  //     });
+  //   }
 
-    // Don't mark as dirty - new node will be in addedNodes
-    set({
-      nodes: [...nodes, newNode],
-      edges: newEdges,
-      connectedHandles: computeConnectedHandles(newEdges),
-    });
-  },
+  //   // Don't mark as dirty - new node will be in addedNodes
+  //   set({
+  //     nodes: [...nodes, newNode],
+  //     edges: newEdges,
+  //     connectedHandles: computeConnectedHandles(newEdges),
+  //   });
+  // },
 
   addNodeAfter: (node, sourceNodeId, sourceHandleId = "none") => {
     const { nodes, edges, versionId } = get();

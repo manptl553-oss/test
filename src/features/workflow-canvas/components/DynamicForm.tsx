@@ -222,6 +222,33 @@ export const DynamicForm = ({
             isTag
           />
         );
+       case "code": 
+        const selectedLanguage = watch("language");
+        return (
+          <div key={field.name} className="space-y-2 w-full">
+            <Label className="block font-medium text-sm text-gray-700 mt-4">
+              {field.label}
+            </Label>
+            <Controller
+              control={control}
+              name={field.name}
+              render={({ field: { value, onChange } }) => (
+                <div
+                  className="border border-gray-300 rounded-md overflow-hidden shadow-sm focus-within:ring-2 focus-within:ring-primary/30"
+                  onKeyDown={(e) => {
+                    if (e.key === " ") e.stopPropagation();
+                  }}
+                >
+                  <CodeEditor
+                    onChange={() => {}}
+                    selectedLanguage={selectedLanguage}
+                    value={value ?? ""}
+                  />
+                </div>
+              )}
+            />
+            {errorMsg && <p className="text-red-500 text-xs">{errorMsg}</p>}
+          </div>);
 
       case "conditions":
       case "cases":
