@@ -43,7 +43,7 @@ export const normalizeWorkflowData = (workflow: Workflow): Workflow => {
         const matched = outputs.find((out) =>
           cleanCondition.includes(out.toLowerCase())
         );
-        sourceHandle = matched || outputs[0] || "done";
+        sourceHandle = matched || outputs[0] || "none";
       }
     }
 
@@ -84,12 +84,12 @@ function mapHandleToCondition(sourceHandle: string | null | undefined): string {
 }
 
 // 3. Transform a single node
-function transformNode(node: Node<NodeData>, versionId: string): any {
+export function transformNode(node: Node<NodeData>): any {
   const nodeData = node?.data;
 
   return {
     id: nodeData?.id, // Use the id from data
-    versionId: versionId,
+    versionId: nodeData.versionId,
     name: nodeData.name,
     description: nodeData?.description || "",
     type: nodeData.type,
@@ -106,14 +106,14 @@ function transformNode(node: Node<NodeData>, versionId: string): any {
 }
 
 // 4. Transform a single edge
-function transformEdge(edge: Edge, versionId: string): any {
+export function transformEdge(edge: Edge): any {
   return {
     id: edge.id,
-    versionId: versionId,
+    versionId: edge.data.versionId,
     sourceId: edge.source, // Use source directly (it's already the node's data.id)
     targetId: edge.target, // Use target directly
     groupId: null,
     condition: mapHandleToCondition(edge.sourceHandle),
-    expression: "",
+    expression: edge?.data?.expression ?? "",
   };
 }

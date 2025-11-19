@@ -2,7 +2,7 @@ import { Edge, Node } from "reactflow";
 import { useFlowStore } from "@/store";
 import { getEdgeLabelForNode, getTargetHandleForNode } from "./node";
 import { NodeTypeProps } from "../constants";
-
+import { v4 as uuidv4 } from "uuid";
 /** -------------------------------------------------
  *  Create consistent edge object with dynamic label
  * ------------------------------------------------- */
@@ -14,25 +14,25 @@ export const makeEdge = (params: Partial<Edge>): Edge => {
   const sourceNode = state.nodes.find((n) => n.id === source);
 
   //  Dynamically resolve the label from node definition
-let label: string | undefined;
+  let label: string | undefined;
 
-if (sourceNode && sourceHandle) {
-  label = getEdgeLabelForNode(sourceNode, sourceHandle);
-}
+  if (sourceNode && sourceHandle) {
+    label = getEdgeLabelForNode(sourceNode, sourceHandle);
+  }
 
   //  Safety: if the node no longer exists or label invalid → clear it
   if (!sourceNode || !label) label = undefined;
 
   return {
-    id: params.id || `e-${source}-${target}-${Date.now()}`,
+    id: params.id || uuidv4(),
     source: source!,
     target: target!,
-    sourceHandle: sourceHandle || "done",
+    sourceHandle: sourceHandle || "none",
     targetHandle: params.targetHandle || "input",
     type: params.type || "custom",
     animated: true,
     style: params.style || { strokeWidth: 2 },
-    data: { ...params.data, label },
+    data: { ...params.data, label, versionId: state.versionId },
     label, // ReactFlow displays this directly
   };
 };
@@ -40,7 +40,10 @@ if (sourceNode && sourceHandle) {
 /** -------------------------------------------------
  *  Compute connected handle map (for "+" add logic)
  * ------------------------------------------------- */
-export const computeConnectedHandles = (edges: Edge[], nodes?: Node[]): Record<string, Set<string>> => {
+export const computeConnectedHandles = (
+  edges: Edge[],
+  nodes?: Node[]
+): Record<string, Set<string>> => {
   const handleMap: Record<string, Set<string>> = {};
 
   for (const e of edges) {
@@ -63,7 +66,10 @@ export const computeConnectedHandles = (edges: Edge[], nodes?: Node[]): Record<s
 /** -------------------------------------------------
  *  Detect parent loop relationship dynamically
  * ------------------------------------------------- */
-export const findParentLoop = (sourceNode?: Node, targetNode?: Node): string | null => {
+export const findParentLoop = (
+  sourceNode?: Node,
+  targetNode?: Node
+): string | null => {
   const getType = (n?: any) => n?.data?.type;
 
   return (

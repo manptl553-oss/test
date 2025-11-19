@@ -32,7 +32,6 @@ const splitExpression = (expr = "") => {
   return { field: m[1].trim(), operator: m[2], value: m[3].trim() };
 };
 
-
 export const DynamicForm = ({
   fields,
   schema,
@@ -55,14 +54,13 @@ export const DynamicForm = ({
     }
 
     // Parse switch cases
-    if (!Array.isArray(d.cases) || d.cases.length === 0) {
-      d.cases = [{ field: "", operator: "==", value: "" }];
+    if (!Array.isArray(d.switchCases) || d.switchCases.length === 0) {
+      d.switchCases = [{ field: "", operator: "==", value: "" }];
     } else {
-      d.cases = d.cases.map((c: any) =>
+      d.switchCases = d.switchCases.map((c: any) =>
         c.expression ? splitExpression(c.expression) : c
       );
     }
-
     // Add empty defaults for missing fields
     fields.forEach((f) => {
       if (d[f.name] === undefined) {
@@ -79,11 +77,10 @@ export const DynamicForm = ({
         }
       }
     });
-
+    
     return d;
   }, [defaultValues, fields]);
-
-
+  
   const {
     handleSubmit,
     control,
@@ -95,24 +92,23 @@ export const DynamicForm = ({
     mode: "onSubmit",
     shouldUnregister: false,
   });
-
-
+  
   const authType = watch("auth_type");
-
+  
   const visibleFields = useMemo(() => {
     if (!twoPane) return fields;
-
+    
     return fields.filter((f) => {
       const isBasicCred = f.name === "username" || f.name === "password";
       if (authType === "header") return !isBasicCred;
       return true;
     });
   }, [fields, twoPane, authType]);
-
-
+  
+  console.log(defaultValues,"--------default values")
   const renderField = (field: FieldConfig) => {
     const errorMsg = (errors as any)?.[field.name]?.message;
-
+    
     switch (field.type) {
       case "input":
         return (
@@ -227,7 +223,6 @@ export const DynamicForm = ({
           />
         );
 
-
       case "conditions":
       case "cases":
         return (
@@ -246,12 +241,10 @@ export const DynamicForm = ({
   const left = visibleFields.filter((f) => f.type !== "textarea");
   const right = visibleFields.filter((f) => f.type === "textarea");
 
-
   const onSubmitInternal = (data: Record<string, any>) => {
     onSubmit?.(data);
     onClose?.();
   };
-
 
   return (
     <form onSubmit={handleSubmit(onSubmitInternal)} className="space-y-4">

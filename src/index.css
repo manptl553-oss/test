@@ -17,3 +17,6 @@
   -webkit-box-orient: vertical;
   text-overflow: ellipsis;
 }
+.arrow:hover {
+  background: var(--arrow-hover);
+}

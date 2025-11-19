@@ -34,7 +34,7 @@ export const nodeFieldsConfig: Record<string, FieldConfig[]> = {
 
   event: [
     {
-      name: "event_name",
+      name: "eventName",
       label: "Event Name",
       type: "select",
       required: true,
@@ -389,7 +389,7 @@ export const nodeFieldsConfig: Record<string, FieldConfig[]> = {
   },
 ],
   switch: [
-  { name: "cases", type: "cases", label: "Switch Cases" }]
+  { name: "switchCases", type: "cases", label: "Switch Cases" }]
 };
 
 /* -------------------------------------------------------
@@ -415,7 +415,7 @@ export const nodeValidationSchema: Record<string, z.ZodSchema<any>> = {
   }),
 
   event: z.object({
-    event_name: z.string().min(1, "Please select an event"),
+    eventName: z.string().min(1, "Please select an event"),
   }),
 
   send_email: z.object({
@@ -459,7 +459,7 @@ export const nodeValidationSchema: Record<string, z.ZodSchema<any>> = {
 
   /* SWITCH Node */
   switch: z.object({
-    cases: z
+    switchCases: z
       .array(
         z.object({
           field: z.string().min(1, "Field is required"),

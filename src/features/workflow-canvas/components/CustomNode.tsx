@@ -15,7 +15,7 @@ import { NodeConfigModal } from "./NodeConfigModal";
 
 const closedModel = ["vip_membership_invite", "pep_check_invite"];
 const normalizeHandle = (handle?: string | null) =>
-  handle?.toLowerCase() ?? "done";
+  handle?.toLowerCase() ?? "none";
 const areHandlesEquivalent = (a: string, b: string): boolean => {
   if (a === b) return true;
   const groups = [
@@ -79,7 +79,6 @@ const CustomNode = ({ data, id }: NodeProps) => {
 
   const handleDeleteClick = useCallback(async () => {
     try {
-      const backendId = (data as any)?.backend_id as string | undefined;
       /* backend deletion hook could go here */
       (data as any).onDeleteClick?.(id);
     } catch (e) {
@@ -161,11 +160,11 @@ const CustomNode = ({ data, id }: NodeProps) => {
               type="target"
               position={Position.Left}
               id={`input-${i + 1}`}
-              className="
+              className={`
               !w-6 !h-6
               !rounded-l-full 
               !border-none
-            "
+            `}
               style={{ background: style.bg }}
             />
           </div>
@@ -185,7 +184,7 @@ const CustomNode = ({ data, id }: NodeProps) => {
           !w-4 !h-7 
           !rounded-l-full 
           !border-none
-        "
+          "
         style={{ top: "50%", background: style.bg }}
       />
     );
@@ -198,7 +197,7 @@ const CustomNode = ({ data, id }: NodeProps) => {
         (i + 1) * (100 / ((data as any).outputs.length + 1))
       }%`;
       const isConnected = isHandleConnected(outputId);
-      const handleIdForAdd = outputId === "done" ? "next" : outputId;
+      const handleIdForAdd = outputId === "none" ? "next" : outputId;
       const label = getLabel(outputId);
 
       return (

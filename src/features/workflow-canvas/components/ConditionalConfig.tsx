@@ -9,6 +9,8 @@ import {
   SelectItem,
   SelectValue,
 } from "@/shared";
+import { useFlowStore } from "@/store";
+import { useCallback } from "react";
 
 const operators = [
   { label: "EQUALS", value: "==" },
@@ -20,21 +22,52 @@ const operators = [
   { label: "LESS OR EQUAL", value: "<=" },
 ];
 
-
 export const LogicRulesField = ({
   control,
   name,
   label,
   errors,
-  mode = "conditional", 
+  mode = "conditional",
 }: any) => {
-
-  const { fields, append, remove, } = useFieldArray({
+  const { fields, append, remove } = useFieldArray({
     name,
     control,
   });
 
+  const { edges, activeNode, setEdges } = useFlowStore();
+  const removeEdge = useCallback((index: number) => {
+    const existingEdges = edges.filter((e) => e.source === activeNode?.id);
+    remove(index);
+    const caseIndex = index + 1;
+    if (caseIndex <= 0 || caseIndex >= existingEdges.length) return;
 
+    const edgeToRemove = edges.findIndex(
+      (e) => e.sourceHandle === `case_${caseIndex}`
+    );
+    const lastEdge = edges.findIndex(
+      (e) => e.sourceHandle === `case_${existingEdges.length}`
+    );
+
+    const newEdges = [...edges];
+    const temp = newEdges[edgeToRemove];
+    newEdges[edgeToRemove] = {
+      ...newEdges[lastEdge],
+      sourceHandle: `case_${caseIndex}`,
+      data: {
+        ...newEdges[lastEdge].data,
+        condition: `case_${caseIndex}`,
+      },
+    };
+    newEdges[lastEdge] = {
+      ...temp,
+      sourceHandle: `case_${existingEdges.length}`,
+      data: {
+        ...temp.data,
+        condition: `case_${existingEdges.length}`,
+      },
+    };
+    setEdges(newEdges);
+  }, []);
 
   return (
     <div className="w-full space-y-2">
@@ -42,8 +75,10 @@ export const LogicRulesField = ({
 
       <div className="space-y-3 max-h-[400px] overflow-y-auto border p-3 rounded-md">
         {fields.map((item, index) => (
-          <div key={item.id} className="flex gap-2 items-center border p-2 rounded-md">
-            
+          <div
+            key={item.id}
+            className="flex gap-2 items-center border p-2 rounded-md"
+          >
             {/* Field */}
             <Controller
               control={control}
@@ -58,7 +93,7 @@ export const LogicRulesField = ({
               control={control}
               name={`${name}.${index}.operator`}
               render={({ field }) => {
-                const selected = operators.find(o => o.value === field.value);
+                const selected = operators.find((o) => o.value === field.value);
                 return (
                   <Select value={field.value} onValueChange={field.onChange}>
                     <SelectTrigger className="border w-40">
@@ -86,7 +121,14 @@ export const LogicRulesField = ({
             />
 
             {fields.length > 1 && (
-              <Button variant="destructive" size="icon" type="button" onClick={() => remove(index)}>
+              <Button
+                variant="destructive"
+                size="icon"
+                type="button"
+                onClick={() => {
+                  mode == "switch" ? removeEdge(index) : remove(index);
+                }}
+              >
                 ✕
               </Button>
             )}

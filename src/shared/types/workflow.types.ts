@@ -3,7 +3,7 @@
 export interface WorkflowNode {
   id: string;
   name: string;
-  type: string;                     // NodeTypeProps as string to avoid circular dependency
+  type: string; // NodeTypeProps as string to avoid circular dependency
   parentNode?: string;
   parent_id?: string | null;
   position?: { x: number; y: number };
@@ -29,6 +29,7 @@ export interface WorkflowEdge {
 export interface Workflow {
   id: string;
   name: string;
+  versionId: string;
   description?: string;
   enabled: boolean;
   lastModified?: string;

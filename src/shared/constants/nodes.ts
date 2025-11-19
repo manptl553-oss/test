@@ -288,29 +288,29 @@ export const nodeTypeStyles: Record<
 };
 
 export const NODE_DEFINITIONS: Record<NodeTypeProps, NodeDefinition> = {
-  webhook: { outputs: ["next"], defaultTarget: "input" },
-  event: { outputs: ["next"], defaultTarget: "input" },
-  schedule: { outputs: ["next"], defaultTarget: "input" },
-  http_request: { outputs: ["next"], defaultTarget: "input" },
+  webhook: { outputs: ["none"], defaultTarget: "input" },
+  event: { outputs: ["none"], defaultTarget: "input" },
+  schedule: { outputs: ["none"], defaultTarget: "input" },
+  http_request: { outputs: ["none"], defaultTarget: "input" },
 
-  send_email: { outputs: ["success"], defaultTarget: "input" },
-  send_http_request: { outputs: ["success"], defaultTarget: "input" },
-  update_database: { outputs: ["done"], defaultTarget: "input" },
-  vip_membership_invite: { outputs: ["done"], defaultTarget: "input" },
-  pep_check_invite: { outputs: ["done"], defaultTarget: "input" },
+  send_email: { outputs: ["none"], defaultTarget: "input" },
+  send_http_request: { outputs: ["none"], defaultTarget: "input" },
+  update_database: { outputs: ["none"], defaultTarget: "input" },
+  vip_membership_invite: { outputs: ["none"], defaultTarget: "input" },
+  pep_check_invite: { outputs: ["none"], defaultTarget: "input" },
 
-  map: { outputs: ["done"], defaultTarget: "input" },
-  rename: { outputs: ["done"], defaultTarget: "input" },
-  remove: { outputs: ["done"], defaultTarget: "input" },
-  copy: { outputs: ["done"], defaultTarget: "input" },
-  filter: { outputs: ["done"], defaultTarget: "input" },
-  aggregate: { outputs: ["done"], defaultTarget: "input" },
-  group: { outputs: ["done"], defaultTarget: "input" },
-  concat: { outputs: ["done"], defaultTarget: "input" },
-  formula: { outputs: ["done"], defaultTarget: "input" },
-  convert_type: { outputs: ["done"], defaultTarget: "input" },
+  map: { outputs: ["none"], defaultTarget: "input" },
+  rename: { outputs: ["none"], defaultTarget: "input" },
+  remove: { outputs: ["none"], defaultTarget: "input" },
+  copy: { outputs: ["none"], defaultTarget: "input" },
+  filter: { outputs: ["none"], defaultTarget: "input" },
+  aggregate: { outputs: ["none"], defaultTarget: "input" },
+  group: { outputs: ["none"], defaultTarget: "input" },
+  concat: { outputs: ["none"], defaultTarget: "input" },
+  formula: { outputs: ["none"], defaultTarget: "input" },
+  convert_type: { outputs: ["none"], defaultTarget: "input" },
 
-  merge: { outputs: ["done"], defaultTarget: "input-1" },
+  merge: { outputs: ["none"], defaultTarget: "input-1" },
 
   split: {
     outputs: ["item"],
@@ -318,9 +318,9 @@ export const NODE_DEFINITIONS: Record<NodeTypeProps, NodeDefinition> = {
     labels: { item: "Each Item" },
   },
 
-  date_format: { outputs: ["done"], defaultTarget: "input" },
-  date_operation: { outputs: ["done"], defaultTarget: "input" },
-  timestamp: { outputs: ["done"], defaultTarget: "input" },
+  date_format: { outputs: ["none"], defaultTarget: "input" },
+  date_operation: { outputs: ["none"], defaultTarget: "input" },
+  timestamp: { outputs: ["none"], defaultTarget: "input" },
 
   conditional: {
     outputs: ["true", "false"],
@@ -347,5 +347,5 @@ export const NODE_DEFINITIONS: Record<NodeTypeProps, NodeDefinition> = {
     labels: { true: "True", false: "False" },
   },
 
-  code_block: { outputs: ["done"], defaultTarget: "input" },
+  code_block: { outputs: ["none"], defaultTarget: "input" },
 };

@@ -1,4 +1,4 @@
-import { nodeCategoryConst, NodeTypeProps, nodeTypeStyles } from "@/shared";
+import { NODE_DEFINITIONS, nodeCategoryConst, NodeTypeProps, nodeTypeStyles } from "@/shared";
 import { useFlowStore } from "@/store";
 import { BugIcon, ChevronLeft } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -32,7 +32,6 @@ export default function NodePickerPanel({
         : [{ type: "root", data: nodeCategory }];
     }
   );
-  // console.log(navigationStack);
 
   const currentView = navigationStack[navigationStack.length - 1];
   const style = nodeTypeStyles[currentView?.data?.type as NodeTypeProps] ||
@@ -57,12 +56,14 @@ export default function NodePickerPanel({
   const selectTemplate = (template: any) => {
     const nodeType = template.type as NodeTypeProps;
     const Icon = nodeTypeStyles[nodeType]?.icon;
+    const outputs=NODE_DEFINITIONS[nodeType] || ["none"]
     const nodeData = {
       name: template.name,
       templateId: template?.id,
       type: nodeType,
       icon: Icon,
       description: template.description,
+      outputs
     };
     updateNode(id, nodeData);
     setActiveNode(null);
@@ -83,7 +84,7 @@ export default function NodePickerPanel({
   const renderRootView = () => {
     const root = currentView.type === "root" ? currentView.data : [];
     if (!root) return;
-    return root.map((category) => {
+    return root.map((category: any) => {
       return (
         <PopoverItem
           key={category.id}

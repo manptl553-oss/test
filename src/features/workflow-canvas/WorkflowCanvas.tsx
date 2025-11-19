@@ -1,24 +1,24 @@
+import { Button, Input } from "@/shared";
+import { Workflow } from "@/shared/types/workflow.types";
+import { useFlowStore } from "@/store/workflow-store";
+import { ArrowLeft } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import { ReactFlowProvider } from "reactflow";
 import FlowCanvas from "./components/FlowCanvas";
 import { normalizeWorkflowData } from "./helpers/normalize";
-import { useMemo, useState } from "react";
-import { ArrowLeft } from "lucide-react";
-import { Button, Input } from "@/shared";
-import { useFlowStore } from "@/store/workflow-store";
-import { Workflow } from "@/shared/types/workflow.types";
-
 export function WorkflowCanvas({
   workflow,
   handleBack,
   handleUpdateWorkflowMeta,
   handleSaveWorkflow,
 }: {
+  workflow: Workflow;
   handleBack: () => void;
   handleUpdateWorkflowMeta: () => void;
   handleRunWorkflow: () => void;
-  handleSaveWorkflow: (workflow: Workflow) => void;
-  workflow?: Workflow;
+  handleSaveWorkflow: (workflow: any) => void;
 }) {
+  const { getChangesForSync, nodes, setVersionId, versionId } = useFlowStore();
   const [workflowName, setWorkflowName] = useState(workflow?.name || "");
   const normalizedData = useMemo(
     () => (workflow ? normalizeWorkflowData(workflow) : null),
@@ -28,7 +28,10 @@ export function WorkflowCanvas({
     () => workflow && workflowName.trim() !== workflow.name.trim(),
     [workflowName, workflow]
   );
-  const nodes = useFlowStore((state) => state.nodes);
+
+  useEffect(() => {
+    if (!versionId) setVersionId(workflow.versionId);
+  }, [versionId]);
 
   return (
     <div className="flex-1 flex flex-col animate-fade-in bg-(--wf-background-base) text-(--wf-text-default)">
@@ -81,8 +84,12 @@ export function WorkflowCanvas({
             <Button
               className="bg-(--wf-brand-primary) hover:bg-(--wf-brand-secondary) text-(--wf-text-inverted) "
               onClick={() => {
-                console.log(normalizedData);
-                if (normalizedData) handleSaveWorkflow(normalizedData);
+                const changes = getChangesForSync();
+                if (changes)
+                  handleSaveWorkflow({
+                    ...workflow,
+                    ...changes,
+                  });
               }}
             >
               Save
@@ -93,7 +100,7 @@ export function WorkflowCanvas({
 
       <ReactFlowProvider>
         <div className="relative w-full h-[calc(100vh-90px)] overflow-hidden bg-(--wf-background-base)">
-          <FlowCanvas workflow={workflow} />
+          <FlowCanvas workflow={normalizedData} />
         </div>
       </ReactFlowProvider>
     </div>

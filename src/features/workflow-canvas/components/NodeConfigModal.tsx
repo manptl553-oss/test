@@ -1,7 +1,3 @@
-import { useMemo, useState } from "react";
-import { useReactFlow } from "reactflow";
-import { DynamicForm } from "./DynamicForm";
-import { useFlowStore } from "@/store";
 import {
   Dialog,
   DialogContent,
@@ -11,6 +7,10 @@ import {
   nodeFieldsConfig,
   nodeValidationSchema,
 } from "@/shared";
+import { useFlowStore } from "@/store";
+import { useMemo, useState } from "react";
+import { useReactFlow } from "reactflow";
+import { DynamicForm } from "./DynamicForm";
 
 export const getSourceHandle = (sourceHandle: string | undefined) => {
   switch (sourceHandle) {
@@ -40,10 +40,7 @@ export function NodeConfigModal() {
   const schema = nodeValidationSchema[nodeType];
 
   const defaultValues = useMemo(() => {
-    const saved =
-      (isTrigger
-        ? nodeData?.configuration?.[nodeType]
-        : nodeData?.configuration) ?? {};
+    const saved = nodeData?.configuration ?? {};
     const result: any = {};
     fields.forEach((f: any) => {
       const val = saved[f.name];
@@ -73,17 +70,19 @@ export function NodeConfigModal() {
       }
 
       // Process cases for SWITCH
-      if (Array.isArray(values.cases)) {
-        finalConfig.cases = values.cases.map((c: any, index: number) => ({
-          condition: `case_${index + 1}`,
-          expression: `${c.field} ${c.operator} ${c.value}`,
-        }));
+      if (Array.isArray(values.switchCases)) {
+        finalConfig.switchCases = values.switchCases.map(
+          (c: any, index: number) => ({
+            condition: `case_${index + 1}`,
+            expression: `${c.field} ${c.operator} ${c.value}`,
+          })
+        );
       }
-
+      console.log(values, "---------values");
       const payload = {
         type: nodeType,
         name: nodeName,
-        configuration: isTrigger ? { [nodeType]: finalConfig } : finalConfig,
+        configuration: finalConfig,
       };
 
       // IMPORTANT: Use updateNode from store instead of setNodes

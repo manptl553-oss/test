@@ -2,7 +2,7 @@ import { Calendar, Clock, Globe, Webhook } from "lucide-react";
 // import dagre from "dagre";
 import { NodeTypeProps, nodeTypeStyles } from "@/shared";
 import { getAutoLayoutedElements } from "@/shared/utils/layout";
-import { useFlowStore } from "@/store";
+import { NodeData, useFlowStore } from "@/store";
 import { Fullscreen } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import ReactFlow, {
@@ -12,12 +12,13 @@ import ReactFlow, {
   Node,
   OnConnectStartParams,
   useReactFlow,
-  XYPosition
+  XYPosition,
 } from "reactflow";
 import "reactflow/dist/style.css";
 import CustomEdge from "./CustomEdge";
 import CustomNode from "./CustomNode";
 import { Popover } from "./Popover";
+import { v4 as uuidv4 } from "uuid";
 
 // ---------- TYPES ----------
 interface PopoverItem {
@@ -39,37 +40,13 @@ interface PopoverConfig {
 }
 
 export function mapWorkflowToFlow(workflow: any, actions?: any) {
-  const nodes: Node[] = [];
+  const nodes: Node<NodeData>[] = [];
   const edges: Edge[] = [];
   if (!workflow) return { nodes, edges };
-
-  const xSpacing = 320;
-  const ySpacing = 180;
-
-  // Trigger node
-  if (workflow.triggers?.length > 0) {
-    const trigger = workflow.triggers[0];
-    const icon = trigger.icon || nodeTypeStyles[trigger.type as NodeTypeProps].icon;
-    nodes.push({
-      id: trigger.id,
-      type: "custom",
-      data: {
-        id: trigger.id,
-        name: trigger.name || "Event Trigger",
-        type: trigger.type,
-        icon,
-        configuration: trigger.configuration,
-        outputs: ["next"],
-        backend_id: trigger.id, // store backend id
-        ...actions,
-      },
-      position: { x: 100, y: 200 },
-    });
-  }
-
   // Workflow nodes
   workflow.nodes?.forEach((wfNode: any, index: number) => {
-    const icon = wfNode.icon || nodeTypeStyles[wfNode.type as NodeTypeProps].icon;
+    const icon =
+      wfNode.icon || nodeTypeStyles[wfNode.type as NodeTypeProps].icon;
     let outputs: string[] = [];
 
     switch (wfNode.type) {
@@ -87,7 +64,7 @@ export function mapWorkflowToFlow(workflow: any, actions?: any) {
         outputs = ["next"];
         break;
       default:
-        outputs = ["next"];
+        outputs = ["none"];
         break;
     }
 
@@ -96,32 +73,30 @@ export function mapWorkflowToFlow(workflow: any, actions?: any) {
       type: "custom",
       data: {
         id: wfNode.id,
+        versionId: wfNode?.versionId,
+        templateId: wfNode.templateId,
         name: wfNode.name,
         type: wfNode.type,
         icon,
         configuration: wfNode.config,
         outputs,
         ...actions,
-        backend_id: wfNode.id, // ✅ store backend id
       },
-      position: {
-        x: 400 + (index % 3) * xSpacing,
-        y: 100 + Math.floor(index / 3) * ySpacing,
-      },
+      position: wfNode.position,
     });
   });
 
   // Edges
   const seenEdgeIds = new Set<string>();
   workflow.edges?.forEach((e: any) => {
-    const edgeId = e.id || `${e.source}-${e.target}-${e.condition || "next"}`;
+    const edgeId = e.id;
     if (seenEdgeIds.has(edgeId)) return;
     seenEdgeIds.add(edgeId);
 
     edges.push({
       id: edgeId,
-      source: e.source,
-      target: e.target,
+      source: e.sourceId,
+      target: e.targetId,
       sourceHandle: e.condition || "next",
       targetHandle: "input",
       type: "custom",
@@ -130,35 +105,36 @@ export function mapWorkflowToFlow(workflow: any, actions?: any) {
       markerEnd: { type: MarkerType.ArrowClosed },
       label: e.condition || "",
       labelStyle: { fontWeight: 600, fontSize: 12 },
-      data: e.data,
+      data: { ...e.data, versionId: e?.versionId },
     });
   });
 
-  // Auto-connect Trigger
-  if (workflow.triggers?.length > 0 && workflow.nodes?.length > 0) {
-    const triggerId = workflow.triggers[0].id;
-    const existingTargets = new Set(workflow.edges?.map((e: any) => e.target));
+  // // Auto-connect Trigger
+  // if (workflow.triggers?.length > 0 && workflow.nodes?.length > 0) {
+  //   const triggerId = workflow.triggers[0].id;
+  //   const existingTargets = new Set(workflow.edges?.map((e: any) => e.target));
 
-    const firstNodes = workflow.nodes.filter(
-      (n: any) => !existingTargets.has(n.id)
-    );
-    firstNodes.forEach((n: any) => {
-      const edgeId = `edge-trigger-${n.id}`;
-      if (!seenEdgeIds.has(edgeId)) {
-        edges.push({
-          id: edgeId,
-          source: triggerId,
-          target: n.id,
-          type: "custom",
-          animated: true,
-          style: { strokeWidth: 2 },
-          markerEnd: { type: MarkerType.ArrowClosed },
-          label: "trigger",
-          labelStyle: { fill: "#facc15", fontWeight: 600 },
-        });
-      }
-    });
-  }
+  //   const firstNodes = workflow.nodes.filter(
+  //     (n: any) => !existingTargets.has(n.id)
+  //   );
+  //   firstNodes.forEach((n: any) => {
+  //     const edgeId = n.id;
+  //     if (!seenEdgeIds.has(edgeId)) {
+  //       edges.push({
+  //         id: edgeId,
+  //         source: triggerId,
+  //         target: n.id,
+  //         type: "custom",
+  //         animated: true,
+  //         style: { strokeWidth: 2 },
+  //         markerEnd: { type: MarkerType.ArrowClosed },
+  //         label: "trigger",
+  //         labelStyle: { fill: "#facc15", fontWeight: 600 },
+  //         data: { versionId: n.versionId },
+  //       });
+  //     }
+  //   });
+  // }
 
   return { nodes, edges };
 }
@@ -202,15 +178,15 @@ const triggerModules: PopoverItem[] = [
 // ---------- MAIN COMPONENT ----------
 function useDebounce<T>(value: T, delay: number): T {
   const [debouncedValue, setDebouncedValue] = useState(value);
-  
+
   useEffect(() => {
     const handler = setTimeout(() => {
       setDebouncedValue(value);
     }, delay);
-    
+
     return () => clearTimeout(handler);
   }, [value, delay]);
-  
+
   return debouncedValue;
 }
 
@@ -228,15 +204,19 @@ export default function FlowCanvas({ workflow }: any) {
     renameNode,
     setActiveNode,
     activeNode,
+    initializeFromBackend,
+    versionId,
   } = useFlowStore();
 
   const isPopoverOpen = useMemo(
     () => ["start_workflow", "addNode"].includes(activeNode?.data?.type),
     [activeNode?.data?.type] // ✅ More specific dependency
   );
-  
+
   const containerRef = useRef<HTMLDivElement>(null);
-  const [popoverConfig, setPopoverConfig] = useState<PopoverConfig | null>(null);
+  const [popoverConfig, setPopoverConfig] = useState<PopoverConfig | null>(
+    null
+  );
   const [popoverAnchor, setPopoverAnchor] = useState<{
     nodeId: string;
     position: { x: number; y: number };
@@ -256,7 +236,7 @@ export default function FlowCanvas({ workflow }: any) {
 
   const handleAddNode = useCallback(
     (nodeId: string, position: XYPosition, handleId: string) => {
-      const id = Date.now().toString();
+      const id = uuidv4();
       const newNode = {
         id,
         type: "custom",
@@ -270,7 +250,7 @@ export default function FlowCanvas({ workflow }: any) {
         },
       };
       addNodeAfter(newNode, nodeId, handleId);
-      setActiveNode(newNode);
+      (newNode);
     },
     [addNodeAfter, deleteNode, renameNode, setActiveNode]
   );
@@ -291,9 +271,7 @@ export default function FlowCanvas({ workflow }: any) {
           onRename: renameNode,
         })
       : { nodes: [], edges: [] };
-
-    setNodes(nodes);
-    setEdges(edges);
+    initializeFromBackend({ nodes, edges });
   }, [
     workflow,
     isEditMode,
@@ -352,6 +330,7 @@ export default function FlowCanvas({ workflow }: any) {
       node.position.x !== popoverAnchor.position.x ||
       node.position.y !== popoverAnchor.position.y
     ) {
+      popoverAnchor;
       setPopoverAnchor({
         nodeId: popoverAnchor.nodeId,
         position: node.position,
@@ -361,26 +340,34 @@ export default function FlowCanvas({ workflow }: any) {
 
   // Initial Start Node
   useEffect(() => {
-    const isWorkflowEmpty = isEditMode
-      ? workflow?.triggers?.length === 0 && workflow?.nodes?.length === 0
-      : nodes.length === 0;
-    
+    const isWorkflowEmpty =
+      isEditMode && (workflow?.nodes?.length ?? 0) === 0 && nodes.length === 0;
+
+    const id = uuidv4();
     if (isWorkflowEmpty) {
       const startNode: Node = {
-        id: "start_workflow",
+        id: id,
         type: "custom",
         position: { x: 200, y: 250 },
         data: {
-          id: "start_workflow",
+          id: id,
           name: "Start Workflow",
           type: "start_workflow",
-          outputs: ["next"],
+          versionId: versionId ?? workflow.versionId,
+          outputs: ["none"],
           onStartClick: (id: string) => openTriggerPopover(id),
         },
       };
       setNodes([startNode]);
     }
-  }, [nodes.length, isEditMode, workflow?.triggers?.length, workflow?.nodes?.length, setNodes, openTriggerPopover]);
+  }, [
+    nodes.length,
+    isEditMode,
+    workflow?.triggers?.length,
+    workflow?.nodes?.length,
+    setNodes,
+    openTriggerPopover,
+  ]);
 
   //  OPTIMIZATION 4: Create stable node data object
   const nodeDataCallbacks = useMemo(
@@ -394,7 +381,7 @@ export default function FlowCanvas({ workflow }: any) {
   const nodesWithData = useMemo(() => {
     const popoverNodeId = popoverAnchor?.nodeId;
     const hasConfig = !!popoverConfig;
-    
+
     return nodes.map((node) => ({
       ...node,
       data: {
@@ -416,7 +403,10 @@ export default function FlowCanvas({ workflow }: any) {
   );
 
   const onConnectStart = useCallback(
-    (_event: React.MouseEvent | React.TouchEvent, params: OnConnectStartParams) => {
+    (
+      _event: React.MouseEvent | React.TouchEvent,
+      params: OnConnectStartParams
+    ) => {
       const { nodeId, handleId } = params;
 
       const isConnected = edges.some(
@@ -493,7 +483,7 @@ export default function FlowCanvas({ workflow }: any) {
       </ReactFlow>
 
       {isPopoverOpen && <Popover />}
-      
+
       <div className="absolute bottom-8 left-4 z-20">
         <button
           onClick={handleAutoLayout}

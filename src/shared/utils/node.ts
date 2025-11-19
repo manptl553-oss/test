@@ -4,12 +4,12 @@ import { NodeDefinition } from "../types";
 export const getNodeDefinition = (type?: string): NodeDefinition => {
   const key = type?.toLowerCase?.();
   if (!key) {
-    return { outputs: ["done"], defaultTarget: "input" };
+    return { outputs: ["none"], defaultTarget: "input" };
   }
 
   return (
     NODE_DEFINITIONS[key as keyof typeof NODE_DEFINITIONS] ?? {
-      outputs: ["done"],
+      outputs: ["none"],
       defaultTarget: "input",
     }
   );
@@ -20,7 +20,7 @@ export const getOutputsForNode = (node: any): string[] => {
   const def = getNodeDefinition(type);
 
   if (type === "switch") {
-    const cases = node?.data?.configuration?.cases;
+    const cases = node?.data?.configuration?.switchCases;
     if (Array.isArray(cases) && cases.length > 0)
       return cases.map((c: any, i: number) => c?.condition || `case_${i + 1}`);
     return ["case_1"];
