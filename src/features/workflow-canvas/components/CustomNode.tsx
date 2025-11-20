@@ -163,7 +163,7 @@ const CustomNode = ({ data, id }: NodeProps) => {
               className={`
               !w-6 !h-6
               !rounded-l-full 
-              !border-none
+              !border-none 
             `}
               style={{ background: style.bg }}
             />
@@ -178,14 +178,8 @@ const CustomNode = ({ data, id }: NodeProps) => {
         type="target"
         position={Position.Left}
         id="input"
-        className="
-           !top-12
-          !left-1
-          !w-4 !h-7 
-          !rounded-l-full 
-          !border-none
-          "
-        style={{ top: "50%", background: style.bg }}
+          className="!w-4 !h-4 !border-0 !bg-transparent !opacity-0"
+        style={{ top: "50%", background: style.bg,  left: -2 }}
       />
     );
   };
@@ -203,7 +197,7 @@ const CustomNode = ({ data, id }: NodeProps) => {
       return (
         <div
           key={outputId}
-          className="absolute right-2 !top-2/6 flex items-center z-0 "
+          className="absolute right-2 !top-1/2 -translate-y-1/2 flex items-center z-0 "
         >
           {label && <div className="text-xs font-semibold pr-4">{label}</div>}
 
@@ -213,21 +207,22 @@ const CustomNode = ({ data, id }: NodeProps) => {
               position={Position.Right}
               id={outputId}
               isConnectable={!isConnected}
-              className="
-        !w-7 !h-8
-        !top-1
-  !rounded-r-full
-  !border-2
-        !m-0
-        flex items-center justify-center
-        cursor-pointer
-      "
+           className="react-flow__handle"
               style={{
                 top: "50%",
-                right: -8,
+                // right: -8,
                 transform: "translateY(-50%)",
                 pointerEvents: "all",
-                background: style.bg,
+                // background: style.bg,
+
+                width: 22,
+                height: 22,
+                borderRadius: "50%",
+                opacity: 0,
+                background: "transparent",
+                right: "-1px",
+                zIndex: 50, // ABOVE the + button
+                position: "absolute",
               }}
               onClick={(e) => {
                 e.stopPropagation();
@@ -239,7 +234,7 @@ const CustomNode = ({ data, id }: NodeProps) => {
             />
 
             {/* + only if not connected */}
-            {!isConnected && (
+            {/* {!isConnected && (
               <div
                 className="
                 !top-[3px]
@@ -248,6 +243,24 @@ const CustomNode = ({ data, id }: NodeProps) => {
         text-white text-xs font-light
         pointer-events-none
       "
+              >
+                +
+              </div>
+            )} */}
+               {!isConnected && (
+              <div
+                className="absolute -right-2 top-1/2 -translate-y-1/2  w-6 h-6 rounded-full flex items-center justify-center text-white text-sm font-bold cursor-pointer hover:scale-110 transition-transform pd-2"
+                style={{
+                  background: style.bg,
+                  pointerEvents: "auto",
+                  zIndex: 10,  // BELOW handle
+                }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  const { clientX, clientY } = e;
+                  const position = project({ x: clientX, y: clientY });
+                  handleAddClick(position, handleIdForAdd);
+                }}
               >
                 +
               </div>
@@ -263,11 +276,10 @@ const CustomNode = ({ data, id }: NodeProps) => {
         <div className="w-30 h-30 mx-auto relative space-y-3">
           {renderInputHandles()}
           <div
-            className={`w-24 h mx-auto h-24 border-white border-4 z-10 relative rounded-full transition-all duration-200  flex flex-col items-center justify-center gap-2 cursor-pointer`}
+            className={`w-24  mx-auto h-24 border-white border-2 z-10 relative rounded-full transition-all duration-200  flex flex-col items-center justify-center gap-2 cursor-pointer`}
             style={{
               background: style.bg,
               transition: "all 0.3s ease-in-out",
-              // border: style.border,
             }}
             onClick={handleClick}
             onMouseEnter={(e) => {

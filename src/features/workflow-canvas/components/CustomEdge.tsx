@@ -1,158 +1,309 @@
-import { NodeTypeProps, nodeTypeStyles } from "@/shared";
-import { memo, useState, useMemo } from "react";
+import React, { memo, useMemo, useState } from "react";
 import {
   BaseEdge,
   EdgeLabelRenderer,
   EdgeProps,
   getSmoothStepPath,
   useReactFlow,
+  useStore,
 } from "reactflow";
-import { Settings } from "lucide-react";
+import { cn, NodeTypeProps, nodeTypeStyles } from "@/shared";
 import { useFlowStore } from "@/store";
-import EdgeSettingsMenu from "./EdgeAettingsMenu";
+import { Plus, Unlink } from "lucide-react";
+import {v4 as uuidv4} from "uuid"
 
-const DOT_SPACING = 18; // distance between dots
-const DOT_RADIUS = 4; // size of dots
+/* -------------------------------------------------------------------
+   CONSTANTS
+------------------------------------------------------------------- */
+const DOT_SPACING = 18;
+const DOT_RADIUS = 4;
 
-function lerpColor(color1: string, color2: string, t: number) {
-  const c1 = parseInt(color1?.slice(1), 16);
-  const c2 = parseInt(color2?.slice(1), 16);
+const NODE_MAIN_RADIUS = 52;        // Visual circle size for your node
+const EDGE_CAP_RADIUS = 10;         // Half-circle size
+const EDGE_CAP_GAP = -2;            // Negative = slight overlap into main circle
 
-  const r1 = (c1 >> 16) & 0xff;
-  const g1 = (c1 >> 8) & 0xff;
-  const b1 = c1 & 0xff;
+/* -------------------------------------------------------------------
+   UTIL — Color Interpolation
+------------------------------------------------------------------- */
+const lerpColor = (c1: string, c2: string, t: number) => {
+  const a = parseInt(c1.slice(1), 16);
+  const b = parseInt(c2.slice(1), 16);
 
-  const r2 = (c2 >> 16) & 0xff;
-  const g2 = (c2 >> 8) & 0xff;
-  const b2 = c2 & 0xff;
+  return `rgb(
+    ${((a >> 16) & 255) * (1 - t) + ((b >> 16) & 255) * t},
+    ${((a >> 8) & 255) * (1 - t) + ((b >> 8) & 255) * t},
+    ${(a & 255) * (1 - t) + (b & 255) * t}
+  )`;
+};
 
-  const r = Math.round(r1 + (r2 - r1) * t);
-  const g = Math.round(g1 + (g2 - g1) * t);
-  const b = Math.round(b1 + (b2 - b1) * t);
-
-  return `rgb(${r},${g},${b})`;
-}
-
-export default memo(function CustomEdge(props: EdgeProps) {
+/* -------------------------------------------------------------------
+   MAIN COMPONENT
+------------------------------------------------------------------- */
+const CustomEdge = memo((props: EdgeProps) => {
+  const { id, source, target, sourceX, sourceY, targetX, targetY } = props;
+  const [hovered,setHovered] = useState(false)
   const { getNode } = useReactFlow();
-  const { setEdgeForSidebar } = useFlowStore();
-  const [showMenu, setShowMenu] = useState(false);
+  const nodeInternals = useStore((s) => s.nodeInternals);
 
-  const sourceNode = getNode(props.source);
-  const targetNode = getNode(props.target);
+  const { deleteEdge, addNodeBetweenEdge } = useFlowStore();
+  const sourceNode:any = getNode(source);
+  const targetNode = getNode(target);
+  const allNodes = useMemo(() => Array.from(nodeInternals.values()), [nodeInternals]);
+
+  const isSelf = source === target;
+
+
   const sourceColor =
-    nodeTypeStyles[sourceNode?.data?.type as NodeTypeProps]?.bg;
+    nodeTypeStyles[sourceNode?.data?.type as NodeTypeProps]?.bg ?? "#3b82f6";
   const targetColor =
-    nodeTypeStyles[targetNode?.data?.type as NodeTypeProps]?.bg;
+    nodeTypeStyles[targetNode?.data?.type as NodeTypeProps]?.bg ?? "#10b981";
 
-  const {
-    id,
-    source,
-    sourceX,
-    sourceY,
-    targetX,
-    targetY,
-    sourcePosition,
-    targetPosition,
-    selected,
-    data,
-  } = props;
 
-  // 1️⃣ Use a smooth curve path
-  const [edgePath] = getSmoothStepPath({
-    sourceX,
-    sourceY,
-    targetX,
-    targetY,
-    sourcePosition,
-    targetPosition,
-    borderRadius: 30,
-  });
 
-  // 2️⃣ Compute direction + spacing manually
-  const dx = targetX - sourceX;
-  const dy = targetY - sourceY;
-  const length = Math.sqrt(dx * dx + dy * dy);
-  const dotCount = Math.floor(length / DOT_SPACING);
+  //  SELF LOOP (clean U-shape)
+ const isSelfLoop = props?.data?.loopType === "self";
+  const isLoopChild = props?.data?.loopType === "loop-child"; // loop → child
+  const isLoopBack = props?.data?.loopType === "loop-back"; // child → loop
 
-  // 3️⃣ Calculate midpoint for menu
-  const midX = sourceX + dx * 0.5;
-  const midY = sourceY + dy * 0.5;
 
-  // 4️⃣ Generate dots
-  const dots = useMemo(() => {
-    const result = [];
-    for (let i = 1; i < dotCount; i++) {
-      const t = i / dotCount;
-      const color = lerpColor(sourceColor, targetColor, t);
-      const x = sourceX + dx * t;
-      const y = sourceY + dy * t;
 
-      result.push(
-        <circle
-          key={i}
-          cx={x}
-          cy={y}
-          r={DOT_RADIUS}
-          fill={color}
-          style={{
-            filter: selected
-              ? "drop-shadow(0 0 3px rgba(126, 192, 64, 0.8))"
-              : "none",
-          }}
-        />
-      );
-    }
-    return result;
-  }, [dotCount, sourceX, sourceY, dx, dy, sourceColor, targetColor, selected]);
+  const handleAddNodeBetween = () => {
+    const position = {
+      x: (props?.sourceX + props?.targetX) / 2 - 20,
+      y: (props?.sourceY + props?.targetY) / 2 - 20,
+    };
+    const id = uuidv4();
+
+    const newNode = {
+      id,
+      type: "custom",
+      position,
+      data: { id, type: "addNode" },
+    };
+
+    addNodeBetweenEdge(newNode, props);
+  };
+
+  const handleUnlinkNodes = () => {
+    deleteEdge(props.id);
+  };
 
   // 5️⃣ Edge Menu Renderer
-  const renderEdgeMenu = (x: number, y: number) => (
+  const renderEdgeActions = (x: number, y: number) => (
     <EdgeLabelRenderer>
       <div
         style={{
           position: "absolute",
           transform: `translate(${x}px, ${y}px) translateX(-50%)`,
-          pointerEvents: "all",
+          pointerEvents: "none",
         }}
-        className="nodrag nopan flex flex-col items-center"
+        className="absolute nodrag nopan"
       >
-        <button
-          className="flex items-center justify-center w-5 h-5 rounded-full bg-primary hover:opacity-80 shadow-lg transition-all duration-200"
-          onClick={() => setShowMenu((prev) => !prev)}
+        <div
+          className={cn(
+            "flex items-center gap-1 transition-opacity duration-200",
+            hovered ? "opacity-100" : "opacity-0"
+          )}
+          style={{ pointerEvents: "all" }}
         >
-          <Settings className="w-3 h-3 text-white" />
-        </button>
+          <button
+            onClick={handleAddNodeBetween}
+            className="w-6 h-6 flex items-center justify-center rounded-full bg-green-600 hover:bg-green-700 shadow-md transition-all"
+          >
+            <Plus className="w-3 h-3 text-white" />
+          </button>
 
-        {showMenu && (
-          <div className="mt-2">
-            <EdgeSettingsMenu edge={props} onClose={() => setShowMenu(false)} />
-          </div>
-        )}
+          <button
+            onClick={handleUnlinkNodes}
+            className="w-6 h-6 flex items-center justify-center rounded-full bg-red-600 hover:bg-red-700 shadow-md transition-all"
+          >
+            <Unlink className="w-3 h-3 text-white" />
+          </button>
+        </div>
       </div>
     </EdgeLabelRenderer>
   );
 
-  return (
-    <>
-      <g>
-        {/* Invisible path for hit detection */}
-        <BaseEdge
-          id={id}
-          path={edgePath}
-          style={{
-            stroke: "transparent",
-            strokeWidth: 25,
-            pointerEvents: "stroke",
-          }}
-        />
+ if (isSelfLoop) {
+    const pos = sourceNode.positionAbsolute;
+    const width = sourceNode.width;
+    const height = sourceNode.height;
 
-        {/* Render each dot */}
-        {dots}
+    const left = pos.x - 80;
+    const right = pos.x + width + 80;
+    const top = pos.y - 40;
+    const bottom = pos.y + height + 40;
+
+    const path = `
+      M ${pos.x + width} ${pos.y + height / 2}
+      L ${right} ${pos.y + height / 2}
+      L ${right} ${bottom}
+      L ${left} ${bottom}
+      L ${left} ${pos.y + height / 2}
+      L ${pos.x} ${pos.y + height / 2}
+    `;
+
+    return (
+      <g
+        onMouseEnter={() => setHovered(true)}
+        onMouseLeave={() => setHovered(false)}
+      >
+        <path d={path} stroke={sourceColor} strokeWidth={3} fill="none" />
+        {renderEdgeActions(pos.x + width / 2, bottom)}
+      </g>
+    );
+  }
+
+  /* =====================================================================================
+     2) LOOP → CHILD  (simple smooth path)
+  ===================================================================================== */
+  if (isLoopChild) {
+    const [path] = getSmoothStepPath({
+      sourceX,
+      sourceY,
+      targetX,
+      targetY,
+      borderRadius: 30,
+    });
+
+    return (
+      <g>
+        <BaseEdge id={id} path={path} />
+      </g>
+    );
+  }
+
+  /* =====================================================================================
+     3) CHILD → LOOP (N8N style rectangular loop-back)
+  ===================================================================================== */
+  if (isLoopBack) {
+    const loop = targetNode;
+    const child = sourceNode;
+
+    const L = loop.positionAbsolute;
+    const C = child.positionAbsolute;
+
+    const left = L.x - 120;
+    const right = C.x + child.width + 120;
+    const top = L.y + loop.height + 30;
+    const bottom = C.y + child.height + 30;
+
+    const path = `
+      M ${C.x + child.width} ${C.y + child.height / 2}
+      L ${right} ${C.y + child.height / 2}
+      L ${right} ${bottom}
+      L ${left} ${bottom}
+      L ${left} ${L.y + loop.height / 2}
+      L ${L.x} ${L.y + loop.height / 2}
+    `;
+
+    return (
+      <g>
+        <path d={path} stroke={sourceColor} strokeWidth={3} fill="none" />
+      </g>
+    );
+  }
+
+
+
+  /* ---------------------------------------------------------------
+     NORMAL EDGES (with dotted animation + half-caps)
+  ----------------------------------------------------------------- */
+  const [hitPath] = getSmoothStepPath({
+    sourceX,
+    sourceY,
+    targetX,
+    targetY,
+    borderRadius: 30,
+  });
+
+  // Circle centers
+  const srcCX = sourceX - NODE_MAIN_RADIUS;
+  const srcCY = sourceY;
+  const tgtCX = targetX + NODE_MAIN_RADIUS;
+  const tgtCY = targetY;
+
+  // Direction vector
+  const vx = tgtCX - srcCX;
+  const vy = tgtCY - srcCY;
+  const len = Math.sqrt(vx * vx + vy * vy) || 1;
+  const ux = vx / len;
+  const uy = vy / len;
+
+  const srcAngle = (Math.atan2(uy, ux) * 180) / Math.PI;
+  const tgtAngle = srcAngle + 180;
+
+  // Cap origins
+  const srcOX = srcCX + ux * (NODE_MAIN_RADIUS + EDGE_CAP_GAP);
+  const srcOY = srcCY + uy * (NODE_MAIN_RADIUS + EDGE_CAP_GAP) - 10;
+
+  const tgtOX = tgtCX - ux * (NODE_MAIN_RADIUS + EDGE_CAP_GAP) + 10;
+  const tgtOY = tgtCY - uy * (NODE_MAIN_RADIUS + EDGE_CAP_GAP) - 10;
+
+  // Dotted segment start/end
+  const startX = srcOX + ux * EDGE_CAP_RADIUS;
+  const startY = srcOY + uy * EDGE_CAP_RADIUS;
+
+  const endX = tgtOX - ux * EDGE_CAP_RADIUS;
+  const endY = tgtOY - uy * EDGE_CAP_RADIUS;
+
+  // Dots
+  const dx = endX - startX;
+  const dy = endY - startY;
+  const dLen = Math.sqrt(dx * dx + dy * dy);
+  const dCount = Math.floor(dLen / DOT_SPACING);
+
+  const dots = [];
+  for (let i = 1; i < dCount; i++) {
+    const t = i / dCount;
+    dots.push(
+      <circle
+        key={`dot-${i}`}
+        cx={startX + dx * t}
+        cy={startY + dy * t}
+        r={DOT_RADIUS}
+        fill={lerpColor(sourceColor, targetColor, t)}
+      />
+    );
+  }
+ const midX = sourceX + dx * 0.5;
+  const midY = sourceY + dy * 0.5;
+  /* ---------------------------------------------------------------
+     RENDER NORMAL EDGE
+  ----------------------------------------------------------------- */
+  return (
+    <g 
+    onMouseEnter={()=>setHovered(true)}
+    onMouseLeave={()=>{setHovered(false)}}
+    >
+      {/* hit area */}
+      <BaseEdge
+        id={id}
+        path={hitPath}
+        style={{ stroke: "transparent", strokeWidth: 25 }}
+      />
+
+      {/* dots */}
+      {dots}
+
+      {/* source cap */}
+      <g transform={`translate(${srcOX}, ${srcOY}) rotate(${srcAngle})`}>
+        <path
+          d={`M 0 -${EDGE_CAP_RADIUS} A ${EDGE_CAP_RADIUS} ${EDGE_CAP_RADIUS} 0 0 1 0 ${EDGE_CAP_RADIUS} Z`}
+          fill={sourceColor}
+        />
       </g>
 
-      {/* Edge Menu */}
-      {renderEdgeMenu(midX, midY)}
-    </>
+      {/* target cap */}
+      <g transform={`translate(${tgtOX}, ${tgtOY}) rotate(${tgtAngle})`}>
+        <path
+          d={`M 0 -${EDGE_CAP_RADIUS} A ${EDGE_CAP_RADIUS} ${EDGE_CAP_RADIUS} 0 0 1 0 ${EDGE_CAP_RADIUS} Z`}
+          fill={targetColor}
+        />
+      </g>
+      {renderEdgeActions(midX,midY)}
+    </g>
   );
 });
+
+export default CustomEdge;

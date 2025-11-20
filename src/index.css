@@ -20,3 +20,6 @@
 .arrow:hover {
   background: var(--arrow-hover);
 }
+.pd-2{
+  padding-left: 10px !important;
+}
