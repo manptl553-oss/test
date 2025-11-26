@@ -6,7 +6,7 @@ import { cn } from "@/shared/utils";
 /* ---------------------------------------------
  * Context
  * --------------------------------------------- */
-type Ctx = { open: boolean; setOpen: (v: boolean) => void };
+type Ctx = { open: boolean; setOpen: (v: boolean) => void; isModal?: boolean };
 const DialogCtx = React.createContext<Ctx | null>(null);
 
 const useDialogCtx = () => {
@@ -22,10 +22,17 @@ type RootProps = {
   open?: boolean;
   defaultOpen?: boolean;
   onOpenChange?: (open: boolean) => void;
+  isModal?: boolean;
   children?: React.ReactNode;
 };
 
-const Dialog = ({ open, defaultOpen, onOpenChange, children }: RootProps) => {
+const Dialog = ({
+  open,
+  defaultOpen,
+  onOpenChange,
+  isModal = false,
+  children,
+}: RootProps) => {
   const [uncontrolledOpen, setUncontrolledOpen] = useState(!!defaultOpen);
   const isControlled = open !== undefined;
   const actualOpen = isControlled ? !!open : uncontrolledOpen;
@@ -39,7 +46,7 @@ const Dialog = ({ open, defaultOpen, onOpenChange, children }: RootProps) => {
   );
 
   return (
-    <DialogCtx.Provider value={{ open: actualOpen, setOpen }}>
+    <DialogCtx.Provider value={{ open: actualOpen, setOpen, isModal }}>
       {children}
     </DialogCtx.Provider>
   );
@@ -74,12 +81,17 @@ const DialogOverlay = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement>
 >(({ className, onClick, ...props }, ref) => {
-  const { open, setOpen } = useDialogCtx();
+  const { open, setOpen, isModal } = useDialogCtx();
 
   const handleClick = (e: React.MouseEvent<HTMLDivElement>) => {
     onClick?.(e);
-    if (!e.defaultPrevented) {
+    // Only close on overlay click if not in modal mode
+    if (!e.defaultPrevented && !isModal) {
       setOpen(false);
+    }
+    // In modal mode, prevent any propagation
+    if (isModal) {
+      e.stopPropagation();
     }
   };
 
@@ -105,7 +117,7 @@ const DialogContent = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement>
 >(({ className, children, ...props }, ref) => {
-  const { open, setOpen } = useDialogCtx();
+  const { open, setOpen, isModal } = useDialogCtx();
   const dialogRef = useRef<HTMLDivElement>(null);
   const [isReadyForOutsideClick, setIsReadyForOutsideClick] = useState(false);
 
@@ -126,15 +138,15 @@ const DialogContent = React.forwardRef<
   // Close on ESC
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setOpen(false);
+      if (e.key === "Escape" && !isModal) setOpen(false);
     };
     if (open) document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);
-  }, [open, setOpen]);
+  }, [open, setOpen, isModal]);
 
   // Close on outside click (with race condition protection)
   useEffect(() => {
-    if (!open || !isReadyForOutsideClick) return;
+    if (!open || !isReadyForOutsideClick || isModal) return;
 
     const onClickOutside = (e: MouseEvent) => {
       const target = e.target as Node;
@@ -147,7 +159,7 @@ const DialogContent = React.forwardRef<
 
     document.addEventListener("mousedown", onClickOutside);
     return () => document.removeEventListener("mousedown", onClickOutside);
-  }, [open, isReadyForOutsideClick, setOpen]);
+  }, [open, isReadyForOutsideClick, setOpen, isModal]);
 
   if (!open) return null;
 
@@ -178,10 +190,12 @@ const DialogContent = React.forwardRef<
         >
           {children}
 
-          <DialogClose className="absolute right-4 top-4 rounded-sm opacity-70 hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2">
-            <X className="h-4 w-4" />
-            <span className="sr-only">Close</span>
-          </DialogClose>
+          {!isModal && (
+            <DialogClose className="absolute right-4 top-4 rounded-sm opacity-70 hover:opacity-100 focus:outline-none focus:ring-0 focus:ring-ring focus:ring-offset-2">
+              <X className="h-4 w-4" />
+              <span className="sr-only">Close</span>
+            </DialogClose>
+          )}
         </div>
       </div>
     </>

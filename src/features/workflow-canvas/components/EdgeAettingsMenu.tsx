@@ -11,28 +11,28 @@ interface EdgeSettingsMenuProps {
 }
 
 const EdgeSettingsMenu = ({ edge, onClose }: EdgeSettingsMenuProps) => {
-  const { deleteEdge, addNodeBetweenEdge } = useFlowStore();
   const menuRef = useRef<HTMLDivElement>(null);
+  const { deleteEdge, addNodeBetweenEdge } = useFlowStore();
+
   const handleAddNodeBetween = () => {
     const position = {
       x: edge?.sourceX + 20,
       y: edge?.sourceY + 20,
     };
     const id = uuidv4();
+
     const newNode = {
       id,
       type: "custom",
       position,
-      data: {
-        id,
-        type: "addNode",
-      },
+      data: { id, type: "addNode" },
     };
-    addNodeBetweenEdge(newNode, edge);
+
+    // addNodeBetweenEdge(newNode, edge);
     onClose();
   };
 
-  const handleUnlinkNodes = async () => {
+  const handleUnlinkNodes = () => {
     deleteEdge(edge.id);
     onClose();
   };
@@ -45,52 +45,40 @@ const EdgeSettingsMenu = ({ edge, onClose }: EdgeSettingsMenuProps) => {
       }
     };
 
-    // Use capture phase to catch events before React Flow
+    // capture phase
     document.addEventListener("pointerdown", handleClickOutside, true);
     return () =>
       document.removeEventListener("pointerdown", handleClickOutside, true);
   }, [onClose]);
 
-  const menuItems = [
-    {
-      icon: Plus,
-      label: "Add Node Between",
-      onClick: handleAddNodeBetween,
-      color: "text-success hover:bg-success/10",
-    },
-    {
-      icon: Unlink,
-      label: "Unlink Nodes",
-      onClick: handleUnlinkNodes,
-      color: "text-warning hover:bg-warning/10",
-    },
-  ];
-
   return (
     <div
-      className="bg-white p-2  rounded-lg shadow-[var(--shadow-lg)] overflow-hidden animate-in fade-in zoom-in-95 duration-200 z-50"
       ref={menuRef}
+      className="bg-white p-2 rounded-lg shadow-lg z-50 animate-in fade-in zoom-in-95 duration-200 min-w-[120px] border border-gray-200"
     >
-      <div className=" border !border-gray-200 ">
-        {menuItems.map((item, index) => (
-          <button
-            key={index}
-            onClick={item.onClick}
-            className={cn(
-              "w-full px-2 py-2 flex items-center group  gap-1.5",
-              "text-sm font-medium transition-colors",
-              "hover:bg-accent/50",
-              item.color,
-              "border-b border-border !border-gray-200  hover:bg-blue-500 hover:text-white  last:border-b-0"
-            )}
-          >
-            <item.icon className="w-2.5 h-2.5 text-gray-700  group-hover:text-white" />
-            <span className="!text-[10px] text-gray-700 group-hover:text-white font-normal">
-              {item.label}
-            </span>
-          </button>
-        ))}
-      </div>
+      {/* Add Node Between */}
+      <button
+        onClick={handleAddNodeBetween}
+        className={cn(
+          "flex w-full items-center gap-2 px-2 py-1.5 rounded-md",
+          "hover:bg-blue-500 hover:text-white transition-colors text-gray-700"
+        )}
+      >
+        <Plus className="w-3 h-3" />
+        <span className="text-xs">Add Node</span>
+      </button>
+
+      {/* Unlink */}
+      <button
+        onClick={handleUnlinkNodes}
+        className={cn(
+          "flex w-full items-center gap-2 px-2 py-1.5 rounded-md mt-1",
+          "hover:bg-red-500 hover:text-white transition-colors text-gray-700"
+        )}
+      >
+        <Unlink className="w-3 h-3" />
+        <span className="text-xs">Unlink</span>
+      </button>
     </div>
   );
 };

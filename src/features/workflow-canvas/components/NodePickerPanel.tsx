@@ -1,8 +1,8 @@
-import { NODE_DEFINITIONS, nodeCategoryConst, NodeTypeProps, nodeTypeStyles } from "@/shared";
+import { NODE_DEFINITIONS, NodeTypeProps, nodeTypeStyles } from "@/shared";
 import { useFlowStore } from "@/store";
 import { BugIcon, ChevronLeft } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { NavigationItem } from "../types";
+import { NavigationItem, NodeTemplate, WorkflowCategory } from "../types";
 import { PopoverItem } from "./PopoverItem";
 
 export default function NodePickerPanel({
@@ -12,15 +12,15 @@ export default function NodePickerPanel({
   id: string;
   isStartNode?: boolean;
 }) {
-  const { updateNode, setActiveNode } = useFlowStore();
+  const { updateNode, setActiveNode, nodeCategories } = useFlowStore();
   const panelRef = useRef<HTMLDivElement>(null);
 
   const nodeCategory = useMemo(
     () =>
       isStartNode
-        ? nodeCategoryConst.filter((n) => n.name === "trigger") ?? []
-        : nodeCategoryConst,
-    [isStartNode]
+        ? nodeCategories.filter((n) => n.name === "trigger") ?? []
+        : nodeCategories,
+    [isStartNode, nodeCategories]
   );
   const [navigationStack, setNavigationStack] = useState<NavigationItem[]>(
     () => {
@@ -34,39 +34,40 @@ export default function NodePickerPanel({
   );
 
   const currentView = navigationStack[navigationStack.length - 1];
-  const style = nodeTypeStyles[currentView?.data?.type as NodeTypeProps] ||
-    nodeTypeStyles[currentView?.data?.name as NodeTypeProps] || {
-      icon: BugIcon,
-      bg: "bg-gray-300",
-      border: "border-gray-500",
-    };
+  const style = nodeTypeStyles[
+    (currentView?.data as WorkflowCategory)?.name as NodeTypeProps
+  ] || {
+    icon: BugIcon,
+    bg: "bg-gray-300",
+    border: "border-gray-500",
+  };
+  // nodeTypeStyles[(currentView?.data as WorkflowCategory)?.type as NodeTypeProps] ||
 
   const goBack = () => setNavigationStack((stack) => stack.slice(0, -1));
-  const navigateToCategory = (category: any) =>
+  const navigateToCategory = (category: WorkflowCategory) =>
     setNavigationStack((stack) => [
       ...stack,
       { type: "category", data: category },
     ]);
-  const navigateToSubCategory = (subCategory: any) =>
+  const navigateToSubCategory = (subCategory: WorkflowCategory) =>
     setNavigationStack((stack) => [
       ...stack,
       { type: "subcategory", data: subCategory },
     ]);
 
-  const selectTemplate = (template: any) => {
+  const selectTemplate = (template: NodeTemplate) => {
     const nodeType = template.type as NodeTypeProps;
     const Icon = nodeTypeStyles[nodeType]?.icon;
-    const outputs=NODE_DEFINITIONS[nodeType] || ["none"]
+    const outputs = NODE_DEFINITIONS[nodeType] || ["none"];
     const nodeData = {
       name: template.name,
       templateId: template?.id,
       type: nodeType,
       icon: Icon,
       description: template.description,
-      outputs
+      outputs,
     };
     updateNode(id, nodeData);
-    setActiveNode(null);
     setNavigationStack([{ type: "root", data: nodeCategory }]);
   };
 
@@ -84,63 +85,70 @@ export default function NodePickerPanel({
   const renderRootView = () => {
     const root = currentView.type === "root" ? currentView.data : [];
     if (!root) return;
-    return root.map((category: any) => {
-      return (
-        <PopoverItem
-          key={category.id}
-          category={category}
-          onClick={() => navigateToCategory(category)}
-        />
-      );
-    });
+    return root.map(
+      (category: WorkflowCategory) =>
+        category.visibility && (
+          <PopoverItem
+            key={category.id}
+            category={category}
+            onClick={() => navigateToCategory(category)}
+          />
+        )
+    );
   };
 
   const renderCategoryView = () => {
-    const category = currentView.data;
+    const category =
+      currentView.type === "category" ? currentView?.data : undefined;
     if (!category) return;
     const categoryArray = [];
     if (category?.nodeTemplates?.length > 0) {
-      const tempData = category.nodeTemplates?.map((template: any) => {
-        return (
-          <PopoverItem
-            key={template.id}
-            category={template}
-            onClick={() => selectTemplate(template)}
-          />
-        );
-      });
+      const tempData = category.nodeTemplates?.map(
+        (template: NodeTemplate) =>
+          template.visibility && (
+            <PopoverItem
+              key={template.id}
+              category={template}
+              onClick={() => selectTemplate(template)}
+            />
+          )
+      );
       categoryArray.push(...tempData);
     }
     if (category?.subCategories?.length > 0) {
-      const tempData = category.subCategories.map((subCat: any) => {
-        return (
-          <PopoverItem
-            key={subCat.id}
-            category={subCat}
-            onClick={() =>
-              subCat?.subCategories?.length > 0
-                ? navigateToCategory(subCat)
-                : navigateToSubCategory(subCat)
-            }
-          />
-        );
-      });
+      const tempData = category.subCategories.map(
+        (subCat: WorkflowCategory) =>
+          subCat.visibility && (
+            <PopoverItem
+              key={subCat.id}
+              category={subCat}
+              onClick={() =>
+                subCat?.subCategories?.length > 0
+                  ? navigateToCategory(subCat)
+                  : navigateToSubCategory(subCat)
+              }
+            />
+          )
+      );
       categoryArray.push(...tempData);
     }
     return categoryArray;
   };
 
   const renderSubCategoryView = () => {
-    const subCategory = currentView.data;
-    return subCategory.nodeTemplates?.map((template: any) => {
-      return (
-        <PopoverItem
-          key={template.id}
-          category={template}
-          onClick={() => selectTemplate(template)}
-        />
-      );
-    });
+    const subCategory =
+      currentView?.type === "subcategory" ? currentView?.data : undefined;
+    if (!subCategory) return;
+    return subCategory.nodeTemplates?.map(
+      (template: NodeTemplate) =>
+        template.visibility && (
+          <PopoverItem
+            key={template.id}
+            category={template}
+            onClick={() => selectTemplate(template)}
+          />
+        )
+    );
   };
 
   return (
@@ -151,7 +159,7 @@ export default function NodePickerPanel({
             <ChevronLeft className="w-5 h-5" />
           </button>
         )}
-        {currentView?.data?.name || "Start"}
+        {(currentView?.data as WorkflowCategory)?.name || "Start"}
       </div>
       {currentView.type !== "root" && (
         <div className="relative py-4 space-y-4">
@@ -185,10 +193,10 @@ export default function NodePickerPanel({
         </div>
       )}
 
-      <div className="flex-1 overflow-y-auto px-2 py-2 h-full max-h-60 space-y-1 ">
-        {currentView.type === "root" && renderRootView()}
-        {currentView.type === "category" && renderCategoryView()}
-        {currentView.type === "subcategory" && renderSubCategoryView()}
+      <div className="flex-1 overflow-y-auto px-2 py-2 h-full max-h-80 space-y-1 ">
+        {renderRootView()}
+        {renderCategoryView()}
+        {renderSubCategoryView()}
       </div>
     </div>
   );

@@ -5,8 +5,9 @@ import NodePickerPanel from "./NodePickerPanel";
 
 export const Popover = () => {
   const popoverRef = useRef<HTMLDivElement>(null);
-  const { getViewport, getNode } = useReactFlow();
+  const { getNode } = useReactFlow();
   const rafRef = useRef<number | null>(null);
+  const lastPositionRef = useRef({ left: 0, top: 0, arrowY: 0, side: "right" });
 
   const { activeNode } = useFlowStore();
   const isStartNode = activeNode?.data?.type === "start_workflow";
@@ -18,31 +19,24 @@ export const Popover = () => {
   if (!activeNode) return null;
 
   // -------------------------------
-  // POSITION UPDATE LOOP
+  // OPTIMIZED POSITION UPDATE LOOP
   // -------------------------------
   const updatePosition = () => {
     const rfNode = getNode(activeNode.id);
-
-    if (!rfNode) {
-      rafRef.current = requestAnimationFrame(updatePosition);
-      return;
-    }
-
     const domNode = document.querySelector(`[data-id="${activeNode.id}"]`);
     const popover = popoverRef.current;
 
-    if (!domNode || !popover) {
+    if (!rfNode || !domNode || !popover) {
       rafRef.current = requestAnimationFrame(updatePosition);
       return;
     }
 
     const nodeRect = (domNode as HTMLElement).getBoundingClientRect();
     const popRect = popover.getBoundingClientRect();
-
     const margin = 12;
 
     // -------------------------------
-    // LEFT / RIGHT POSITIONING
+    // CALCULATE POSITIONS
     // -------------------------------
     let left = nodeRect.right + margin;
     let newSide: "right" | "left" = "right";
@@ -53,9 +47,7 @@ export const Popover = () => {
       newSide = "left";
     }
 
-    // -------------------------------
-    // VERTICAL CENTERING
-    // -------------------------------
+    // Vertical centering
     let top = nodeRect.top + nodeRect.height / 2 - popRect.height / 2;
 
     // Clamp inside viewport
@@ -63,35 +55,43 @@ export const Popover = () => {
     const maxY = window.innerHeight - popRect.height - 20;
     top = Math.max(minY, Math.min(maxY, top));
 
-    // -------------------------------
-    // ARROW POSITION (Relative to popover)
-    // -------------------------------
-    const arrowPos = nodeRect.top + nodeRect.height / 2 - top ;
-
-    setArrowY(arrowPos);
-    setSide(newSide);
+    // Arrow position
+    const arrowPos = nodeRect.top + nodeRect.height / 2 - top;
 
     // -------------------------------
-    // FINAL STYLE
+    // ✅ ONLY UPDATE IF POSITION CHANGED
     // -------------------------------
-    setStyle({
-      position: "fixed",
-      left,
-      top,
-      zIndex: 2000,
-      willChange: "transform",
-    });
+    const lastPos = lastPositionRef.current;
+    const hasChanged =
+      Math.abs(lastPos.left - left) > 0.5 ||
+      Math.abs(lastPos.top - top) > 0.5 ||
+      Math.abs(lastPos.arrowY - arrowPos) > 0.5 ||
+      lastPos.side !== newSide;
+
+    if (hasChanged) {
+      lastPositionRef.current = { left, top, arrowY: arrowPos, side: newSide };
+
+      setStyle({
+        position: "fixed",
+        left,
+        top,
+        zIndex: 2000,
+        willChange: "transform",
+      });
+      setArrowY(arrowPos);
+      setSide(newSide);
+    }
 
     rafRef.current = requestAnimationFrame(updatePosition);
   };
 
   // Start tracking when popover opens
   useEffect(() => {
-    updatePosition();
+    rafRef.current = requestAnimationFrame(updatePosition);
     return () => {
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
     };
-  }, [activeNode]);
+  }, [activeNode?.id]); // ✅ Only restart when node changes
 
   return (
     <div

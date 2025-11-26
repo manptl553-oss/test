@@ -47,7 +47,7 @@ const CustomNode = ({ data, id }: NodeProps) => {
   const edges = useStore((s) => s.edges);
   const Icon = data.icon || PlusIcon;
   const isStartNode = (data as any).type === "start_workflow";
-  const isAddNode = (data as any).type === "addNode";
+  const isAddNode = (data as any).type === "void_node";
   const name = data?.name || "start workflow";
   const style = nodeTypeStyles[data?.type as NodeTypeProps] ||
     nodeTypeStyles[data?.name as NodeTypeProps] || {
@@ -55,14 +55,9 @@ const CustomNode = ({ data, id }: NodeProps) => {
       border: "#15803d", // gray-400
     };
 
-  const { activeNode, setActiveNode } = useFlowStore();
+  const { activeNode } = useFlowStore();
   const open = activeNode?.id === id;
-  const isNodeConfigModelOpen =
-    !isStartNode && !isAddNode && activeNode?.id === id;
-
-  const handleClick = () => {
-    setActiveNode(open ? null : data);
-  };
+  const isNodeConfigModelOpen = !isStartNode && !isAddNode && open;
 
   // ✅ Report node ref to FlowCanvas (for popover anchor)
   useEffect(() => {
@@ -97,22 +92,22 @@ const CustomNode = ({ data, id }: NodeProps) => {
       document.removeEventListener("pointerdown", handleClickOutside);
   }, []);
 
-  const handleDragStart = useCallback(
-    (event: React.DragEvent, handleId: string) => {
-      event.dataTransfer.setData("application/reactflow", "edge");
-      event.dataTransfer.effectAllowed = "move";
-      store.setState({
-        connectionStartHandle: { nodeId: id, handleId, type: "source" },
-      });
-    },
-    [store, id]
-  );
+  // const handleDragStart = useCallback(
+  //   (event: React.DragEvent, handleId: string) => {
+  //     event.dataTransfer.setData("application/reactflow", "edge");
+  //     event.dataTransfer.effectAllowed = "move";
+  //     store.setState({
+  //       connectionStartHandle: { nodeId: id, handleId, type: "source" },
+  //     });
+  //   },
+  //   [store, id]
+  // );
 
-  const handleDragEnd = useCallback(() => {
-    store.setState({ connectionStartHandle: null });
-  }, [store]);
+  // const handleDragEnd = useCallback(() => {
+  //   store.setState({ connectionStartHandle: null });
+  // }, [store]);
 
-  const isHandleConnected = useCallback(
+  const isOutputHandleConnected = useCallback(
     (outputId: string) => {
       const output = normalizeHandle(outputId);
       const nodeOutputs = (data as any).outputs?.map(normalizeHandle) || [];
@@ -137,8 +132,13 @@ const CustomNode = ({ data, id }: NodeProps) => {
     [edges, id, (data as any).outputs, (data as any).name]
   );
 
+  const isInputHandleConnected = useCallback(
+    () => edges.some((edge) => edge.target === id),
+    [edges, id]
+  );
   const renderInputHandles = () => {
     if (isStartNode || isTriggerNode(data?.type)) return null;
+    const isConnected = isInputHandleConnected();
 
     // MERGE NODE (multiple inputs)
     if ((data as any).name?.toLowerCase() === "merge") {
@@ -178,8 +178,9 @@ const CustomNode = ({ data, id }: NodeProps) => {
         type="target"
         position={Position.Left}
         id="input"
-          className="!w-4 !h-4 !border-0 !bg-transparent !opacity-0"
-        style={{ top: "50%", background: style.bg,  left: -2 }}
+        className="!w-4 !h-4 !border-0 !bg-transparent !opacity-0"
+        style={{ top: "50%", background: style.bg, left: -2 }}
+        isConnectable={!isConnected}
       />
     );
   };
@@ -190,7 +191,7 @@ const CustomNode = ({ data, id }: NodeProps) => {
       const verticalPos = `${
         (i + 1) * (100 / ((data as any).outputs.length + 1))
       }%`;
-      const isConnected = isHandleConnected(outputId);
+      const isConnected = isAddNode ? true : isOutputHandleConnected(outputId);
       const handleIdForAdd = outputId === "none" ? "next" : outputId;
       const label = getLabel(outputId);
 
@@ -207,7 +208,7 @@ const CustomNode = ({ data, id }: NodeProps) => {
               position={Position.Right}
               id={outputId}
               isConnectable={!isConnected}
-           className="react-flow__handle"
+              className="react-flow__handle"
               style={{
                 top: "50%",
                 // right: -8,
@@ -233,27 +234,13 @@ const CustomNode = ({ data, id }: NodeProps) => {
               }}
             />
 
-            {/* + only if not connected */}
-            {/* {!isConnected && (
-              <div
-                className="
-                !top-[3px]
-        absolute inset-0 !-left-0
-        flex items-center justify-center 
-        text-white text-xs font-light
-        pointer-events-none
-      "
-              >
-                +
-              </div>
-            )} */}
-               {!isConnected && (
+            {!isConnected && (
               <div
                 className="absolute -right-2 top-1/2 -translate-y-1/2  w-6 h-6 rounded-full flex items-center justify-center text-white text-sm font-bold cursor-pointer hover:scale-110 transition-transform pd-2"
                 style={{
                   background: style.bg,
                   pointerEvents: "auto",
-                  zIndex: 10,  // BELOW handle
+                  zIndex: 10, // BELOW handle
                 }}
                 onClick={(e) => {
                   e.stopPropagation();
@@ -281,7 +268,7 @@ const CustomNode = ({ data, id }: NodeProps) => {
               background: style.bg,
               transition: "all 0.3s ease-in-out",
             }}
-            onClick={handleClick}
+            // onClick={handleClick}
             onMouseEnter={(e) => {
               const el = e.currentTarget as HTMLDivElement;
               el.style.borderColor = `${style.border}90`;

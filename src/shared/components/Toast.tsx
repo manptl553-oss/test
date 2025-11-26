@@ -207,7 +207,7 @@ export const ToastClose = React.forwardRef<
     ref={ref}
     type="button"
     className={cn(
-      "rounded-md p-1 text-gray-500 hover:text-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-400",
+      "rounded-md p-1 text-gray-500 hover:text-gray-800 focus:outline-none focus:ring-0 focus:ring-gray-400",
       className
     )}
     {...props}

@@ -32,6 +32,7 @@ import {
   Settings,
   Settings2,
   Zap,
+  Watch,
 } from "lucide-react";
 import { NodeDefinition } from "../types";
 
@@ -59,12 +60,12 @@ export enum NodeTypeProps {
   DATE_OPERATION = "date_operation",
   TIMESTAMP = "timestamp",
   CODE_BLOCK = "code_block",
-  VIP_MEMBERSHIP_INVITE = "vip_membership_invite",
-  PEP_CHECK_INVITE = "pep_check_invite",
+  MEMBERSHIP_INVITE = "membership_invite",
   HTTP_REQUEST = "http_request",
   WEBHOOK = "webhook",
   EVENT = "event",
   SCHEDULE = "schedule",
+  DELAY = "delay",
 }
 
 export enum NodeIconTypeProps {
@@ -200,15 +201,10 @@ export const nodeTypeStyles: Record<
     bg: "#1d4ed8", // blue-700
     border: "#1e3a8a", // blue-800
   },
-  [NodeTypeProps.VIP_MEMBERSHIP_INVITE]: {
+  [NodeTypeProps.MEMBERSHIP_INVITE]: {
     icon: Star,
     bg: "#eab308", // yellow-500
     border: "#a16207", // yellow-700
-  },
-  [NodeTypeProps.PEP_CHECK_INVITE]: {
-    icon: Share2,
-    bg: "#14b8a6", // teal-500
-    border: "#0f766e", // teal-700
   },
   [NodeTypeProps.RULE_EXECUTOR]: {
     icon: Scissors,
@@ -234,6 +230,11 @@ export const nodeTypeStyles: Record<
     icon: CalendarClock,
     bg: "#6366f1", // indigo-500
     border: "#4338ca", // indigo-700
+  },
+  [NodeTypeProps.DELAY]: {
+    icon: Watch,
+    bg: "#d97706", // amber-600
+    border: "#b45309", // amber-700
   },
 
   // ============================
@@ -296,8 +297,7 @@ export const NODE_DEFINITIONS: Record<NodeTypeProps, NodeDefinition> = {
   send_email: { outputs: ["none"], defaultTarget: "input" },
   send_http_request: { outputs: ["none"], defaultTarget: "input" },
   update_database: { outputs: ["none"], defaultTarget: "input" },
-  vip_membership_invite: { outputs: ["none"], defaultTarget: "input" },
-  pep_check_invite: { outputs: ["none"], defaultTarget: "input" },
+  membership_invite: { outputs: ["none"], defaultTarget: "input" },
 
   map: { outputs: ["none"], defaultTarget: "input" },
   rename: { outputs: ["none"], defaultTarget: "input" },
@@ -323,7 +323,7 @@ export const NODE_DEFINITIONS: Record<NodeTypeProps, NodeDefinition> = {
   timestamp: { outputs: ["none"], defaultTarget: "input" },
 
   conditional: {
-    outputs: ["true", "false"],
+    outputs: ["on_true", "on_false"],
     defaultTarget: "input",
     labels: { true: "True", false: "False" },
   },
@@ -342,10 +342,12 @@ export const NODE_DEFINITIONS: Record<NodeTypeProps, NodeDefinition> = {
   },
 
   rule_executor: {
-    outputs: ["true", "false"],
+    outputs: ["on_true", "on_false"],
     defaultTarget: "input",
     labels: { true: "True", false: "False" },
   },
 
   code_block: { outputs: ["none"], defaultTarget: "input" },
+
+  delay: { outputs: ["none"], defaultTarget: "input" },
 };

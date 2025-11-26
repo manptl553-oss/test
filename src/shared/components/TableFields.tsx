@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { Controller, useFieldArray } from "react-hook-form";
 import { Button } from "./Button";
 import { Input } from "./Input";
@@ -11,7 +11,8 @@ import {
   SelectValue,
 } from "./Select";
 import { DynamicFiledOptions, TableFieldProps } from "../types";
-import { cn } from "../utils";
+import { cn, formatName } from "../utils";
+import { Textarea } from "./TextArea";
 
 function TableField({
   control,
@@ -30,13 +31,15 @@ function TableField({
     name,
   });
 
+  const initializedRef = useRef(false);
   useEffect(() => {
-    if (!fields || fields.length === 0) {
+    if (!initializedRef.current && (!fields || fields.length === 0)) {
       const emptyRow: any = {};
       columns?.forEach((col) => {
         emptyRow[col.name] = "";
       });
       columns ? append(emptyRow) : append("");
+      initializedRef.current = true;
     }
   }, []);
 
@@ -52,7 +55,10 @@ function TableField({
     switch (column.type) {
       case "input":
         return (
-          <div key={filedName} className={cn("space-y-2 w-full", cellClassName)}>
+          <div
+            key={filedName}
+            className={cn("space-y-2 w-full", cellClassName)}
+          >
             <Controller
               control={control}
               name={filedName}
@@ -71,25 +77,59 @@ function TableField({
 
       case "select":
         return (
-          <div key={filedName} className={cn("space-y-2 w-full", cellClassName)}>
+          <div
+            key={filedName}
+            className={cn("space-y-2 w-full", cellClassName)}
+          >
             <Controller
               control={control}
               name={filedName}
-              render={({ field: { value, onChange } }) => (
-                <Select value={value ?? ""} onValueChange={onChange}>
-                  <SelectTrigger className="border border-gray-300 focus-visible:ring-0">
-                    <SelectValue placeholder={`Select ${column.label}`} />
-                  </SelectTrigger>
-                  <SelectContent className="bg-white border border-gray-300">
-                    {column.options?.map((opt) => (
-                      <SelectItem key={opt.value} value={opt.value}>
-                        {opt.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+              render={({ field: { value, onChange } }) => {
+                const selected = column.options?.find(
+                  (opt) => opt.value === value
+                );
+                return (
+                  <Select value={value ?? ""} onValueChange={onChange}>
+                    <SelectTrigger className="border border-gray-300 focus-visible:ring-0">
+                      <SelectValue placeholder={`Select ${column.label}`}>
+                        {formatName(selected?.label ?? `Select ${column.label}`)}
+                      </SelectValue>
+                    </SelectTrigger>
+                    <SelectContent className="bg-white border border-gray-300">
+                      {column.options?.map((opt) => (
+                        <SelectItem key={opt.value} value={opt.value}>
+                          {formatName(opt.label)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                );
+              }}
+            />
+            {errorMsg && <p className="text-red-500 text-xs">{errorMsg}</p>}
+          </div>
+        );
+      case "textarea":
+        return (
+          <div key={filedName} className="space-y-2 w-full">
+            <Controller
+              control={control}
+              name={filedName}
+              render={({ field: rhf }) => (
+                <Textarea
+                  placeholder={column.label}
+                  value={
+                    typeof rhf.value === "string"
+                      ? rhf.value
+                      : JSON.stringify(rhf.value ?? {}, null, 2)
+                  }
+                  onChange={(e) => {
+                    rhf.onChange(e.target.value); // ALWAYS STRING
+                  }}
+                />
               )}
             />
+
             {errorMsg && <p className="text-red-500 text-xs">{errorMsg}</p>}
           </div>
         );
@@ -103,18 +143,26 @@ function TableField({
     <div className={cn("space-y-2 w-full", className)}>
       <Label className="block font-medium text-sm text-gray-700">{label}</Label>
 
-      <div className={cn("flex gap-2 font-semibold text-sm text-gray-700", headerClassName)}>
+      <div
+        className={cn(
+          "flex gap-2 font-semibold text-sm text-gray-700",
+          headerClassName
+        )}
+      >
         {columns &&
           columns.map((col) => (
             <div key={col.name} className="flex-1">
               {col.label}
             </div>
           ))}
-        <div className="w-20">Actions</div>
+        {columns?.length && <div className="w-20">Actions</div>}
       </div>
 
       {fields.map((row, idx) => (
-        <div key={row.id} className={cn("flex gap-2 items-start", rowClassName)}>
+        <div
+          key={row.id}
+          className={cn("flex gap-2 items-start", rowClassName)}
+        >
           {columns
             ? columns.map((col) => (
                 <div key={col.name} className="flex-1">

@@ -8,6 +8,7 @@ import {
   SelectContent,
   SelectItem,
   SelectValue,
+  formatName,
 } from "@/shared";
 import { useFlowStore } from "@/store";
 import { useCallback } from "react";
@@ -73,11 +74,11 @@ export const LogicRulesField = ({
     <div className="w-full space-y-2">
       <Label className="block font-medium text-sm text-gray-700">{label}</Label>
 
-      <div className="space-y-3 max-h-[400px] overflow-y-auto border p-3 rounded-md">
+      <div className="space-y-3 p-3">
         {fields.map((item, index) => (
           <div
             key={item.id}
-            className="flex gap-2 items-center border p-2 rounded-md"
+            className="flex gap-2"
           >
             {/* Field */}
             <Controller
@@ -89,27 +90,31 @@ export const LogicRulesField = ({
             />
 
             {/* Operator */}
-            <Controller
-              control={control}
-              name={`${name}.${index}.operator`}
-              render={({ field }) => {
-                const selected = operators.find((o) => o.value === field.value);
-                return (
-                  <Select value={field.value} onValueChange={field.onChange}>
-                    <SelectTrigger className="border w-40">
-                      <span>{selected?.label ?? "Operator"}</span>
-                    </SelectTrigger>
-                    <SelectContent>
-                      {operators.map((o) => (
-                        <SelectItem key={o.value} value={o.value}>
-                          {o.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                );
-              }}
-            />
+            <div className="flex-1">
+              <Controller
+                control={control}
+                name={`${name}.${index}.operator`}
+                render={({ field }) => {
+                  const selected = operators.find(
+                    (o) => o.value === field.value
+                  );
+                  return (
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <SelectTrigger className="border w-40">
+                        <span>{formatName(selected?.label ?? "Operator")}</span>
+                      </SelectTrigger>
+                      <SelectContent>
+                        {operators.map((o) => (
+                          <SelectItem key={o.value} value={o.value}>
+                            {formatName(o.label)}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  );
+                }}
+              />
+            </div>
 
             {/* Value */}
             <Controller

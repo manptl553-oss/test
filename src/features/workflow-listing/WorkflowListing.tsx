@@ -133,7 +133,7 @@ export function WorkflowListing<T>({
               placeholder={searchPlaceholder}
               value={localSearch}
               onChange={(e) => setLocalSearch(e.target.value)}
-              className="px-4 py-2 min-w-[240px] rounded-lg bg-gray-800 border border-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-lime-500"
+              className="px-4 py-2 min-w-[240px] rounded-lg bg-gray-800 border border-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-0 focus:ring-lime-500"
             />
           )}
 

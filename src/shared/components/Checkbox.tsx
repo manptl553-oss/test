@@ -39,7 +39,7 @@ const Checkbox = React.forwardRef<HTMLInputElement, CheckboxProps>(
         onClick={toggle}
         className={cn(
           "peer flex h-4 w-4 shrink-0 items-center justify-center rounded-sm border border-primary ring-offset-background",
-          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+          "focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-ring focus-visible:ring-offset-0",
           "disabled:cursor-not-allowed disabled:opacity-50",
           current && "bg-primary text-primary-foreground",
           className

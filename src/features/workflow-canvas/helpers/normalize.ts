@@ -1,7 +1,11 @@
 import { getEdgeLabelForNode, getNodeDefinition } from "@/shared";
-import { Workflow, WorkflowEdge } from "@/shared/types/workflow.types";
+import {
+  Workflow,
+  WorkflowEdge,
+  WorkflowNode,
+} from "@/shared/types/workflow.types";
 import { NodeData } from "@/store";
-import { Edge, Node } from "reactflow";
+import { Edge, Node, XYPosition } from "reactflow";
 
 /**
  *  normalizeWorkflowData
@@ -23,7 +27,7 @@ export const normalizeWorkflowData = (workflow: Workflow): Workflow => {
     const sourceDef = getNodeDefinition(sourceType);
     const outputs = sourceDef.outputs || [];
 
-    let sourceHandle = edge.sourceHandle;
+    let sourceHandle = edge.sourceHandle ?? edge.condition;
 
     //  Loop node handling (handles both parentNode & group_id cases)
     if (sourceType === "loop") {
@@ -50,6 +54,7 @@ export const normalizeWorkflowData = (workflow: Workflow): Workflow => {
     const targetHandle = edge.targetHandle || "input";
 
     const label = getEdgeLabelForNode({ data: sourceNode }, sourceHandle);
+    const expression = edge?.expression;
 
     return {
       ...edge,
@@ -57,7 +62,7 @@ export const normalizeWorkflowData = (workflow: Workflow): Workflow => {
       targetHandle,
       type: edge.type || "custom",
       animated: true,
-      data: { label },
+      data: { expression, label },
       label,
     };
   });
@@ -77,8 +82,8 @@ function mapHandleToCondition(sourceHandle: string | null | undefined): string {
   ) {
     return "none";
   }
-  if (sourceHandle === "true") return "on_true";
-  if (sourceHandle === "false") return "on_false";
+  if (sourceHandle === "true" || sourceHandle == "on_true") return "on_true";
+  if (sourceHandle === "false" || sourceHandle == "on_false") return "on_false";
   if (sourceHandle.startsWith("case_")) return sourceHandle;
   return "none";
 }
@@ -88,19 +93,19 @@ export function transformNode(node: Node<NodeData>): any {
   const nodeData = node?.data;
 
   return {
-    id: nodeData?.id, // Use the id from data
-    versionId: nodeData.versionId,
+    id: nodeData?.id,
+    versionId: nodeData?.versionId ?? "",
     name: nodeData.name,
-    description: nodeData?.description || "",
+    description: nodeData?.description ?? "",
     type: nodeData.type,
-    parentId: nodeData.parentLoop || null,
-    templateId: nodeData.templateId, // Already present in your node
-    config: nodeData.configuration || {},
+    parentId: nodeData.parentLoop ?? null,
+    templateId: nodeData?.templateId ?? "", // Already present in your node
+    config: nodeData.configuration ?? {},
     retryAttempts: 0,
     retryDelayMs: 0,
     position: {
-      x: node?.position.x,
-      y: node?.position.y,
+      x: Number(node?.position.x),
+      y: Number(node?.position.y),
     },
   };
 }

@@ -8,7 +8,8 @@ export type BaseFieldType =
   | "tags"
   | "code"
   | "conditions"
-  | "cases";   
+  | "cases"
+  | "auth";
 
 interface FieldBaseConfig {
   name: string;
@@ -40,5 +41,4 @@ export type FieldConfig =
   | (FieldBaseConfig & {
       type: "table";
       options: DynamicFiledOptions[];
-    })
-
+    });

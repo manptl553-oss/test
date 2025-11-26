@@ -48,7 +48,7 @@ const EditableNodeName = ({
             }
           }}
           className={cn(
-            "border border-gray-300 rounded px-1 py-0.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500",
+            "border border-gray-300 rounded px-1 py-0.5 text-sm focus:outline-none focus:ring-0 focus:ring-blue-500",
             inputClassName
           )}
         />

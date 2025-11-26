@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Check, ChevronDown } from "lucide-react";
-import { cn } from "@/shared/utils";
+import { cn, formatName } from "@/shared/utils";
 
 /* -------------------------------------------------------------------------- */
 /*                               Context Setup                                */
@@ -50,7 +50,7 @@ const Select = ({ value, defaultValue, onValueChange, disabled, children }: Sele
 
   return (
     <SelectContext.Provider value={{ value: actualValue, setValue, open, setOpen, disabled }}>
-      <div className="relative inline-block w-full">{children}</div>
+      <div className="inline-block w-full">{children}</div>
     </SelectContext.Provider>
   );
 };
@@ -59,9 +59,13 @@ const Select = ({ value, defaultValue, onValueChange, disabled, children }: Sele
 /*                                 SelectValue                                */
 /* -------------------------------------------------------------------------- */
 
-const SelectValue = ({ placeholder }: { placeholder?: string }) => {
+const SelectValue = ({ placeholder, children }: { placeholder?: string; children?: React.ReactNode }) => {
   const { value } = useSelectCtx();
-  return <span className="block truncate">{value || placeholder}</span>;
+  
+  // If children provided, use that; otherwise show value or placeholder
+  if (children) return <span className="block truncate">{children}</span>;
+  
+  return <span className="block truncate">{formatName(value ?? placeholder ?? "")}</span>;
 };
 
 /* -------------------------------------------------------------------------- */
@@ -84,7 +88,7 @@ const SelectTrigger = React.forwardRef<HTMLButtonElement, SelectTriggerProps>(
         onClick={() => !disabled && setOpen(!open)}
         className={cn(
           "flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground",
-          "focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
+          "focus:outline-none focus:ring-0 focus:ring-ring focus:ring-offset-2",
           "disabled:cursor-not-allowed disabled:opacity-50",
           className
         )}
@@ -133,11 +137,11 @@ const SelectContent = React.forwardRef<HTMLDivElement, SelectContentProps>(
           else if (ref) (ref as React.MutableRefObject<HTMLDivElement | null>).current = node;
         }}
         className={cn(
-          "absolute z-50 mt-1 max-h-96 min-w-32 overflow-auto rounded-md border bg-popover text-popover-foreground shadow-md animate-in fade-in-0",
+          "absolute z-50 mt-1 max-h-96 min-w-32 overflow-auto rounded-md border bg-white text-black shadow-md animate-in fade-in-0",
           className
         )}
       >
-        <div className="p-1">{children}</div>
+        {children}
       </div>
     );
   }

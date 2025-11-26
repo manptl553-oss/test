@@ -1,25 +1,58 @@
-import { Button, Input } from "@/shared";
-import { Workflow } from "@/shared/types/workflow.types";
+import {
+  Button,
+  FieldOption,
+  formatName,
+  Input,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  WorkFlowStatus,
+} from "@/shared";
+import { VersionData, Workflow } from "@/shared/types/workflow.types";
 import { useFlowStore } from "@/store/workflow-store";
 import { ArrowLeft } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { ReactFlowProvider } from "reactflow";
 import FlowCanvas from "./components/FlowCanvas";
 import { normalizeWorkflowData } from "./helpers/normalize";
+import { WorkflowCategoryList } from "./types";
 export function WorkflowCanvas({
   workflow,
+  versions,
+  handleVersionChange,
+  nodeCategory,
   handleBack,
   handleUpdateWorkflowMeta,
   handleSaveWorkflow,
+  handlePublish,
 }: {
   workflow: Workflow;
+  versions: VersionData[];
+  handleVersionChange: (versionId: string) => void;
+  nodeCategory: WorkflowCategoryList;
   handleBack: () => void;
   handleUpdateWorkflowMeta: () => void;
   handleRunWorkflow: () => void;
   handleSaveWorkflow: (workflow: any) => void;
+  handlePublish: (versionId: string, status: WorkFlowStatus) => void;
 }) {
-  const { getChangesForSync, nodes, setVersionId, versionId } = useFlowStore();
+  const {
+    getChangesForSync,
+    nodes,
+    setCurrentVersion,
+    currentVersion,
+    setNodeCategories,
+    nodeCategories,
+    voidNode,
+    setVoidNode,
+    markAsSynced,
+  } = useFlowStore();
   const [workflowName, setWorkflowName] = useState(workflow?.name || "");
+  const [selectedVersion, setSelectedVersion] = useState(
+    workflow?.version?.version?.toString() || ""
+  );
   const normalizedData = useMemo(
     () => (workflow ? normalizeWorkflowData(workflow) : null),
     [workflow]
@@ -30,8 +63,21 @@ export function WorkflowCanvas({
   );
 
   useEffect(() => {
-    if (!versionId) setVersionId(workflow.versionId);
-  }, [versionId]);
+    if (!currentVersion || currentVersion.id != workflow.version.id)
+      setCurrentVersion(workflow.version);
+    if (nodeCategories.length === 0) setNodeCategories(nodeCategory);
+
+    if (!voidNode) {
+      const voidNode = nodeCategory
+        .flatMap((cat) => cat.nodeTemplates)
+        .find((t) => t.type === "void_node");
+      setVoidNode({
+        name: voidNode?.name ?? "Void Node",
+        type: voidNode?.type ?? "void_node",
+        templateId: voidNode?.id ?? "",
+      });
+    }
+  }, [currentVersion, nodeCategories, workflow.version]);
 
   return (
     <div className="flex-1 flex flex-col animate-fade-in bg-(--wf-background-base) text-(--wf-text-default)">
@@ -45,9 +91,9 @@ export function WorkflowCanvas({
     text-(--wf-text-inverted)
     rounded-full
     shadow-md border border-(--wf-border-strong)
-    focus-visible:outline-none focus-visible:ring-2
+    focus-visible:outline-none focus-visible:ring-0
     focus-visible:ring-(--wf-border-focus)
-    focus-visible:ring-offset-2 focus-visible:ring-offset-(--wf-background-base)
+    focus-visible:ring-offset-0 focus-visible:ring-offset-(--wf-background-base)
 "
           >
             <ArrowLeft color="black" size={20} />
@@ -64,21 +110,59 @@ export function WorkflowCanvas({
                      border border-(--wf-border-default)
                      bg-(--wf-background-base) text-(--wf-text-default)
 
-                     focus-visible:ring-2 focus-visible:ring-(--wf-border-focus)
-                     focus-visible:ring-offset-2 focus-visible:ring-offset-(--wf-background-base)"
+                     focus-visible:ring-0 focus-visible:ring-(--wf-border-focus)
+                     focus-visible:ring-offset-0 focus-visible:ring-offset-(--wf-background-base)"
             />
 
-            {isNameChanged && (
+            <Select
+              value={selectedVersion}
+              onValueChange={(value) => {
+                setSelectedVersion(value);
+                handleVersionChange?.(value);
+              }}
+            >
+              <SelectTrigger className="w-[180px] border border-(--wf-border-default) bg-(--wf-background-base) text-(--wf-text-default)">
+                <SelectValue placeholder="Select">
+                  {formatName(workflow.version.name)}
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent className="bg-(--wf-background-base) border border-(--wf-border-default) text-white">
+                {versions?.map((version) => (
+                  <SelectItem
+                    key={version.id}
+                    value={version.version.toString()}
+                  >
+                    {formatName(version.name)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            {workflow.version.status == WorkFlowStatus.PUBLISHED ? (
+              <p>published</p>
+            ) : (
+              <Button
+                className="bg-(--wf-brand-primary) hover:bg-(--wf-brand-secondary) text-(--wf-text-inverted) "
+                onClick={() => {
+                  handlePublish(
+                    workflow?.version?.id,
+                    WorkFlowStatus.PUBLISHED
+                  );
+                }}
+              >
+                Publish
+              </Button>
+            )}
+            {/* {isNameChanged && (
               <Button
                 className="bg-(--wf-brand-primary) hover:bg-(--wf-brand-secondary) text-(--wf-text-inverted) "
                 onClick={handleUpdateWorkflowMeta}
               >
                 Save
               </Button>
-            )}
+            )} */}
           </div>
         </div>
-
         {nodes?.length > 0 && (
           <div>
             <Button
@@ -88,8 +172,10 @@ export function WorkflowCanvas({
                 if (changes)
                   handleSaveWorkflow({
                     ...workflow,
+                    versionId: workflow?.version?.id,
                     ...changes,
                   });
+                markAsSynced();
               }}
             >
               Save

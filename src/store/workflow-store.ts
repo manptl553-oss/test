@@ -8,6 +8,7 @@ import {
   EdgeChange,
   applyNodeChanges,
   applyEdgeChanges,
+  XYPosition,
 } from "reactflow";
 import { computeConnectedHandles, makeEdge } from "@/shared/utils/edge";
 import {
@@ -16,12 +17,14 @@ import {
   getTargetHandleForNode,
   isTriggerNode,
   NodeTypeProps,
+  VersionData,
 } from "@/shared";
 import {
   transformEdge,
   transformNode,
 } from "@/features/workflow-canvas/helpers/normalize";
 import { v4 as uuidv4 } from "uuid";
+import { WorkflowCategoryList } from "@/features";
 
 export interface NodeData {
   id: string;
@@ -44,9 +47,18 @@ interface WorkflowDiff {
   deletedEdges: string[];
 }
 
+interface VoidNodeData {
+  name: string;
+  type: string;
+  templateId: string;
+}
+
 interface FlowState {
   nodes: Node<NodeData>[];
   edges: Edge[];
+  nodeCategories: WorkflowCategoryList;
+  voidNode: VoidNodeData | null;
+  isDragging: boolean;
 
   // Track what exists in backend
   syncedNodeIds: Set<string>;
@@ -64,10 +76,14 @@ interface FlowState {
   showSidebar: boolean;
   connectedHandles: Record<string, Set<string>>;
   workflowId: string | null;
-  versionId: string | null;
+  currentVersion: VersionData | null;
   activeNode: Node | null;
 
   // Initialize from backend
+  setNodeCategories: (value: WorkflowCategoryList) => void;
+  setVoidNode: (nodeData: VoidNodeData) => void;
+  getNewNode: (position: XYPosition) => Node<NodeData>;
+
   initializeFromBackend: (workflow: {
     nodes: Node<NodeData>[];
     edges: Edge[];
@@ -84,9 +100,17 @@ interface FlowState {
 
   setActiveNode: (node: Node | null) => void;
   setWorkflowId: (id: string | null) => void;
-  setVersionId: (id: string | null) => void;
+  setCurrentVersion: (data: VersionData | null) => void;
 
   // React Flow API
+  onNodeDragStop: (
+    event: React.MouseEvent | React.PointerEvent,
+    node: Node
+  ) => void;
+  onNodeDrag: (
+    event: React.MouseEvent | React.PointerEvent,
+    node: Node
+  ) => void;
   onNodesChange: (changes: NodeChange[]) => void;
   onEdgesChange: (changes: EdgeChange[]) => void;
   onConnect: (connection: Connection) => void;
@@ -104,11 +128,11 @@ interface FlowState {
   // Node operations
   // addNode: (node: Node, shouldConnect?: boolean) => void;
   addNodeAfter: (
-    node: Node,
+    position: XYPosition,
     sourceNodeId: string,
     sourceHandleId?: string
   ) => void;
-  addNodeBetweenEdge: (node: Node, edge: Edge) => void;
+  addNodeBetweenEdge: (position: XYPosition, edge: Edge) => void;
   deleteNode: (nodeId: string) => void;
   renameNode: (id: string, newName: string) => void;
   updateNode: (nodeId: string, nodeData: any) => void;
@@ -125,12 +149,22 @@ interface FlowState {
   // public helpers
   refreshNodeHandles: (nodeId: string) => void;
   refreshManyHandles: (nodeIds: string[]) => void;
+
+  //syncChanges
+  setDeletedNodeId: (nodeId: string) => void;
+  setDeletedEdgeId: (edgId: string) => void;
+  setDirtyNodeId: (nodeId: string) => void;
+  setDirtyEdgeId: (edgeId: string) => void;
 }
 
 //  Zustand Store with Dirty Tracking
 export const useFlowStore = create<FlowState>((set, get) => ({
   nodes: [],
   edges: [],
+  nodeCategories: [],
+  voidNode: null,
+  //it is for track pos change bcs if we calculate in onNodeChange it gives us lagging issue
+  isDragging: false,
 
   // Sync tracking
   syncedNodeIds: new Set(),
@@ -148,7 +182,7 @@ export const useFlowStore = create<FlowState>((set, get) => ({
   showSidebar: false,
   connectedHandles: {},
   workflowId: null,
-  versionId: null,
+  currentVersion: null,
   activeNode: null,
 
   // Initialize workflow from backend
@@ -249,7 +283,7 @@ export const useFlowStore = create<FlowState>((set, get) => ({
 
   setActiveNode: (node) => set({ activeNode: node }),
   setWorkflowId: (id) => set({ workflowId: id }),
-  setVersionId: (id) => set({ versionId: id }),
+  setCurrentVersion: (data) => set({ currentVersion: data }),
 
   _updateNodeInternals: undefined,
   setUpdateNodeInternals: (fn) => set({ _updateNodeInternals: fn }),
@@ -267,10 +301,18 @@ export const useFlowStore = create<FlowState>((set, get) => ({
   },
 
   // Basic Setters
-  setNodes: (nodes) => set({ nodes }),
+  setNodes: (nodes) => {
+    const { syncedNodeIds, dirtyNodeIds } = get();
+    const newDirtyNodeIds = new Set([
+      ...dirtyNodeIds,
+      ...(nodes
+        ?.flatMap((node) => node.id)
+        ?.filter((nodeId) => syncedNodeIds.has(nodeId)) ?? []),
+    ]);
+    set({ nodes, dirtyNodeIds: newDirtyNodeIds });
+  },
 
   setEdges: (edges) => {
-    console.log("set edges ", edges);
     const prevEdges = get().edges;
     const handleMap =
       prevEdges.length === edges.length
@@ -279,32 +321,18 @@ export const useFlowStore = create<FlowState>((set, get) => ({
     set({ edges, connectedHandles: handleMap });
   },
 
-  deleteEdge: (edgeId: string) =>
-    set((state) => {
-      const { edges, syncedEdgeIds, deletedEdgeIds, dirtyEdgeIds } = state;
+  deleteEdge: (edgeId: string) => {
+    const { edges, setDeletedEdgeId } = get();
 
-      const newDeletedEdgeIds = new Set(deletedEdgeIds);
-      const newDirtyEdgeIds = new Set(dirtyEdgeIds);
+    setDeletedEdgeId(edgeId);
+    // Remove edge
+    const newEdges = edges.filter((e) => e.id !== edgeId);
 
-      // Track deletion if edge was synced
-      if (syncedEdgeIds.has(edgeId)) {
-        newDeletedEdgeIds.add(edgeId);
-        newDirtyEdgeIds.delete(edgeId);
-      } else if (dirtyEdgeIds.has(edgeId)) {
-        newDirtyEdgeIds.delete(edgeId);
-      }
-
-      // Remove edge
-      const newEdges = edges.filter((e) => e.id !== edgeId);
-
-      return {
-        ...state,
-        edges: newEdges,
-        connectedHandles: computeConnectedHandles(newEdges),
-        deletedEdgeIds: newDeletedEdgeIds,
-        dirtyEdgeIds: newDirtyEdgeIds,
-      };
-    }),
+    set({
+      edges: newEdges,
+      connectedHandles: computeConnectedHandles(newEdges),
+    });
+  },
 
   setSourceNodeId: (id) => set({ sourceNodeId: id }),
   setSourceHandleId: (id) => set({ sourceHandleId: id }),
@@ -313,9 +341,9 @@ export const useFlowStore = create<FlowState>((set, get) => ({
 
   // Edge Operations
   addEdge: (edge) => {
-    const { edges, versionId } = get();
+    const { edges, currentVersion } = get();
     const newEdges = addEdge(
-      { ...edge, data: { ...edge.data, versionId: versionId } },
+      { ...edge, data: { ...edge.data, versionId: currentVersion?.id } },
       edges
     );
 
@@ -329,29 +357,48 @@ export const useFlowStore = create<FlowState>((set, get) => ({
   },
 
   // React Flow Handlers
+  // onNodesChange: (changes) => {
+  //   const state = get();
+  //   const nodes = applyNodeChanges(changes, state.nodes);
+
+  //   if (nodes !== state.nodes) {
+  //     const dirtyNodeIds = new Set(state.dirtyNodeIds);
+
+  //     changes.forEach((change) => {
+  //       if (change.type === "position" && state.syncedNodeIds.has(change.id)) {
+  //         // find previous node position
+  //         const prev = state.nodes.find((n) => n.id === change.id);
+  //         // change.position may be present on the change object
+  //         const newPos = (change as any).position;
+  //         if (prev && newPos) {
+  //           const moved =
+  //             prev.position?.x !== newPos.x || prev.position?.y !== newPos.y;
+  //           if (moved) dirtyNodeIds.add(change.id);
+  //         }
+  //       }
+  //     });
+
+  //     set({ nodes, dirtyNodeIds });
+  //   }
+  // },
+
   onNodesChange: (changes) => {
+    const nodes = applyNodeChanges(changes, get().nodes);
+    if (nodes !== get().nodes) set({ nodes });
+  },
+  //on nodeDrag to handle change in pos of not to mark that dirty
+  onNodeDrag: (_event, node) => {
+    const { isDragging, syncedNodeIds } = get();
+    if (isDragging == true || !syncedNodeIds.has(node.id)) return;
+    set({ isDragging: true });
+  },
+  //set dirtyNode and flag to false
+  onNodeDragStop: (_event, node) => {
     const state = get();
-    const nodes = applyNodeChanges(changes, state.nodes);
-
-    if (nodes !== state.nodes) {
-      const dirtyNodeIds = new Set(state.dirtyNodeIds);
-
-      changes.forEach((change) => {
-        if (change.type === "position" && state.syncedNodeIds.has(change.id)) {
-          // find previous node position
-          const prev = state.nodes.find((n) => n.id === change.id);
-          // change.position may be present on the change object
-          const newPos = (change as any).position;
-          if (prev && newPos) {
-            const moved =
-              prev.position?.x !== newPos.x || prev.position?.y !== newPos.y;
-            if (moved) dirtyNodeIds.add(change.id);
-          }
-        }
-      });
-
-      set({ nodes, dirtyNodeIds });
-    }
+    if (!state.isDragging) return;
+    const dirtyNodeIds = new Set(state.dirtyNodeIds);
+    dirtyNodeIds.add(node.id);
+    set({ dirtyNodeIds, isDragging: false });
   },
 
   onEdgesChange: (changes) => {
@@ -364,35 +411,29 @@ export const useFlowStore = create<FlowState>((set, get) => ({
       (e) => nodeIds.has(e.source) && nodeIds.has(e.target)
     );
 
-    const newDeletedEdgeIds = new Set(state.deletedEdgeIds);
-    const newDirtyEdgeIds = new Set(state.dirtyEdgeIds);
-
-    changes.forEach((change) => {
-      if (change.type === "remove" && state.syncedEdgeIds.has(change.id)) {
-        newDeletedEdgeIds.add(change.id);
-        newDirtyEdgeIds.delete(change.id);
-      }
-    });
+    //i think we don't need it bcs we have other function to delete edge
+    // changes.forEach((change) => {
+    //   if (change.type === "remove") {
+    //     state.setDeletedEdgeId(change.id);
+    //   }
+    // });
 
     if (cleanedEdges !== prevEdges) {
       set({
         edges: cleanedEdges,
         connectedHandles: computeConnectedHandles(cleanedEdges),
-        deletedEdgeIds: newDeletedEdgeIds,
-        dirtyEdgeIds: newDirtyEdgeIds,
       });
     }
   },
 
   onConnect: (connection) => {
-    const { edges, versionId } = get();
+    const { edges } = get();
 
     const newEdge = makeEdge({
       source: connection.source!,
       target: connection.target!,
       sourceHandle: connection.sourceHandle ?? "none",
       targetHandle: connection.targetHandle ?? "input",
-      data: { versionId: versionId },
     });
 
     const newEdges = addEdge(newEdge, edges);
@@ -403,17 +444,9 @@ export const useFlowStore = create<FlowState>((set, get) => ({
     });
   },
 
-  addNodeAfter: (node, sourceNodeId, sourceHandleId = "none") => {
-    const { nodes, edges, versionId } = get();
-
-    const newNode = {
-      ...node,
-      data: {
-        ...node.data,
-        versionId: versionId,
-        outputs: getOutputsForNode(node),
-      },
-    };
+  addNodeAfter: (position, sourceNodeId, sourceHandleId = "none") => {
+    const { nodes, edges, getNewNode } = get();
+    const newNode = getNewNode(position);
 
     const filteredEdges = edges.filter(
       (e) => !(e.source === sourceNodeId && e.sourceHandle === sourceHandleId)
@@ -421,7 +454,8 @@ export const useFlowStore = create<FlowState>((set, get) => ({
 
     const newEdges: Edge[] = [...filteredEdges];
 
-    if (!isTriggerNode(node?.data?.type?.toLowerCase?.())) {
+    //will remove this if condition
+    if (!isTriggerNode(newNode?.data?.type?.toLowerCase?.())) {
       newEdges.push(
         makeEdge({
           source: sourceNodeId,
@@ -439,183 +473,58 @@ export const useFlowStore = create<FlowState>((set, get) => ({
     });
   },
 
-  // addNodeBetweenEdge: (node, edge) => {
-  //   const {
-  //     nodes,
-  //     edges,
-  //     versionId,
-  //     syncedEdgeIds,
-  //     deletedEdgeIds,
-  //     dirtyEdgeIds,
-  //   } = get();
+  addNodeBetweenEdge: (position, edge) => {
+    const { nodes, edges, getNewNode, setDeletedEdgeId } = get();
 
-  //   if (!edge) return;
-  //   const sourceEdgeId = edge.id;
-  //   // const edge = edges.find((e) => e.id === sourceEdgeId);
-  //   // if (!edge) return;
+    if (!edge) return;
+    const sourceEdgeId = edge.id;
+    // const edge = edges.find((e) => e.id === sourceEdgeId);
+    // if (!edge) return;
 
-  //   const sourceNode = nodes.find((n) => n.id === edge.source);
-  //   const targetNode = nodes.find((n) => n.id === edge.target);
-  //   if (!sourceNode || !targetNode) return;
+    const sourceNode = nodes.find((n) => n.id === edge.source);
+    const targetNode = nodes.find((n) => n.id === edge.target);
+    if (!sourceNode || !targetNode) return;
 
-  //   const newNode = { ...node };
-  //   newNode.data.outputs = getOutputsForNode(newNode);
-  //   newNode.data.versionId = versionId;
-  //   const prevId = sourceNode?.data?.id ?? null;
-  //   const prevType = sourceNode?.data?.type ?? null;
-  //   const nextId = targetNode?.data?.id ?? null;
-  //   const nextType = targetNode?.data?.type ?? null;
+    const newNode = getNewNode(position);
+    let newEdges = edges.filter((e) => e.id !== sourceEdgeId);
 
-  //   newNode.data.prev_node_id = prevId;
-  //   newNode.data.prev_node_type = prevType;
-  //   newNode.data.next_node_id = nextId;
-  //   newNode.data.next_node_type = nextType;
+    setDeletedEdgeId(sourceEdgeId);
 
-  //   let newEdges = edges.filter((e) => e.id !== sourceEdgeId);
-  //   const newDeletedEdgeIds = new Set(deletedEdgeIds);
-  //   const newDirtyEdgeIds = new Set(dirtyEdgeIds);
+    if (isTriggerNode(newNode?.data?.type?.toLowerCase?.())) {
+      set({
+        nodes: [...nodes, newNode],
+        edges: newEdges,
+        sourceEdgeId: null,
+        showSidebar: false,
+      });
+      return;
+    }
 
-  //   if (syncedEdgeIds.has(sourceEdgeId)) {
-  //     newDeletedEdgeIds.add(sourceEdgeId);
-  //     newDirtyEdgeIds.delete(sourceEdgeId);
-  //   }
-
-  //   if (isTriggerNode(node?.data?.type?.toLowerCase?.())) {
-  //     set({
-  //       nodes: [...nodes, newNode],
-  //       edges: newEdges,
-  //       sourceEdgeId: null,
-  //       showSidebar: false,
-  //       deletedEdgeIds: newDeletedEdgeIds,
-  //       dirtyEdgeIds: newDirtyEdgeIds,
-  //     });
-  //     return;
-  //   }
-
-  //   const edgeToNew = makeEdge({
-  //     source: sourceNode.id,
-  //     target: newNode.id,
-  //     sourceHandle: edge.sourceHandle ?? "none",
-  //     targetHandle: getTargetHandleForNode(newNode),
-  //   });
-
-  //   const edgeFromNew = makeEdge({
-  //     source: newNode.id,
-  //     target: targetNode.id,
-  //     sourceHandle: getOutputsForNode(newNode)[0],
-  //     targetHandle: edge.targetHandle ?? "input",
-  //   });
-
-  //   newEdges.push(edgeToNew, edgeFromNew);
-
-  //   set({
-  //     nodes: [...nodes, newNode],
-  //     edges: newEdges,
-  //     connectedHandles: computeConnectedHandles(newEdges),
-  //     sourceEdgeId: null,
-  //     showSidebar: false,
-  //     deletedEdgeIds: newDeletedEdgeIds,
-  //     dirtyEdgeIds: newDirtyEdgeIds,
-  //   });
-  // },
-
-addNodeBetweenEdge: (node, edge) => {
-  const {
-    nodes,
-    edges,
-    versionId,
-    syncedEdgeIds,
-    deletedEdgeIds,
-    dirtyEdgeIds,
-  } = get();
-
-  if (!edge) return;
-
-  const sourceNode = nodes.find((n) => n.id === edge.source);
-  const targetNode = nodes.find((n) => n.id === edge.target);
-
-  if (!sourceNode || !targetNode) return;
-
-  // Create node
-  const newNode = {
-    ...node,
-    data: {
-      ...node.data,
-      versionId,
-      outputs: ["none"],
-      parentLoop: sourceNode.id,         // mark inside loop
-    },
-  };
-
-  let newEdges = edges.filter((e) => e.id !== edge.id);
-
-  /* ---------------------------------------
-     CASE: INSERT INSIDE LOOP SELF-LOOP
-  ---------------------------------------- */
-  if (edge.data?.loopType === "self") {
-    console.log("-------------------", edge)
-    // A) Loop -> NewNode
-    const forward = makeEdge({
+    const edgeToNew = makeEdge({
       source: sourceNode.id,
-      sourceHandle: "body",
       target: newNode.id,
-      targetHandle: "input",
-      data: { loopType: "loop-child" },
+      sourceHandle: edge.sourceHandle ?? "none",
+      targetHandle: getTargetHandleForNode(newNode),
+      data: edge.data,
     });
 
-    // B) NewNode -> Loop
-    const back = makeEdge({
+    const edgeFromNew = makeEdge({
       source: newNode.id,
-      sourceHandle: "none",
-      target: sourceNode.id,
-      targetHandle: "body",
-      data: { loopType: "loop-back" },
+      target: targetNode.id,
+      sourceHandle: getOutputsForNode(newNode)[0],
+      targetHandle: edge.targetHandle ?? "input",
     });
 
-    newEdges.push(forward, back);
-    console.log(nodes,"------------------",  newEdges)
-    return set({
+    newEdges.push(edgeToNew, edgeFromNew);
+
+    set({
       nodes: [...nodes, newNode],
       edges: newEdges,
       connectedHandles: computeConnectedHandles(newEdges),
-      deletedEdgeIds: new Set(deletedEdgeIds),
-      dirtyEdgeIds: new Set(dirtyEdgeIds),
       sourceEdgeId: null,
       showSidebar: false,
     });
-  }
-
-  /* ---------------------------------------
-     DEFAULT INSERT (non-loop)
-  ---------------------------------------- */
-  const edgeToNew = makeEdge({
-    source: sourceNode.id,
-    target: newNode.id,
-    sourceHandle: edge.sourceHandle ?? "none",
-    targetHandle: "input",
-  });
-
-  const edgeFromNew = makeEdge({
-    source: newNode.id,
-    target: targetNode.id,
-    sourceHandle: "none",
-    targetHandle: edge.targetHandle ?? "input",
-  });
-
-  newEdges.push(edgeToNew, edgeFromNew);
-
-  set({
-    nodes: [...nodes, newNode],
-    edges: newEdges,
-    connectedHandles: computeConnectedHandles(newEdges),
-    deletedEdgeIds: new Set(deletedEdgeIds),
-    dirtyEdgeIds: new Set(dirtyEdgeIds),
-    sourceEdgeId: null,
-    showSidebar: false,
-  });
-},
-
-
+  },
 
   renameNode: (nodeId, newName) => {
     set((state) => {
@@ -642,13 +551,13 @@ addNodeBetweenEdge: (node, edge) => {
     const {
       nodes,
       edges,
-      syncedNodeIds,
-      syncedEdgeIds,
-      deletedNodeIds,
-      deletedEdgeIds,
-      dirtyNodeIds,
-      dirtyEdgeIds,
+      setDeletedNodeId,
+      activeNode,
+      setActiveNode,
+      setDeletedEdgeId,
     } = state;
+
+    if (activeNode && activeNode?.id == nodeId) setActiveNode(null);
 
     const deletedNode = nodes.find((n) => n.id === nodeId);
     const isLoop = deletedNode?.data?.type === "loop";
@@ -695,6 +604,7 @@ addNodeBetweenEdge: (node, edge) => {
             target: outEdge.target,
             sourceHandle: inEdge.sourceHandle ?? "none",
             targetHandle: outEdge.targetHandle ?? "input",
+            data: inEdge?.data ?? {},
           });
         });
 
@@ -708,305 +618,336 @@ addNodeBetweenEdge: (node, edge) => {
     const cleanedEdges = updatedEdges.filter(
       (e) => validNodeIds.has(e.source) && validNodeIds.has(e.target)
     );
-
-    // Smart dirty tracking for NODES
-    const newDeletedNodeIds = new Set(deletedNodeIds);
-    const newDirtyNodeIds = new Set(dirtyNodeIds);
-
-    if (syncedNodeIds.has(nodeId)) {
-      // Node existed in backend - add to deleted
-      newDeletedNodeIds.add(nodeId);
-      // Remove from dirty if it was there
-      newDirtyNodeIds.delete(nodeId);
-    }
-
-    // Smart dirty tracking for EDGES
-    const newDeletedEdgeIds = new Set(deletedEdgeIds);
-    const newDirtyEdgeIds = new Set(dirtyEdgeIds);
+    setDeletedNodeId(nodeId);
 
     // Track deleted edges (only if they were synced)
     removedEdges.forEach((edge) => {
-      if (syncedEdgeIds.has(edge.id)) {
-        newDeletedEdgeIds.add(edge.id);
-        newDirtyEdgeIds.delete(edge.id);
-      }
-      // If edge wasn't synced, it's new - just remove it
+      setDeletedEdgeId(edge.id);
     });
 
     set({
       nodes: updatedNodes,
       edges: cleanedEdges,
       connectedHandles: computeConnectedHandles(cleanedEdges, updatedNodes),
+    });
+  },
+  updateNode: (nodeId, nodeData) => {
+    let {
+      nodes,
+      edges,
+      currentVersion,
+      setDeletedEdgeId,
+      setDirtyEdgeId,
+      setDirtyNodeId,
+      getNewNode,
+      setDeletedNodeId,
+      _updateNodeInternals,
+      setActiveNode,
+    } = get();
+
+    // Find existing node
+    const oldNode = nodes.find((n) => n.id === nodeId);
+    if (!oldNode) return;
+
+    const oldType = oldNode.data.type;
+    const newType = nodeData.type ?? oldType;
+    const typeChanged = oldType !== newType;
+    // Merge or reset data
+    // const mergedData = typeChanged
+    // ? { ...nodeData } // FULL RESET
+    // : { ...oldNode.data, ...nodeData }; // merge for same type
+
+    const newNodeId = uuidv4();
+    const mergedNode: Node<NodeData> = {
+      ...oldNode,
+      ...(typeChanged ? { id: newNodeId } : {}),
+      data: {
+        ...oldNode.data,
+        ...nodeData,
+        ...(typeChanged ? { id: newNodeId } : {}),
+      },
+    };
+    setActiveNode(mergedNode);
+
+    // Recompute outputs
+    const newOutputs = getOutputsForNode(mergedNode);
+    mergedNode.data.outputs = newOutputs;
+
+    const normalizedOutputs = newOutputs.map((o) => o.toLowerCase());
+
+    const trackDeletedEdges = (edgesToDelete: Edge[]) => {
+      edgesToDelete.forEach((edge) => {
+        setDeletedEdgeId(edge.id);
+      });
+    };
+
+    //set nodeId dirty or delete node
+    typeChanged ? setDeletedNodeId(nodeId) : setDirtyNodeId(nodeId);
+
+    // SPECIAL RULE: If the node is a TRIGGER → remove all incoming edges
+    if (isTriggerNode(newType)) {
+      const incomingEdges = edges.filter((edge) => edge.target === nodeId);
+      edges = edges.filter((edge) => edge.target !== nodeId);
+
+      trackDeletedEdges(incomingEdges);
+    }
+
+    //check for typeChange & Update Edge as per that
+    // Update invalid edges for this node (only outgoing)
+    if (typeChanged) {
+      const affectedEdges = edges.filter(
+        (edge) => edge.source === nodeId || edge.target === nodeId
+      );
+
+      // Track old edges as deleted
+      trackDeletedEdges(affectedEdges);
+
+      // Update edges with new node ID
+      edges = edges.map((edge) => {
+        if (edge.source !== nodeId && edge.target !== nodeId) return edge;
+
+        if (edge.source === nodeId) {
+          return {
+            ...edge,
+            id: uuidv4(), // New edge ID
+            source: mergedNode.id,
+            sourceHandle: normalizedOutputs[0],
+          };
+        } else {
+          return {
+            ...edge,
+            id: uuidv4(), // New edge ID
+            target: mergedNode.id,
+          };
+        }
+      });
+
+      //hot fix critical here
+      const sourceEdgeId = edges.find(
+        (edge) => edge.source === mergedNode.id
+      )?.id;
+      if (sourceEdgeId) oldNode.data.outputs?.push(normalizedOutputs[0]);
+    }
+
+    // If NOT conditional/rule/switch → simple update
+    const isConditional =
+      newType === NodeTypeProps.CONDITIONAL ||
+      newType === NodeTypeProps.RULE_EXECUTOR ||
+      newType === NodeTypeProps.SWITCH;
+
+    // If TRIGGER node → also behave like simple node
+    if (!isConditional || isTriggerNode(newType)) {
+      set({
+        nodes: nodes.map((n) => (n.id == nodeId ? mergedNode : n)),
+        edges,
+        connectedHandles: computeConnectedHandles(edges),
+      });
+      return;
+    }
+
+    // ------------------------------------------------------------
+    // CONDITIONAL, RULE EXECUTOR, or SWITCH → Create branch children
+    // ------------------------------------------------------------
+
+    const x = oldNode.position.x;
+    const y = oldNode.position.y;
+
+    let branchNodes: Node<NodeData>[] = [];
+    let branchEdges: Edge[] = [];
+
+    // Handle SWITCH node differently
+    const isSwitch = newType === NodeTypeProps.SWITCH;
+
+    const branchNames = isSwitch
+      ? newOutputs // e.g. ["case_1", "case_2", ...]
+      : newOutputs.map((out) => out.toLowerCase()); // ["on_true","on_false"] etc.
+
+    // Offset logic (clean)
+    const getOffsetY = (idx: number, total: number, handle: string) => {
+      if (!isSwitch) {
+        // Conditional → True/False custom spacing
+        const fixedOffsets: Record<string, number> = {
+          true: -100,
+          false: 100,
+        };
+        if (fixedOffsets[handle] !== undefined) return fixedOffsets[handle];
+      }
+      // Switch or generic fallback
+      return idx * 140 - ((total - 1) * 140) / 2;
+    };
+    branchNames.forEach((handle, index) => {
+      const normalized = handle.toLowerCase();
+      if (oldNode.data.outputs?.includes(normalized)) {
+        if (!isSwitch) return;
+        edges = edges.map((edge) => {
+          const isMatch =
+            edge.source === mergedNode.id && edge.sourceHandle === normalized;
+
+          if (!isMatch) return edge;
+
+          const caseData =
+            isSwitch && nodeData?.configuration
+              ? nodeData?.configuration?.switchCases?.find(
+                  (c: any) => c.condition === normalized
+                )
+              : null;
+
+          return {
+            ...edge,
+            data: {
+              ...edge.data,
+              ...(caseData ?? {}),
+            },
+          };
+        });
+
+        const dirtyEdge = edges.find(
+          (e) => e.source == mergedNode.id && e.sourceHandle == normalized
+        );
+
+        if (dirtyEdge) setDirtyEdgeId(dirtyEdge.id);
+        return;
+      }
+
+      // const childId = uuidv4();
+      const offsetY = getOffsetY(index, branchNames.length, normalized);
+      const newBranchNode = getNewNode({ x: x + 250, y: y + offsetY });
+      branchNodes.push(newBranchNode);
+
+      // Edge
+      branchEdges.push({
+        id: uuidv4(),
+        type: "custom",
+        source: mergedNode.id,
+        sourceHandle: normalized,
+        target: newBranchNode.id,
+        targetHandle: "input",
+        ...(isSwitch && {
+          label: handle.replace(/_/g, " ").toUpperCase(),
+          labelStyle: { fontWeight: 600, fontSize: 12 },
+        }),
+        data: {
+          versionId: currentVersion?.id,
+          condition: normalized,
+          ...(isSwitch &&
+            nodeData?.configuration && {
+              ...nodeData?.configuration?.switchCases.find(
+                (e: any) => e.condition == normalized
+              ),
+            }),
+        },
+      });
+    });
+
+    //delete edges for switch node
+
+    if (isSwitch) {
+      const oldConditions =
+        oldNode.data?.configuration?.switchCases?.flatMap(
+          (e: any) => e.condition
+        ) ?? [];
+      const newConditions =
+        nodeData?.configuration?.switchCases?.flatMap(
+          (e: any) => e.condition
+        ) ?? [];
+      const casesToDelete = oldConditions?.filter(
+        (e: any) => !newConditions?.includes(e)
+      );
+      const deletedEdges = edges.filter(
+        (e) =>
+          e.source === mergedNode.id && casesToDelete?.includes(e.sourceHandle)
+      );
+      edges = edges.filter((e) => {
+        if (e.source != mergedNode.id) return true;
+        return !casesToDelete?.includes(e.sourceHandle);
+      });
+      trackDeletedEdges(deletedEdges);
+    }
+    const finalEdges = [...edges, ...branchEdges];
+    const finalNodes = [
+      ...nodes.map((n) => (n.id == nodeId ? mergedNode : n)),
+      ...branchNodes,
+    ];
+
+    set({
+      nodes: finalNodes,
+      edges: finalEdges,
+      connectedHandles: computeConnectedHandles(finalEdges),
+    });
+    _updateNodeInternals?.(mergedNode.id);
+  },
+
+  setNodeCategories: (categories) => set({ nodeCategories: categories }),
+
+  setVoidNode: (nodeData) => set({ voidNode: nodeData }),
+
+  getNewNode: (position) => {
+    const { voidNode, currentVersion } = get();
+    const id = uuidv4();
+    const newNode = {
+      id,
+      type: "custom",
+      position,
+      data: {
+        id,
+        name: voidNode?.name ?? "",
+        type: voidNode?.type ?? "void_node",
+        templateId: voidNode?.templateId,
+        versionId: currentVersion?.id ?? null,
+        outputs: ["none"],
+      },
+    };
+
+    return newNode;
+  },
+
+  setDeletedNodeId: (nodeId) => {
+    const { syncedNodeIds, deletedNodeIds, dirtyNodeIds } = get();
+    const newDeletedNodeIds = new Set(deletedNodeIds);
+    const newDirtyNodeIds = new Set(dirtyNodeIds);
+    if (syncedNodeIds.has(nodeId)) {
+      newDeletedNodeIds.add(nodeId);
+      newDirtyNodeIds.delete(nodeId);
+    }
+    set({
       deletedNodeIds: newDeletedNodeIds,
-      deletedEdgeIds: newDeletedEdgeIds,
       dirtyNodeIds: newDirtyNodeIds,
-      dirtyEdgeIds: newDirtyEdgeIds,
     });
   },
 
-  updateNode: (nodeId, nodeData) =>
-    set((state) => {
-      let {
-        nodes,
-        edges,
-        versionId,
-        dirtyNodeIds,
-        dirtyEdgeIds,
-        deletedEdgeIds,
-        syncedEdgeIds,
-        syncedNodeIds,
-      } = state;
-
-      /* ------------------------------------------------------------
-       Find old node
-    ------------------------------------------------------------ */
-      const oldNode = nodes.find((n) => n.id === nodeId);
-      if (!oldNode) return state;
-
-      const oldType = oldNode.data.type;
-      const newType = nodeData.type ?? oldType;
-      const typeChanged = oldType !== newType;
-
-      /* ------------------------------------------------------------
-       Merge updated node data
-    ------------------------------------------------------------ */
-      const mergedNode: Node<NodeData> = {
-        ...oldNode,
-        data: { ...oldNode.data, ...nodeData },
-      };
-
-      const newDeletedEdgeIds = new Set(deletedEdgeIds);
-      const newDirtyEdgeIds = new Set(dirtyEdgeIds);
-      const newDirtyNodeIds = new Set(dirtyNodeIds);
-
-      if (syncedNodeIds.has(nodeId)) newDirtyNodeIds.add(nodeId);
-
-      /* ------------------------------------------------------------
-       Compute valid outputs
-    ------------------------------------------------------------ */
-      const newOutputs = getOutputsForNode(mergedNode);
-      mergedNode.data.outputs = newOutputs;
-
-      const normalizedOutputs = newOutputs.map((o) => o.toLowerCase());
-
-      /* ------------------------------------------------------------
-       Helper to track deleted edges
-    ------------------------------------------------------------ */
-      const trackDeletedEdges = (list: Edge[]) => {
-        list.forEach((edge) => {
-          if (syncedEdgeIds.has(edge.id)) {
-            newDeletedEdgeIds.add(edge.id);
-            newDirtyEdgeIds.delete(edge.id);
-          }
-        });
-      };
-
-      /* ------------------------------------------------------------
-       TRIGGER → Remove incoming edges
-    ------------------------------------------------------------ */
-      if (isTriggerNode(newType)) {
-        const incoming = edges.filter((e) => e.target === nodeId);
-        trackDeletedEdges(incoming);
-
-        edges = edges.filter((e) => e.target !== nodeId);
-      }
-
-      /* ------------------------------------------------------------
-       Remove outgoing edges whose handles are invalid
-    ------------------------------------------------------------ */
-      const invalidOutgoing = edges.filter((e) => {
-        if (e.source !== nodeId) return false;
-        const h = e.sourceHandle?.toLowerCase();
-        return h && !normalizedOutputs.includes(h);
-      });
-
-      trackDeletedEdges(invalidOutgoing);
-
-      edges = edges.filter((e) => {
-        if (e.source !== nodeId) return true;
-        const h = e.sourceHandle?.toLowerCase();
-        return h ? normalizedOutputs.includes(h) : true;
-      });
-
-      const isLoop = newType === NodeTypeProps.LOOP;
-
-      if (isLoop) {
-        // LOOP OUTPUTS
-        mergedNode.data.outputs = ["body", "end"];
-
-        // Remove old loop edges (self or end)
-        edges = edges.filter((e) => !(e.source === nodeId && e.data?.loopType));
-
-        // ---- 1️⃣ SELF LOOP EDGE ----
-        const selfLoop = {
-          id: `loop-self-${nodeId}`,
-          type: "custom",
-          source: nodeId,
-          target: nodeId,
-          sourceHandle: "body",
-          targetHandle: "body",
-          animated: true,
-          data: {
-            loopType: "self",
-            versionId,
-          },
-        };
-
-        // ---- 2️⃣ PLUS NODE FOR END ----
-        const plusId = uuidv4();
-
-        const plusNode = {
-          id: plusId,
-          type: "custom",
-          position: {
-            x: oldNode.position.x + 250,
-            y: oldNode.position.y,
-          },
-          data: {
-            id: plusId,
-            type: "addNode",
-            versionId,
-            parent: nodeId,
-            name: "End",
-            outputs: ["none"],
-          },
-        };
-
-        // ---- 3️⃣ END EDGE ----
-        const endEdge = {
-          id: uuidv4(),
-          type: "custom",
-          source: nodeId,
-          target: plusId,
-          sourceHandle: "end",
-          targetHandle: "input",
-          animated: true,
-          data: {
-            loopType: "end",
-            versionId,
-          },
-        };
-
-        // ---- FINAL STATE ----
-        return {
-          ...state,
-          nodes: nodes
-            .map((n) => (n.id === nodeId ? mergedNode : n))
-            .concat([plusNode]),
-          edges: edges.concat([selfLoop, endEdge]),
-          connectedHandles: computeConnectedHandles(
-            edges.concat([selfLoop, endEdge])
-          ),
-          dirtyNodeIds: newDirtyNodeIds,
-          dirtyEdgeIds: newDirtyEdgeIds,
-          deletedEdgeIds: newDeletedEdgeIds,
-        };
-      }
-
-      /* ------------------------------------------------------------
-       If NOT conditional/switch/rule → Simple update
-    ------------------------------------------------------------ */
-      const isConditional =
-        !isLoop &&
-        (newType === NodeTypeProps.CONDITIONAL ||
-          newType === NodeTypeProps.RULE_EXECUTOR ||
-          newType === NodeTypeProps.SWITCH);
-
-      if (
-        (!isConditional && newType !== NodeTypeProps.LOOP) ||
-        isTriggerNode(newType)
-      ) {
-        return {
-          ...state,
-          nodes: nodes.map((n) => (n.id === nodeId ? mergedNode : n)),
-          edges,
-          connectedHandles: computeConnectedHandles(edges),
-          dirtyNodeIds: newDirtyNodeIds,
-          dirtyEdgeIds: newDirtyEdgeIds,
-          deletedEdgeIds: newDeletedEdgeIds,
-        };
-      }
-
-      /* ------------------------------------------------------------
-       CONDITIONAL / SWITCH → Build branch nodes
-    ------------------------------------------------------------ */
-      const x = oldNode.position.x;
-      const y = oldNode.position.y;
-
-      let branchNodes: Node<NodeData>[] = [];
-      let branchEdges: Edge[] = [];
-
-      const isSwitch = newType === NodeTypeProps.SWITCH;
-
-      const branchNames = isSwitch
-        ? newOutputs
-        : newOutputs.map((n) => n.toLowerCase());
-
-      const getOffsetY = (idx: number, total: number, handle: string) => {
-        if (!isSwitch) {
-          const fixed: Record<string, number> = { true: -100, false: 100 };
-          if (fixed[handle] !== undefined) return fixed[handle];
-        }
-        return idx * 140 - ((total - 1) * 140) / 2;
-      };
-
-      branchNames.forEach((handle, index) => {
-        const normalized = handle.toLowerCase();
-
-        if (!typeChanged && oldNode.data.outputs?.includes(normalized)) {
-          const dirty = edges.find(
-            (e) => e.source === nodeId && e.sourceHandle === normalized
-          );
-          if (dirty) newDirtyEdgeIds.add(dirty.id);
-          return;
-        }
-
-        const childId = uuidv4();
-        const offsetY = getOffsetY(index, branchNames.length, normalized);
-
-        branchNodes.push({
-          id: childId,
-          type: "custom",
-          position: { x: x + 250, y: y + offsetY },
-          data: {
-            id: childId,
-            type: "addNode",
-            parent: nodeId,
-            versionId,
-            name: isSwitch
-              ? handle.replace(/_/g, " ").toUpperCase()
-              : normalized.charAt(0).toUpperCase() + normalized.slice(1),
-            outputs: isSwitch ? ["none"] : [normalized],
-          },
-        });
-
-        branchEdges.push({
-          id: uuidv4(),
-          type: "custom",
-          source: nodeId,
-          sourceHandle: normalized,
-          target: childId,
-          targetHandle: "input",
-          data: { versionId },
-        });
-      });
-
-      /* ------------------------------------------------------------
-       Final state update
-    ------------------------------------------------------------ */
-      return {
-        ...state,
-        nodes: nodes
-          .map((n) => (n.id === nodeId ? mergedNode : n))
-          .concat(branchNodes),
-        edges: edges.concat(branchEdges),
-        connectedHandles: computeConnectedHandles(edges),
-        dirtyNodeIds: newDirtyNodeIds,
-        dirtyEdgeIds: newDirtyEdgeIds,
-        deletedEdgeIds: newDeletedEdgeIds,
-      };
-    }),
-
+  setDeletedEdgeId: (edgeId) => {
+    const { syncedEdgeIds, deletedEdgeIds, dirtyEdgeIds } = get();
+    const newDeletedEdgeIds = new Set(deletedEdgeIds);
+    const newDirtyEdgeIds = new Set(dirtyEdgeIds);
+    if (syncedEdgeIds.has(edgeId)) {
+      newDeletedEdgeIds.add(edgeId);
+      newDirtyEdgeIds.delete(edgeId);
+    }
+    set({
+      deletedEdgeIds: newDeletedEdgeIds,
+      dirtyEdgeIds: newDirtyEdgeIds,
+    });
+  },
+  setDirtyNodeId: (nodeId) => {
+    const { syncedNodeIds, dirtyNodeIds } = get();
+    const newDirtyNodeIds = new Set(dirtyNodeIds);
+    if (syncedNodeIds.has(nodeId)) {
+      newDirtyNodeIds.add(nodeId);
+    }
+    set({
+      dirtyNodeIds: newDirtyNodeIds,
+    });
+  },
+  setDirtyEdgeId: (edgeId) => {
+    const { syncedEdgeIds, dirtyEdgeIds } = get();
+    const newDirtyEdgeIds = new Set(dirtyEdgeIds);
+    if (syncedEdgeIds.has(edgeId)) {
+      newDirtyEdgeIds.add(edgeId);
+    }
+    set({
+      dirtyEdgeIds: newDirtyEdgeIds,
+    });
+  },
   setEdgeForSidebar: (edgeId, sourceNodeId) =>
     set({ sourceEdgeId: edgeId, sourceNodeId, showSidebar: true }),
 

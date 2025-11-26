@@ -1,4 +1,7 @@
-@import "tailwindcss";
+@layer theme, custom-base, custom-components, custom-utilities;
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/preflight.css" layer(custom-base);
+@import "tailwindcss/utilities.css" layer(custom-utilities);
 @theme {
   --color-maastrichtblue: #0b1739;
   --color-primary: #7ec040;
@@ -22,4 +25,10 @@
 }
 .pd-2{
   padding-left: 10px !important;
+}
+.scroll-hide::-webkit-scrollbar {
+  display: none;
+}
+.h-cal{
+  height: calc(100vh-120px);
 }

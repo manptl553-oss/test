@@ -48,6 +48,9 @@ export function NodeConfigModal() {
         result[f.name] = Array.isArray(val) ? val : [];
       } else if (f.type === "cases") {
         result[f.name] = Array.isArray(val) ? val : [];
+      } else if (f.type === "textarea") {
+        result[f.name] =
+          typeof val !== "string" ? JSON.stringify(val, null, 2) : val;
       } else {
         result[f.name] = val ?? "";
       }
@@ -78,7 +81,6 @@ export function NodeConfigModal() {
           })
         );
       }
-      console.log(values, "---------values");
       const payload = {
         type: nodeType,
         name: nodeName,
@@ -117,6 +119,7 @@ export function NodeConfigModal() {
     <Dialog
       open={nodeData ? true : false}
       onOpenChange={() => setActiveNode(null)}
+      isModal={nodeData?.configuration ? false : true}
     >
       <DialogContent className="sm:max-w-[750px] bg-white rounded-xl shadow-xl">
         <DialogHeader className="border-b border-gray-200 pb-4">

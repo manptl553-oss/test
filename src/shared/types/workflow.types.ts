@@ -26,10 +26,20 @@ export interface WorkflowEdge {
   style?: { strokeWidth: number };
 }
 
+export interface VersionData {
+  id: string;
+  name: string;
+  workflowId: string;
+  version: number;
+  status: string;
+  publishedBy: string;
+  updatedBy: string;
+}
+
 export interface Workflow {
   id: string;
   name: string;
-  versionId: string;
+  version: VersionData;
   description?: string;
   enabled: boolean;
   lastModified?: string;

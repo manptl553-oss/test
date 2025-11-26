@@ -2,9 +2,10 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useMemo } from "react";
 import { Controller, useForm } from "react-hook-form";
 
-import { cn } from "@/shared/utils";
+import { cn, formatName } from "@/shared/utils";
 import { DynamicFormProps, FieldConfig } from "../types";
 import {
+  AuthConfigFields,
   Button,
   Checkbox,
   CodeEditor,
@@ -77,10 +78,10 @@ export const DynamicForm = ({
         }
       }
     });
-    
+
     return d;
   }, [defaultValues, fields]);
-  
+
   const {
     handleSubmit,
     control,
@@ -92,28 +93,27 @@ export const DynamicForm = ({
     mode: "onSubmit",
     shouldUnregister: false,
   });
-  
+
   const authType = watch("auth_type");
-  
+
   const visibleFields = useMemo(() => {
     if (!twoPane) return fields;
-    
+
     return fields.filter((f) => {
       const isBasicCred = f.name === "username" || f.name === "password";
       if (authType === "header") return !isBasicCred;
       return true;
     });
   }, [fields, twoPane, authType]);
-  
-  console.log(defaultValues,"--------default values")
+
   const renderField = (field: FieldConfig) => {
     const errorMsg = (errors as any)?.[field.name]?.message;
-    
+
     switch (field.type) {
       case "input":
         return (
-          <div key={field.name} className="space-y-2 w-full">
-            <Label>{field.label}</Label>
+          <div key={field.name} className="space-y-3 w-full mt-3">
+            <Label className="block">{field.label}</Label>
             <Controller
               control={control}
               name={field.name}
@@ -129,13 +129,25 @@ export const DynamicForm = ({
         return (
           <div key={field.name} className="space-y-2 w-full">
             <Label>{field.label}</Label>
+
             <Controller
               control={control}
               name={field.name}
               render={({ field: rhf }) => (
-                <Textarea {...rhf} placeholder={field.placeholder} />
+                <Textarea
+                  placeholder={field.placeholder}
+                  value={
+                    typeof rhf.value === "string"
+                      ? rhf.value
+                      : JSON.stringify(rhf.value ?? {}, null, 2)
+                  }
+                  onChange={(e) => {
+                    rhf.onChange(e.target.value); // ALWAYS STRING
+                  }}
+                />
               )}
             />
+
             {errorMsg && <p className="text-red-500 text-xs">{errorMsg}</p>}
           </div>
         );
@@ -147,25 +159,32 @@ export const DynamicForm = ({
             <Controller
               control={control}
               name={field.name}
-              render={({ field: { value, onChange } }) => (
-                <Select value={value} onValueChange={onChange}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {field.options?.map((opt) => (
-                      <SelectItem key={opt.value} value={opt.value}>
-                        {opt.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
+              render={({ field: { value, onChange } }) => {
+                const selected = field.options?.find(
+                  (opt) => opt.value === value
+                );
+
+                return (
+                  <Select value={value} onValueChange={onChange}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select">
+                        {formatName(selected?.label ?? "Select")}
+                      </SelectValue>
+                    </SelectTrigger>
+                    <SelectContent>
+                      {field.options?.map((opt) => (
+                        <SelectItem key={opt.value} value={opt.value}>
+                          {formatName(opt.label)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                );
+              }}
             />
             {errorMsg && <p className="text-red-500 text-xs">{errorMsg}</p>}
           </div>
         );
-
       case "richtext":
         return (
           <div key={field.name} className="space-y-2 w-full">
@@ -206,7 +225,7 @@ export const DynamicForm = ({
             control={control}
             name={field.name}
             label={field.label}
-            columns={(field.options as DynamicFiledOptions[]) || []}
+            columns={field?.options || []}
             errors={errors[field.name]}
           />
         );
@@ -222,7 +241,7 @@ export const DynamicForm = ({
             isTag
           />
         );
-       case "code": 
+      case "code":
         const selectedLanguage = watch("language");
         return (
           <div key={field.name} className="space-y-2 w-full">
@@ -240,7 +259,7 @@ export const DynamicForm = ({
                   }}
                 >
                   <CodeEditor
-                    onChange={() => {}}
+                    onChange={onChange}
                     selectedLanguage={selectedLanguage}
                     value={value ?? ""}
                   />
@@ -248,7 +267,8 @@ export const DynamicForm = ({
               )}
             />
             {errorMsg && <p className="text-red-500 text-xs">{errorMsg}</p>}
-          </div>);
+          </div>
+        );
 
       case "conditions":
       case "cases":
@@ -259,6 +279,16 @@ export const DynamicForm = ({
             name={field.name}
             label={field.label}
             mode={field.type === "cases" ? "switch" : "conditional"}
+            errors={errors[field.name]}
+          />
+        );
+
+      case "auth":
+        return (
+          <AuthConfigFields
+            control={control}
+            key={field.name}
+            name={field.name}
             errors={errors[field.name]}
           />
         );
@@ -275,7 +305,13 @@ export const DynamicForm = ({
 
   return (
     <form onSubmit={handleSubmit(onSubmitInternal)} className="space-y-4">
-      <div className={twoPane ? "grid grid-cols-2 gap-6" : "space-y-3"}>
+      <div
+        className={
+          twoPane
+            ? "grid grid-cols-2 gap-6"
+            : "space-y-3 max-h-[500px] overflow-y-auto h-full scroll-hide relative"
+        }
+      >
         <div className="space-y-3">
           {(twoPane ? left : visibleFields).map(renderField)}
         </div>

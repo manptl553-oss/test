@@ -28,5 +28,5 @@ export type TableFieldProps =
   | (TableFieldBase & { isTag: true; columns?: never });
 
 export type DynamicFiledOptions =
-  | (DynamicFiledBase & { type: "input"; options?: never })
+  | (DynamicFiledBase & { type: "input" | "textarea"; options?: never })
   | (DynamicFiledBase & { type: "select"; options: FieldOption[] });

@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { email, z } from "zod";
 import { HTTP_METHODS } from "../types";
 import { FieldConfig } from "@/features";
 
@@ -6,6 +6,76 @@ import { FieldConfig } from "@/features";
  * Nodes that use DynamicForm only.
  * Conditional & Switch are not included here.
  */
+const CRON_REGEX =
+  /^(\*|([0-5]?\d)) (\*|([01]?\d|2[0-3])) (\*|([01]?\d|2[0-9]|3[01])) (\*|(1[0-2]|0?[1-9])) (\*|([0-6]))$/;
+
+export enum EAuthType {
+  NONE = "none",
+  BASIC = "basic",
+  HEADER = "header",
+}
+
+const authNoneSchema = z.object({
+  type: z.literal(EAuthType.NONE, "auth type is required"),
+});
+
+const authBasicSchema = z.object({
+  type: z.literal(EAuthType.BASIC),
+  username: z.string().min(1, "Username required"),
+  password: z.string().min(1, "Password required"),
+});
+
+const headerItemSchema = z.object({
+  headerKey: z.string().min(1, "Header Key required"),
+  headerValue: z.string().min(1, "Header Value required"),
+});
+
+const authHeaderSchema = z.object({
+  type: z.literal(EAuthType.HEADER),
+  auth: z.array(headerItemSchema).min(1, "At least one header required"),
+});
+
+export const authSchema = z.union([
+  authNoneSchema,
+  authBasicSchema,
+  authHeaderSchema,
+]);
+
+export enum EDelayUnit {
+  SECONDS = "seconds",
+  MINUTES = "minutes",
+  HOURS = "hours",
+  DAYS = "days",
+}
+
+export const DelayUnitSelect = Object.entries(EDelayUnit).map(
+  ([key, value]) => ({
+    label: key,
+    value,
+  })
+);
+
+export enum EOnboardingAddonType {
+  PEPCheck = "PEP_CHECK",
+}
+const addOnSchema = z.object({
+  addonType: z.enum(EOnboardingAddonType, "Please Select type"),
+  metadata: z
+    .string()
+    .min(1, "Mock data is required")
+    .superRefine((val, ctx) => {
+      try {
+        JSON.parse(val);
+      } catch {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Invalid JSON format",
+        });
+      }
+    })
+    .transform((val) => JSON.parse(val)),
+});
+
 export const nodeFieldsConfig: Record<string, FieldConfig[]> = {
   webhook: [
     {
@@ -28,6 +98,29 @@ export const nodeFieldsConfig: Record<string, FieldConfig[]> = {
       name: "mockData",
       label: "Mock Data",
       type: "textarea",
+      required: false,
+    },
+    {
+      name: "authentication",
+      label: "Authentication",
+      type: "auth",
+      required: true,
+    },
+  ],
+
+  schedule: [
+    {
+      name: "cronExpression",
+      label: "Cron Expression",
+      type: "input",
+      placeholder: "CRON_REGEX",
+      required: true,
+    },
+    {
+      name: "timezone",
+      label: "Timezone",
+      type: "input",
+      placeholder: "IST",
       required: false,
     },
   ],
@@ -80,6 +173,21 @@ export const nodeFieldsConfig: Record<string, FieldConfig[]> = {
       name: "message",
       label: "Message Body",
       type: "richtext",
+      required: true,
+    },
+  ],
+
+  update_database: [
+    {
+      name: "table",
+      label: "Table",
+      type: "input",
+      required: true,
+    },
+    {
+      name: "data",
+      label: "Data",
+      type: "textarea",
       required: true,
     },
   ],
@@ -333,7 +441,7 @@ export const nodeFieldsConfig: Record<string, FieldConfig[]> = {
 
   rule_executor: [
     {
-      name: "ruleset_id",
+      name: "rulesetId",
       label: "Rule Executor",
       type: "select",
       options: [
@@ -381,15 +489,71 @@ export const nodeFieldsConfig: Record<string, FieldConfig[]> = {
     },
   ],
   conditional: [
-  {
-    name: "conditions",
-    label: "Conditions",
-    type: "conditions",
-    required: true,
-  },
-],
-  switch: [
-  { name: "switchCases", type: "cases", label: "Switch Cases" }]
+    {
+      name: "conditions",
+      label: "Conditions",
+      type: "conditions",
+      required: true,
+    },
+  ],
+  switch: [{ name: "switchCases", type: "cases", label: "Switch Cases" }],
+
+  delay: [
+    { name: "delayTime", type: "input", label: "Delay Time", required: true },
+    {
+      name: "delayUnit",
+      type: "select",
+      label: "Delay Unit",
+      options: DelayUnitSelect,
+      required: true,
+    },
+  ],
+  membership_invite: [
+    { name: "appName", type: "input", label: "App Name", required: true },
+    { name: "email", type: "input", label: "Email", required: true },
+    { name: "jobTitle", type: "input", label: "Job Title", required: true },
+    { name: "firstName", type: "input", label: "First Name", required: false },
+    { name: "lastName", type: "input", label: "Last Name", required: false },
+    { name: "phone", type: "input", label: "Phone Number", required: false },
+    {
+      name: "addons",
+      type: "table",
+      label: "Addons",
+      required: false,
+      options: [
+        {
+          name: "addonType",
+          type: "select",
+          label: "AddOn Type",
+          options: [
+            {
+              label: "PEPCheck",
+              value: "PEP_CHECK",
+            },
+          ],
+          required: true,
+        },
+        {
+          name: "metadata",
+          type: "textarea",
+          label: "MetaData",
+          required: false,
+        },
+      ],
+    },
+    {
+      name: "roleIds",
+      type: "tags",
+      label: "Role Ids",
+      required: true,
+    },
+    {
+      name: "groupIds",
+      type: "tags",
+      label: "Group Ids",
+      required: false,
+    },
+  ],
 };
 
 /* -------------------------------------------------------
@@ -411,7 +575,18 @@ export const nodeValidationSchema: Record<string, z.ZodSchema<any>> = {
             message: "Invalid JSON format",
           });
         }
-      }),
+      })
+      .transform((val) => JSON.parse(val)),
+    authentication: authSchema,
+  }),
+
+  schedule: z.object({
+    cronExpression: z
+      .string()
+      .min(1, "Cron Expression is required")
+      .regex(CRON_REGEX, "Invalid cron expression"),
+
+    timezone: z.string().optional(),
   }),
 
   event: z.object({
@@ -441,7 +616,8 @@ export const nodeValidationSchema: Record<string, z.ZodSchema<any>> = {
             message: "Invalid JSON format",
           });
         }
-      }),
+      })
+      .transform((val) => JSON.parse(val)),
   }),
 
   /* IF/ELSE (Conditional Node) */
@@ -468,6 +644,25 @@ export const nodeValidationSchema: Record<string, z.ZodSchema<any>> = {
         })
       )
       .min(1, "At least one case is required"),
+  }),
+
+  update_database: z.object({
+    table: z.string().min(1, "Table is required"),
+
+    data: z
+      .string()
+      .min(1, "Mock data is required")
+      .superRefine((val, ctx) => {
+        try {
+          JSON.parse(val);
+        } catch {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: "Invalid JSON format",
+          });
+        }
+      })
+      .transform((val) => JSON.parse(val)),
   }),
 
   map: z.object({
@@ -653,7 +848,62 @@ export const nodeValidationSchema: Record<string, z.ZodSchema<any>> = {
     operation: z.enum(["toTimestamp", "fromTimestamp"]).optional(),
   }),
 
+  code_block: z.object({
+    language: z
+      .string()
+      .min(1, "Language is required")
+      .refine(
+        (val) => ["python", "javascript"].includes(val),
+        "Invalid language"
+      ),
+
+    expression: z.string().min(1, "Custom Script is required"),
+  }),
+
   rule_executor: z.object({
-    ruleset_id: z.uuid("select valid rule set"),
+    rulesetId: z.string("select valid rule set").min(1,"select valid rule set"),
+  }),
+
+  delay: z.object({
+    delayTime: z
+      .union([z.string(), z.number()])
+      .optional()
+      .transform((val) => {
+        if (val === undefined || val === null || val === "") return undefined;
+        return typeof val === "string" ? Number(val) : val;
+      })
+      .refine((val) => val === undefined || !isNaN(val), {
+        message: "time must be a valid number",
+      }),
+    delayUnit: z.enum(EDelayUnit, "unit is required "),
+  }),
+
+  membership_invite: z.object({
+    appName: z.string().min(1, "app name is required"),
+    email: z.string().email("Invalid email"),
+    jobTitle: z.string().min(1, "job title is required"),
+    firstName: z.string().optional(),
+    lastName: z.string().optional(),
+    phone: z
+      .string("Phone must be a string")
+      .regex(/^\+?[1-9]\d{9,14}$/, "Invalid phone number format")
+      .optional(),
+    addons: z.array(addOnSchema).optional(),
+    roleIds: z
+      .array(
+        z
+          .union([z.string(), z.number()])
+          .optional()
+          .transform((val) => {
+            if (val === undefined || val === null || val === "")
+              return undefined;
+            return typeof val === "string" ? Number(val) : val;
+          })
+          .refine((val) => val === undefined || !isNaN(val), {
+            message: "roleId must be a valid number",
+          })
+      )
+      .min(1, "roles is required"),
+    groupIds: z.array(z.string()).optional(),
   }),
 };

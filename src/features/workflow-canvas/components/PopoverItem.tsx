@@ -1,4 +1,9 @@
-import { NodeIconTypeProps, NodeTypeProps, nodeTypeStyles } from "@/shared";
+import {
+  formatName,
+  NodeIconTypeProps,
+  NodeTypeProps,
+  nodeTypeStyles,
+} from "@/shared";
 import { BugIcon } from "lucide-react";
 
 interface CategoryItemProps {
@@ -37,7 +42,7 @@ export function PopoverItem({ category, onClick }: CategoryItemProps) {
           className="text-sm text-gray-800 font-semibold truncate"
           title={category.name}
         >
-          {category.name}
+          {formatName(category.name)}
         </span>
 
         {category?.type && (
