@@ -152,48 +152,50 @@ export default function NodePickerPanel({
   };
 
   return (
-    <div ref={panelRef} className="flex flex-col h-full ">
-      <div className="px-0 pb-2 font-medium text-gray-700 border-b border-gray-300 flex items-center gap-2">
+    <div ref={panelRef} className="flex flex-col h-full">
+      {/* Header */}
+      <div
+        className="px-0 pb-2 font-medium text-sm text-(--wf-text-default)
+                    border-b border-(--wf-border-default) flex items-center gap-2"
+      >
         {navigationStack?.length > 1 && !isStartNode && (
-          <button onClick={goBack} className="hover:bg-gray-100 p-1 rounded">
-            <ChevronLeft className="w-5 h-5" />
+          <button
+            onClick={goBack}
+            className="hover:bg-(--wf-background-subtle) p-1 rounded"
+          >
+            <ChevronLeft className="w-5 h-5 text-(--wf-text-default)" />
           </button>
         )}
         {(currentView?.data as WorkflowCategory)?.name || "Start"}
       </div>
+
+      {/* Category Header Preview */}
       {currentView.type !== "root" && (
         <div className="relative py-4 space-y-4">
           <div
-            className={`flex flex-col space-y-2 items-center justify-center border-2 border-solid rounded-lg p-5 `}
+            className="flex flex-col space-y-2 items-center justify-center rounded-lg p-5
+                     border border-(--wf-border-default)"
             style={{
-              background: `${style.bg}20 `,
-              border: `1px solid ${style.border}`,
+              background: `${style.bg}20`, // keep dynamic branding tint
+              borderColor: style.border,
             }}
           >
             <div
-              className="w-16 h-16 rounded-full flex items-center justify-center p-2 bg-white/15"
-              style={{
-                background: style.bg,
-              }}
+              className="w-16 h-16 rounded-full flex items-center justify-center p-2"
+              style={{ background: style.bg }}
             >
               <style.icon className="text-white w-8 h-8" />
             </div>
 
-            <span className="text-black text-sm font-medium">
+            <span className="text-(--wf-text-default) text-sm font-medium">
               {currentView?.data?.name || "Start"}
             </span>
-            {/* <div className="rounded-md relative pl-8 pr-3.5 py-2 bg-white border border-black/15">
-              <input
-                type="search"
-                placeholder="Search Your Inputs"
-                className="placeholder:text-gray-600 text-sm font-medium text-black"
-              />
-            </div> */}
           </div>
         </div>
       )}
 
-      <div className="flex-1 overflow-y-auto px-2 py-2 h-full max-h-80 space-y-1 ">
+      {/* Items */}
+      <div className="flex-1 overflow-y-auto px-2 py-2 h-full max-h-80 space-y-1">
         {renderRootView()}
         {renderCategoryView()}
         {renderSubCategoryView()}

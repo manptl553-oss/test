@@ -121,7 +121,7 @@ export function NodeConfigModal() {
       onOpenChange={() => setActiveNode(null)}
       isModal={nodeData?.configuration ? false : true}
     >
-      <DialogContent className="sm:max-w-[750px] bg-white rounded-xl shadow-xl">
+      <DialogContent className="sm:max-w-[750px] bg-(--wf-background-subtle) rounded-xl shadow-xl">
         <DialogHeader className="border-b border-gray-200 pb-4">
           <DialogTitle className="font-semibold text-lg text-gray-800">
             <EditableNodeName

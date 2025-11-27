@@ -201,8 +201,8 @@ const DialogContent = React.forwardRef<
     </>
   );
 
-  // Use portal to render at document.body level
-  return createPortal(dialogContent, document.body);
+  const portalRoot = document.getElementById("workflow-portal-root");
+  return createPortal(dialogContent, portalRoot!);
 });
 DialogContent.displayName = "DialogContent";
 

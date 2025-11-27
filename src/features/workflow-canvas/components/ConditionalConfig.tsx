@@ -72,20 +72,26 @@ export const LogicRulesField = ({
 
   return (
     <div className="w-full space-y-2">
-      <Label className="block font-medium text-sm text-gray-700">{label}</Label>
+      <Label className="block font-medium text-sm text-(--wf-text-default)">
+        {label}
+      </Label>
 
-      <div className="space-y-3 p-3">
+      <div className="space-y-4">
         {fields.map((item, index) => (
           <div
             key={item.id}
-            className="flex gap-2"
+            className="flex gap-2 items-center"
           >
             {/* Field */}
             <Controller
               control={control}
               name={`${name}.${index}.field`}
               render={({ field }) => (
-                <Input {...field} placeholder="Field" className="border" />
+                <Input
+                  {...field}
+                  placeholder="Field"
+                  className="border-(--wf-border-default)"
+                />
               )}
             />
 
@@ -95,15 +101,13 @@ export const LogicRulesField = ({
                 control={control}
                 name={`${name}.${index}.operator`}
                 render={({ field }) => {
-                  const selected = operators.find(
-                    (o) => o.value === field.value
-                  );
+                  const selected = operators.find((o) => o.value === field.value);
                   return (
                     <Select value={field.value} onValueChange={field.onChange}>
-                      <SelectTrigger className="border w-40">
+                      <SelectTrigger className="border-(--wf-border-default) text-(--wf-text-default) w-40">
                         <span>{formatName(selected?.label ?? "Operator")}</span>
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="bg-(--wf-background-subtle) border-(--wf-border-default)">
                         {operators.map((o) => (
                           <SelectItem key={o.value} value={o.value}>
                             {formatName(o.label)}
@@ -121,7 +125,11 @@ export const LogicRulesField = ({
               control={control}
               name={`${name}.${index}.value`}
               render={({ field }) => (
-                <Input {...field} placeholder="Value" className="border" />
+                <Input
+                  {...field}
+                  placeholder="Value"
+                  className="border-(--wf-border-default)"
+                />
               )}
             />
 
@@ -131,7 +139,7 @@ export const LogicRulesField = ({
                 size="icon"
                 type="button"
                 onClick={() => {
-                  mode == "switch" ? removeEdge(index) : remove(index);
+                  mode === "switch" ? removeEdge(index) : remove(index);
                 }}
               >
                 ✕
@@ -144,7 +152,7 @@ export const LogicRulesField = ({
       <Button
         type="button"
         variant="outline"
-        className="bg-primary text-white"
+        className="hover:bg-(--wf-background-subtle)"
         onClick={() => append({ field: "", operator: "==", value: "" })}
       >
         + Add {mode === "switch" ? "Case" : "Condition"}

@@ -1,38 +1,38 @@
 import {
-  Mail,
   Bell,
-  Database,
-  GitBranch,
-  Repeat,
-  Shuffle,
-  MapIcon,
-  Edit3,
-  Trash2,
-  Copy,
-  Filter,
-  Calculator,
-  Group,
-  Combine,
-  FunctionSquare,
-  Code2,
-  Type,
-  Merge,
-  Split,
-  CalendarPlus,
-  CalendarClock,
-  Clock3,
-  Star,
-  Share2,
-  Scissors,
-  Globe,
-  Webhook,
   Bolt,
   Building,
+  Calculator,
+  CalendarClock,
+  CalendarPlus,
+  Clock3,
+  Code2,
+  Combine,
+  Copy,
+  Database,
+  Edit3,
+  Filter,
+  FunctionSquare,
+  GitBranch,
+  Globe,
+  Group,
   IdCard,
+  Mail,
+  MapIcon,
+  Merge,
+  Plus,
+  Repeat,
+  Scissors,
   Settings,
   Settings2,
-  Zap,
+  Shuffle,
+  Split,
+  Star,
+  Trash2,
+  Type,
   Watch,
+  Webhook,
+  Zap,
 } from "lucide-react";
 import { NodeDefinition } from "../types";
 
@@ -65,7 +65,7 @@ export enum NodeTypeProps {
   WEBHOOK = "webhook",
   EVENT = "event",
   SCHEDULE = "schedule",
-  DELAY = "delay",
+  WAIT = "wait",
 }
 
 export enum NodeIconTypeProps {
@@ -77,6 +77,7 @@ export enum NodeIconTypeProps {
   GENERAL = "general",
   KYC = "kyc",
   KYB = "kyb",
+  VOID = "void_node",
 }
 
 export const nodeTypeStyles: Record<
@@ -231,7 +232,7 @@ export const nodeTypeStyles: Record<
     bg: "#6366f1", // indigo-500
     border: "#4338ca", // indigo-700
   },
-  [NodeTypeProps.DELAY]: {
+  [NodeTypeProps.WAIT]: {
     icon: Watch,
     bg: "#d97706", // amber-600
     border: "#b45309", // amber-700
@@ -285,6 +286,11 @@ export const nodeTypeStyles: Record<
     icon: Building,
     bg: "#d97706", // amber-600
     border: "#b45309", // amber-700
+  },
+  [NodeIconTypeProps.VOID]: {
+    icon: Plus,
+    bg: "#9ca3af", // gray-400
+    border: "#4b5563", // gray-600
   },
 };
 
@@ -349,5 +355,5 @@ export const NODE_DEFINITIONS: Record<NodeTypeProps, NodeDefinition> = {
 
   code_block: { outputs: ["none"], defaultTarget: "input" },
 
-  delay: { outputs: ["none"], defaultTarget: "input" },
+  wait: { outputs: ["none"], defaultTarget: "input" },
 };

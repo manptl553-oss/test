@@ -137,8 +137,8 @@ const CustomNode = ({ data, id }: NodeProps) => {
     [edges, id]
   );
   const renderInputHandles = () => {
-    if (isStartNode || isTriggerNode(data?.type)) return null;
     const isConnected = isInputHandleConnected();
+    if (isStartNode || isTriggerNode(data?.type)) return null;
 
     // MERGE NODE (multiple inputs)
     if ((data as any).name?.toLowerCase() === "merge") {
@@ -178,8 +178,12 @@ const CustomNode = ({ data, id }: NodeProps) => {
         type="target"
         position={Position.Left}
         id="input"
-        className="!w-4 !h-4 !border-0 !bg-transparent !opacity-0"
-        style={{ top: "50%", background: style.bg, left: -2 }}
+        className={`!w-6 !h-6 !border-0 ${isConnected && "opacity-0"}`}
+        style={{
+          top: "50%",
+          background: style.bg,
+          left: `${isConnected ? -2 : '6px'}`,
+        }}
         isConnectable={!isConnected}
       />
     );
@@ -263,7 +267,7 @@ const CustomNode = ({ data, id }: NodeProps) => {
         <div className="w-30 h-30 mx-auto relative space-y-3">
           {renderInputHandles()}
           <div
-            className={`w-24  mx-auto h-24 border-white border-2 z-10 relative rounded-full transition-all duration-200  flex flex-col items-center justify-center gap-2 cursor-pointer`}
+            className={`w-24  mx-auto h-24 border-(--wf-background-base) border-2 z-10 relative rounded-full transition-all duration-200  flex flex-col items-center justify-center gap-2 cursor-pointer`}
             style={{
               background: style.bg,
               transition: "all 0.3s ease-in-out",
@@ -276,7 +280,7 @@ const CustomNode = ({ data, id }: NodeProps) => {
             }}
             onMouseLeave={(e) => {
               const el = e.currentTarget as HTMLDivElement;
-              el.style.borderColor = "white";
+              el.style.borderColor = "(--wf-background-base)";
               el.style.transform = "scale(1)";
             }}
           >
@@ -284,7 +288,7 @@ const CustomNode = ({ data, id }: NodeProps) => {
           </div>
           {renderOutputHandles()}
           {!isAddNode && (
-            <div className="text-black font-medium text-sm text-center">
+            <div className="text-(--wf-text-default) font-medium text-sm text-center">
               {name}
             </div>
           )}

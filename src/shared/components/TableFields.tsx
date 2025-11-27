@@ -13,6 +13,7 @@ import {
 import { DynamicFiledOptions, TableFieldProps } from "../types";
 import { cn, formatName } from "../utils";
 import { Textarea } from "./TextArea";
+import { Delete, DeleteIcon, Trash2 } from "lucide-react";
 
 function TableField({
   control,
@@ -52,6 +53,7 @@ function TableField({
     const filedName = !isTag
       ? `${name}.${rowIndex}.${column.name}`
       : `${name}.${rowIndex}`;
+
     switch (column.type) {
       case "input":
         return (
@@ -67,7 +69,7 @@ function TableField({
                   {...field}
                   value={field.value ?? ""}
                   placeholder={column.label}
-                  className="border border-gray-300 focus-visible:ring-0"
+                  className="border-(--wf-border-default)"
                 />
               )}
             />
@@ -90,12 +92,15 @@ function TableField({
                 );
                 return (
                   <Select value={value ?? ""} onValueChange={onChange}>
-                    <SelectTrigger className="border border-gray-300 focus-visible:ring-0">
+                    <SelectTrigger className="border-(--wf-border-default) text-(--wf-text-default)">
                       <SelectValue placeholder={`Select ${column.label}`}>
-                        {formatName(selected?.label ?? `Select ${column.label}`)}
+                        {formatName(
+                          selected?.label ?? `Select ${column.label}`
+                        )}
                       </SelectValue>
                     </SelectTrigger>
-                    <SelectContent className="bg-white border border-gray-300">
+
+                    <SelectContent className="bg-(--wf-background-subtle) border-(--wf-border-default)">
                       {column.options?.map((opt) => (
                         <SelectItem key={opt.value} value={opt.value}>
                           {formatName(opt.label)}
@@ -109,6 +114,7 @@ function TableField({
             {errorMsg && <p className="text-red-500 text-xs">{errorMsg}</p>}
           </div>
         );
+
       case "textarea":
         return (
           <div key={filedName} className="space-y-2 w-full">
@@ -123,9 +129,8 @@ function TableField({
                       ? rhf.value
                       : JSON.stringify(rhf.value ?? {}, null, 2)
                   }
-                  onChange={(e) => {
-                    rhf.onChange(e.target.value); // ALWAYS STRING
-                  }}
+                  onChange={(e) => rhf.onChange(e.target.value)}
+                  className="border-(--wf-border-default) text-(--wf-text-default)"
                 />
               )}
             />
@@ -133,30 +138,31 @@ function TableField({
             {errorMsg && <p className="text-red-500 text-xs">{errorMsg}</p>}
           </div>
         );
-
       default:
         return null;
     }
   };
 
   return (
-    <div className={cn("space-y-2 w-full", className)}>
-      <Label className="block font-medium text-sm text-gray-700">{label}</Label>
+    <div className={cn("space-y-3 w-full", className)}>
+      <Label className="block font-medium text-sm text-(--wf-text-default)">
+        {label}
+      </Label>
 
-      <div
-        className={cn(
-          "flex gap-2 font-semibold text-sm text-gray-700",
-          headerClassName
-        )}
-      >
-        {columns &&
-          columns.map((col) => (
+      {columns && (
+        <div
+          className={cn(
+            "flex gap-2 font-semibold text-sm text-(--wf-text-default) mr-[40px]",
+            headerClassName
+          )}
+        >
+          {columns.map((col) => (
             <div key={col.name} className="flex-1">
               {col.label}
             </div>
           ))}
-        {columns?.length && <div className="w-20">Actions</div>}
-      </div>
+        </div>
+      )}
 
       {fields.map((row, idx) => (
         <div
@@ -174,22 +180,22 @@ function TableField({
                   )}
                 </div>
               ))
-            : //hardcoded for tab
-              renderCell(
+            : renderCell(
                 { name, type: "input", label },
                 isTag,
                 idx,
                 errors?.[idx]?.message
               )}
+
           <Button
             type="button"
             variant="destructive"
             size="sm"
             onClick={() => remove(idx)}
-            className="w-20"
+            className="text-black"
             disabled={fields.length === 1}
           >
-            ✕
+            <Trash2 />
           </Button>
         </div>
       ))}
@@ -199,9 +205,7 @@ function TableField({
         variant="outline"
         onClick={() => {
           const emptyRow: any = {};
-          columns?.forEach((col) => {
-            emptyRow[col.name!] = "";
-          });
+          columns?.forEach((col) => (emptyRow[col.name!] = ""));
           columns ? append(emptyRow) : append("");
         }}
       >

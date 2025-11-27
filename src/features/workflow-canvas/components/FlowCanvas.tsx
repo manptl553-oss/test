@@ -309,7 +309,7 @@ export default function FlowCanvas({ workflow }: any) {
   );
 
   return (
-    <div className="w-full h-full relative bg-white" ref={containerRef}>
+    <div className="w-full h-full relative bg-(--wf-background-base)" ref={containerRef}>
       <ReactFlow
         nodes={nodesWithData}
         edges={edgesWithData}
@@ -324,7 +324,7 @@ export default function FlowCanvas({ workflow }: any) {
         onNodeDrag={onNodeDrag}
         onNodeDragStop={onNodeDragStop}
         fitView
-        className="bg-white"
+        className="bg-(--wf-background-base)"
         // proOptions={{ hideAttribution: true }}
       >
         <Background color="#eee" />

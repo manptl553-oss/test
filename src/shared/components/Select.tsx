@@ -87,15 +87,18 @@ const SelectTrigger = React.forwardRef<HTMLButtonElement, SelectTriggerProps>(
         aria-expanded={open}
         onClick={() => !disabled && setOpen(!open)}
         className={cn(
-          "flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground",
-          "focus:outline-none focus:ring-0 focus:ring-ring focus:ring-offset-2",
+          "flex h-10 w-full items-center justify-between rounded-md px-3 py-2 text-sm",
+          "border-(--wf-border-default) bg-(--wf-background-base) text-(--wf-text-default)",
+          "focus:outline-none focus:ring-2 focus:ring-(--wf-border-focus) focus:ring-offset-0",
           "disabled:cursor-not-allowed disabled:opacity-50",
           className
         )}
         {...props}
       >
-        {children || <span className="text-muted-foreground">{placeholder}</span>}
-        <ChevronDown className="h-4 w-4 opacity-50" />
+        {children || (
+          <span className="truncate text-(--wf-text-muted)">{placeholder}</span>
+        )}
+        <ChevronDown className="h-4 w-4 opacity-50 text-(--wf-text-muted)" />
       </button>
     );
   }
@@ -116,7 +119,6 @@ const SelectContent = React.forwardRef<HTMLDivElement, SelectContentProps>(
     const { open, setOpen } = useSelectCtx();
     const contentRef = useRef<HTMLDivElement | null>(null);
 
-    // Close on outside click
     useEffect(() => {
       const handleClick = (e: MouseEvent) => {
         if (contentRef.current && !contentRef.current.contains(e.target as Node)) {
@@ -134,10 +136,12 @@ const SelectContent = React.forwardRef<HTMLDivElement, SelectContentProps>(
         ref={(node) => {
           contentRef.current = node;
           if (typeof ref === "function") ref(node);
-          else if (ref) (ref as React.MutableRefObject<HTMLDivElement | null>).current = node;
+          else if (ref) (ref as any).current = node;
         }}
         className={cn(
-          "absolute z-50 mt-1 max-h-96 min-w-32 overflow-auto rounded-md border bg-white text-black shadow-md animate-in fade-in-0",
+          "absolute z-50 mt-1 max-h-96 min-w-32 overflow-auto rounded-md shadow-xl",
+          "border-(--wf-border-default) bg-(--wf-background-base) text-(--wf-text-default)",
+          "animate-in fade-in-0",
           className
         )}
       >
@@ -172,15 +176,16 @@ const SelectItem = React.forwardRef<HTMLDivElement, SelectItemProps>(
         tabIndex={0}
         onClick={() => !disabled && setValue?.(value)}
         className={cn(
-          "relative flex w-full cursor-pointer select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none transition-colors",
-          isSelected && "bg-accent text-accent-foreground font-medium",
+          "relative flex w-full items-center select-none rounded-sm py-1.5 pl-8 pr-2 text-sm",
+          "bg-(--wf-background-base) text-(--wf-text-default) cursor-pointer transition-colors",
+          !disabled && "hover:bg-(--wf-background-subtle)",
           disabled && "pointer-events-none opacity-50",
-          "hover:bg-accent hover:text-accent-foreground",
+          isSelected && "font-medium",
           className
         )}
       >
         <span className="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
-          {isSelected && <Check className="h-4 w-4" />}
+          {isSelected && <Check className="h-4 w-4 text-(--wf-text-default)" />}
         </span>
         <span className="block truncate">{children}</span>
       </div>
@@ -197,7 +202,10 @@ const SelectLabel = React.forwardRef<HTMLDivElement, { className?: string; child
   ({ className, children, ...props }, ref) => (
     <div
       ref={ref}
-      className={cn("py-1.5 pl-8 pr-2 text-sm font-semibold text-foreground", className)}
+      className={cn(
+        "py-1.5 pl-8 pr-2 text-sm font-semibold text-(--wf-text-default)",
+        className
+      )}
       {...props}
     >
       {children}
@@ -211,7 +219,11 @@ SelectGroup.displayName = "SelectGroup";
 
 const SelectSeparator = React.forwardRef<HTMLDivElement, { className?: string }>(
   ({ className, ...props }, ref) => (
-    <div ref={ref} className={cn("-mx-1 my-1 h-px bg-muted", className)} {...props} />
+    <div
+      ref={ref}
+      className={cn("my-1 h-px bg-(--wf-border-default)", className)}
+      {...props}
+    />
   )
 );
 SelectSeparator.displayName = "SelectSeparator";

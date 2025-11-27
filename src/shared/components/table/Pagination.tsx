@@ -14,9 +14,17 @@ function Button({
 }) {
   return (
     <button
-      className={`flex items-center justify-center w-9 h-9 rounded-lg text-sm
-        ${active ? "bg-primary-100 border border-primary-500 text-primary-500" : "text-gray-400 border border-gray-200"}
-        ${disabled ? "opacity-50 cursor-not-allowed" : "hover:bg-lime-500 hover:text-white"}
+      className={`flex items-center justify-center w-9 h-9 rounded-lg text-sm border transition-colors
+        ${
+          active
+            ? "bg-(--wf-brand-primary) text-(--wf-text-inverted) border-(--wf-brand-primary)"
+            : "text-(--wf-text-muted) border-(--wf-border-default)"
+        }
+        ${
+          disabled
+            ? "opacity-50 cursor-not-allowed"
+            : "hover:bg-(--wf-background-subtle) hover:text-(--wf-text-default)"
+        }
       `}
       onClick={onClick}
       disabled={disabled}
@@ -81,23 +89,24 @@ export const Pagination = ({
   }, [pageCount, pageIndex, gotoPage]);
 
   return pageCount ? (
-    <div className="flex justify-between items-center flex-wrap gap-y-4 mt-4">
+    <div className="flex justify-between items-center flex-wrap gap-y-4 mt-4 text-(--wf-text-default)">
       {/* Rows per page */}
-      <div className="text-sm flex items-center gap-3 text-gray-600">
+      <div className="text-sm flex items-center gap-3 text-(--wf-text-default)">
         <span>Rows per page:</span>
         <select
           value={perPage}
           onChange={(e) => onPerPageChange(Number(e.target.value))}
-          className="border px-2 py-1 rounded-lg"
+          className="border border-(--wf-border-default) bg-(--wf-background-subtle) text-(--wf-text-default) rounded-lg px-2 py-1"
         >
           {perPageOptions.map((n) => (
-            <option key={n}>{n}</option>
+            <option key={n} value={n}>
+              {n}
+            </option>
           ))}
         </select>
 
         <span>
-          Showing{" "}
-          <strong>{pageIndex * perPage + 1}</strong> to{" "}
+          Showing <strong>{pageIndex * perPage + 1}</strong> to{" "}
           <strong>{pageIndex * perPage + itemsInPage}</strong> of{" "}
           <strong>{totalCount}</strong>
         </span>

@@ -121,7 +121,7 @@ export function WorkflowListing<T>({
     <div className="p-6 space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <h2 className="text-2xl font-bold text-white">
+        <h2 className="text-2xl font-bold text-(--wf-text-default)">
           {title || "Workflows"}
         </h2>
 
@@ -133,47 +133,47 @@ export function WorkflowListing<T>({
               placeholder={searchPlaceholder}
               value={localSearch}
               onChange={(e) => setLocalSearch(e.target.value)}
-              className="px-4 py-2 min-w-[240px] rounded-lg bg-gray-800 border border-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-0 focus:ring-lime-500"
+              className="
+                px-4 py-2 min-w-[240px] rounded-lg
+                bg-(--wf-background-subtle)
+                border border-(--wf-border-default)
+                text-(--wf-text-default)
+                placeholder:text-(--wf-text-muted)
+                focus:outline-none focus-visible:ring-2 focus-visible:ring-(--wf-border-focus)
+              "
             />
           )}
 
-          {/* Status Filter */}
           {onStatusFilterChange && (
             <div className="relative" ref={popupRef}>
               <button
                 onClick={() => setIsFilterOpen((v) => !v)}
-                className={`px-4 py-2 rounded-lg border flex items-center gap-2 transition-all ${
-                  hasActiveFilter
-                    ? "bg-lime-600 border-lime-600 text-white"
-                    : "bg-gray-800 border-gray-700 text-gray-300 hover:border-gray-600"
-                }`}
+                className={`
+                  px-4 py-2 rounded-lg border flex items-center gap-2 transition-all
+                  ${
+                    hasActiveFilter
+                      ? "bg-(--wf-brand-primary) border-(--wf-brand-primary) text-(--wf-text-inverted)"
+                      : "bg-(--wf-background-subtle) border-(--wf-border-default) text-(--wf-text-muted) hover:bg-(--wf-background-highlight)"
+                  }
+                `}
               >
                 <span>Filter</span>
                 {hasActiveFilter && (
-                  <div className="w-2 h-2 bg-white rounded-full"></div>
+                  <div className="w-2 h-2 bg-(--wf-text-inverted) rounded-full" />
                 )}
               </button>
 
               {isFilterOpen && (
-                <div className="absolute right-0 mt-2 w-56 bg-gray-900 border border-gray-700 rounded-lg shadow-xl z-50">
+                <div className="absolute right-0 mt-2 w-56 bg-(--wf-background-base) border border-(--wf-border-default) rounded-lg shadow-xl z-50">
                   <div className="p-4 space-y-3">
-                    <label className="text-sm font-medium text-gray-300">
+                    <label className="text-sm font-medium text-(--wf-text-default)">
                       Status
                     </label>
+
                     <select
                       value={statusFilter}
-                      onChange={(e) => {
-                        const value = e.target.value;
-                        // Type assertion is safe because <option> values are restricted
-                        if (
-                          value === "all" ||
-                          value === "enabled" ||
-                          value === "disabled"
-                        ) {
-                          onStatusFilterChange(value);
-                        }
-                      }}
-                      className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded text-white focus:outline-none focus:border-lime-500"
+                      onChange={(e) => onStatusFilterChange?.(e.target.value as StatusFilterValue)}
+                      className="w-full px-3 py-2 bg-(--wf-background-subtle) border border-(--wf-border-default) rounded text-(--wf-text-default)"
                     >
                       {defaultStatusOptions.map((opt) => (
                         <option key={opt.value} value={opt.value}>
@@ -184,8 +184,8 @@ export function WorkflowListing<T>({
 
                     {hasActiveFilter && (
                       <button
-                        onClick={() => onStatusFilterChange("all")}
-                        className="text-sm text-lime-400 hover:text-lime-300"
+                        onClick={() => onStatusFilterChange?.("all")}
+                        className="text-sm text-(--wf-brand-primary) hover:text-(--wf-brand-secondary)"
                       >
                         Clear filter
                       </button>
@@ -200,7 +200,7 @@ export function WorkflowListing<T>({
           {createButton.show && (
             <button
               onClick={createButton.onClick}
-              className="px-5 py-2 bg-lime-600 text-white font-medium rounded-lg hover:bg-lime-700 transition"
+              className="px-5 py-2 bg-(--wf-brand-primary) text-(--wf-text-inverted) font-medium rounded-lg hover:bg-(--wf-brand-secondary) transition"
             >
               {createButton.label}
             </button>
@@ -209,7 +209,7 @@ export function WorkflowListing<T>({
       </div>
 
       {/* Table */}
-      <div className="rounded-xl border border-gray-800 overflow-hidden bg-gray-900/30">
+      <div className="rounded-xl border border-(--wf-border-default) overflow-hidden bg-(--wf-background-subtle)">
         <Table
           columns={[
             ...columns,

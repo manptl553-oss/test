@@ -55,15 +55,15 @@ export function Table<T>({
   };
 
   return (
-    <div className="border rounded-lg overflow-x-auto">
-      <table className="min-w-full divide-y divide-gray-200">
-        <thead className="bg-gray-100">
+    <div className="border border-(--wf-border-default) rounded-lg overflow-x-auto">
+      <table className="min-w-full divide-y divide-(--wf-border-default)">
+        <thead className="bg-(--wf-background-subtle)">
           <tr>
             {columns.map((col) => (
               <th
                 key={String(col.field)}
                 style={{ width: col.width }}
-                className="p-3 text-left text-sm font-medium text-gray-700"
+                className="p-3 text-left text-sm font-medium text-(--wf-text-default)"
               >
                 <div
                   className={`flex items-center gap-1 ${
@@ -72,23 +72,31 @@ export function Table<T>({
                   onClick={() => toggleSort(col)}
                 >
                   {col.label}
-                  {col.sortable && getSortIcon(String(col.field))}
+                  {col.sortable && (
+                    <span className="text-(--wf-text-muted)">{getSortIcon(String(col.field))}</span>
+                  )}
                 </div>
               </th>
             ))}
           </tr>
         </thead>
 
-        <tbody className="divide-y divide-gray-200">
+        <tbody className="divide-y divide-(--wf-border-default)">
           {isLoading ? (
             <tr>
-              <td className="text-center py-8 text-gray-500" colSpan={columns.length}>
+              <td
+                className="text-center py-8 text-(--wf-text-muted)"
+                colSpan={columns.length}
+              >
                 Loading...
               </td>
             </tr>
           ) : records.length === 0 ? (
             <tr>
-              <td className="text-center py-8 text-gray-500" colSpan={columns.length}>
+              <td
+                className="text-center py-8 text-(--wf-text-muted)"
+                colSpan={columns.length}
+              >
                 {emptyText}
               </td>
             </tr>

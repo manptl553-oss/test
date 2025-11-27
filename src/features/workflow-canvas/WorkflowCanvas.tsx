@@ -81,7 +81,7 @@ export function WorkflowCanvas({
 
   return (
     <div className="flex-1 flex flex-col animate-fade-in bg-(--wf-background-base) text-(--wf-text-default)">
-      <header className="border-b border-(--wf-border-default) bg-(--wf-background-subtle) px-6 py-3 flex items-center justify-between">
+      <header className="border-y border-(--wf-border-default) bg-(--wf-background-subtle) px-6 py-3 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <button
             onClick={handleBack}
@@ -142,7 +142,7 @@ export function WorkflowCanvas({
               <p>published</p>
             ) : (
               <Button
-                className="bg-(--wf-brand-primary) hover:bg-(--wf-brand-secondary) text-(--wf-text-inverted) "
+                className="bg-(--wf-brand-primary) text-(--wf-text-inverted) "
                 onClick={() => {
                   handlePublish(
                     workflow?.version?.id,
@@ -166,7 +166,7 @@ export function WorkflowCanvas({
         {nodes?.length > 0 && (
           <div>
             <Button
-              className="bg-(--wf-brand-primary) hover:bg-(--wf-brand-secondary) text-(--wf-text-inverted) "
+              className="bg-(--wf-brand-primary) text-(--wf-text-inverted) "
               onClick={() => {
                 const changes = getChangesForSync();
                 if (changes)

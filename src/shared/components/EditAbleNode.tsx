@@ -48,14 +48,18 @@ const EditableNodeName = ({
             }
           }}
           className={cn(
-            "border border-gray-300 rounded px-1 py-0.5 text-sm focus:outline-none focus:ring-0 focus:ring-blue-500",
+            "border border-(--wf-border-default) rounded px-1 py-0.5 text-sm",
+            "bg-(--wf-background-subtle) text-(--wf-text-default)",
+            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--wf-border-focus) focus-visible:ring-offset-1 ring-offset-(--wf-background-base)",
+            "disabled:opacity-50 disabled:cursor-not-allowed",
             inputClassName
           )}
         />
       ) : (
         <span
           className={cn(
-            "text-sm font-medium cursor-text hover:bg-gray-100 px-1 rounded transition",
+            "text-sm font-medium cursor-text px-1 rounded transition",
+            "text-(--wf-text-default) hover:bg-(--wf-background-subtle)",
             spanClassName
           )}
         >

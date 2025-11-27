@@ -1,10 +1,5 @@
 import React, { createContext, useContext, useMemo } from "react";
-import {
-  CanvasConfig,
-  mergeTheme,
-  NodeConfig,
-  WorkflowTheme
-} from "../theme";
+import { CanvasConfig, mergeTheme, NodeConfig, WorkflowTheme } from "../theme";
 
 // ✅ ADD: Export this type
 export type WorkflowContextValue = {
@@ -27,13 +22,13 @@ export function WorkflowProvider({
   node?: NodeConfig;
 }) {
   const mergedTheme = useMemo(() => mergeTheme(theme), [theme]);
-  
+
   // ✅ ADD: Memoize value to prevent unnecessary re-renders
   const value = useMemo(
     () => ({ theme: mergedTheme, canvas, node }),
     [mergedTheme, canvas, node]
   );
-  
+
   // ✅ ADD: Memoize cssVars calculation
   const cssVars = useMemo(() => {
     return Object.entries(mergedTheme.colors!).reduce(
@@ -49,7 +44,9 @@ export function WorkflowProvider({
 
   return (
     <WorkflowContext.Provider value={value}>
-      <div style={cssVars}>{children}</div>
+      <div style={cssVars} id="workflow-portal-root">
+        {children}
+      </div>
     </WorkflowContext.Provider>
   );
 }

@@ -16,7 +16,6 @@ import {
 } from "@/shared";
 import { useFlowStore } from "@/store";
 import { Plus, Unlink } from "lucide-react";
-import { v4 as uuidv4 } from "uuid";
 
 /* -------------------------------------------------------------------
    CONSTANTS
@@ -137,14 +136,14 @@ const CustomEdge = memo((props: EdgeProps) => {
         style={{
           position: "absolute",
           transform: `translate(${x}px, ${
-            y - 12
+            y - 20
           }px) translate(-50%, -50%) rotate(${angleDeg}deg)`,
           pointerEvents: "none",
           whiteSpace: "nowrap",
         }}
         className="nodrag nopan"
       >
-        <div className="text-xs px-2 py-1 text-black">{text}</div>
+        <div className="text-xs px-2 py-1 text-(--wf-text-default)">{text}</div>
       </div>
     </EdgeLabelRenderer>
   );

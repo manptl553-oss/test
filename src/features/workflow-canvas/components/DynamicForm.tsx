@@ -23,9 +23,6 @@ import {
 import RichTextEditor from "@/shared/components/TextEditor";
 import { LogicRulesField } from "./ConditionalConfig";
 
-/* ------------------------------------------------------------------
-   Helper to convert "a == b" → { field: "a", operator: "==", value: "b" }
--------------------------------------------------------------------*/
 const splitExpression = (expr = "") => {
   const regex = /(.+?)\s*(==|!=|===|>=|<=|>|<)\s*(.+)/;
   const m = expr.match(regex);
@@ -45,7 +42,6 @@ export const DynamicForm = ({
   const cleanedDefaults = useMemo(() => {
     const d: any = { ...defaultValues };
 
-    // Parse conditions
     if (!Array.isArray(d.conditions) || d.conditions.length === 0) {
       d.conditions = [{ field: "", operator: "==", value: "" }];
     } else {
@@ -54,7 +50,6 @@ export const DynamicForm = ({
       );
     }
 
-    // Parse switch cases
     if (!Array.isArray(d.switchCases) || d.switchCases.length === 0) {
       d.switchCases = [{ field: "", operator: "==", value: "" }];
     } else {
@@ -62,7 +57,7 @@ export const DynamicForm = ({
         c.expression ? splitExpression(c.expression) : c
       );
     }
-    // Add empty defaults for missing fields
+
     fields.forEach((f) => {
       if (d[f.name] === undefined) {
         if (f.type === "conditions" || f.type === "cases") {
@@ -141,9 +136,7 @@ export const DynamicForm = ({
                       ? rhf.value
                       : JSON.stringify(rhf.value ?? {}, null, 2)
                   }
-                  onChange={(e) => {
-                    rhf.onChange(e.target.value); // ALWAYS STRING
-                  }}
+                  onChange={(e) => rhf.onChange(e.target.value)}
                 />
               )}
             />
@@ -163,15 +156,14 @@ export const DynamicForm = ({
                 const selected = field.options?.find(
                   (opt) => opt.value === value
                 );
-
                 return (
                   <Select value={value} onValueChange={onChange}>
-                    <SelectTrigger>
+                    <SelectTrigger className="border-(--wf-border-default) text-(--wf-text-default)">
                       <SelectValue placeholder="Select">
                         {formatName(selected?.label ?? "Select")}
                       </SelectValue>
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="bg-(--wf-background-subtle) border-(--wf-border-default)">
                       {field.options?.map((opt) => (
                         <SelectItem key={opt.value} value={opt.value}>
                           {formatName(opt.label)}
@@ -185,6 +177,7 @@ export const DynamicForm = ({
             {errorMsg && <p className="text-red-500 text-xs">{errorMsg}</p>}
           </div>
         );
+
       case "richtext":
         return (
           <div key={field.name} className="space-y-2 w-full">
@@ -193,11 +186,7 @@ export const DynamicForm = ({
               control={control}
               name={field.name}
               render={({ field: { value, onChange } }) => (
-                <RichTextEditor
-                  value={value}
-                  onChange={onChange}
-                  height={300}
-                />
+                <RichTextEditor value={value} onChange={onChange} height={300} />
               )}
             />
             {errorMsg && <p className="text-red-500 text-xs">{errorMsg}</p>}
@@ -241,11 +230,12 @@ export const DynamicForm = ({
             isTag
           />
         );
+
       case "code":
         const selectedLanguage = watch("language");
         return (
           <div key={field.name} className="space-y-2 w-full">
-            <Label className="block font-medium text-sm text-gray-700 mt-4">
+            <Label className="block font-medium text-sm text-(--wf-text-default) mt-4">
               {field.label}
             </Label>
             <Controller
@@ -253,10 +243,11 @@ export const DynamicForm = ({
               name={field.name}
               render={({ field: { value, onChange } }) => (
                 <div
-                  className="border border-gray-300 rounded-md overflow-hidden shadow-sm focus-within:ring-2 focus-within:ring-primary/30"
-                  onKeyDown={(e) => {
-                    if (e.key === " ") e.stopPropagation();
-                  }}
+                  className="
+                    border border-(--wf-border-default) rounded-md overflow-hidden shadow-sm
+                    focus-within:ring-2 focus-within:ring-(--wf-border-focus)
+                  "
+                  onKeyDown={(e) => e.key === " " && e.stopPropagation()}
                 >
                   <CodeEditor
                     onChange={onChange}
@@ -312,14 +303,15 @@ export const DynamicForm = ({
             : "space-y-3 max-h-[500px] overflow-y-auto h-full scroll-hide relative"
         }
       >
-        <div className="space-y-3">
+        <div className="space-y-3 mt-3">
           {(twoPane ? left : visibleFields).map(renderField)}
         </div>
+
         {twoPane && <div className="space-y-3">{right.map(renderField)}</div>}
       </div>
 
       <div className="flex gap-3 pt-6">
-        <Button type="submit" className="flex-1 text-white">
+        <Button type="submit" className="flex-1">
           Save
         </Button>
         {onCancel && (

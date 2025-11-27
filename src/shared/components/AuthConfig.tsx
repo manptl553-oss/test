@@ -30,17 +30,18 @@ export function AuthConfigFields({
   return (
     <div className="space-y-4">
       {/* AUTH TYPE */}
-      <div>
+      <div className="space-y-1">
         <Label>Authentication Type</Label>
         <Controller
           control={control}
           name={`${name}.type`}
           render={({ field }) => (
             <Select value={field.value} onValueChange={field.onChange}>
-              <SelectTrigger>
+              <SelectTrigger className="border-(--wf-border-default) text-(--wf-text-default)">
                 <SelectValue placeholder="Select authentication" />
               </SelectTrigger>
-              <SelectContent>
+
+              <SelectContent className="bg-(--wf-background-subtle) border-(--wf-border-default)">
                 {Object.values(EAuthType).map((t) => (
                   <SelectItem key={t} value={t}>
                     {t}
@@ -59,7 +60,7 @@ export function AuthConfigFields({
       {type === EAuthType.BASIC && (
         <>
           {/* USERNAME */}
-          <div>
+          <div className="space-y-1">
             <Label>Username</Label>
             <Controller
               control={control}
@@ -76,7 +77,7 @@ export function AuthConfigFields({
           </div>
 
           {/* PASSWORD */}
-          <div>
+          <div className="space-y-1">
             <Label>Password</Label>
             <Controller
               control={control}
@@ -98,6 +99,7 @@ export function AuthConfigFields({
         </>
       )}
 
+      {/* HEADER AUTH */}
       {type === EAuthType.HEADER && (
         <div className="space-y-4">
           <TableField
@@ -112,6 +114,7 @@ export function AuthConfigFields({
           />
         </div>
       )}
+
       {errors?.message && (
         <p className="text-red-500 text-xs">{errors.message}</p>
       )}

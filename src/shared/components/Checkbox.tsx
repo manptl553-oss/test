@@ -38,10 +38,16 @@ const Checkbox = React.forwardRef<HTMLInputElement, CheckboxProps>(
         data-state={current ? "checked" : "unchecked"}
         onClick={toggle}
         className={cn(
-          "peer flex h-4 w-4 shrink-0 items-center justify-center rounded-sm border border-primary ring-offset-background",
-          "focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-ring focus-visible:ring-offset-0",
+          // Base styles
+          "flex h-4 w-4 shrink-0 items-center justify-center rounded-sm transition-colors",
+          "border border-(--wf-border-default) bg-(--wf-background-subtle) text-(--wf-text-default)",
+          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--wf-border-focus) focus-visible:ring-offset-2 ring-offset-(--wf-background-base)",
           "disabled:cursor-not-allowed disabled:opacity-50",
-          current && "bg-primary text-primary-foreground",
+
+          // Checked state
+          current &&
+            "bg-(--wf-brand-primary) border-(--wf-brand-primary) text-(--wf-text-inverted)",
+
           className
         )}
       >
