@@ -99,7 +99,7 @@ export const Popover = () => {
       style={{
         ...style,
         width: 360,
-        background: "#fff",
+        background: "var(--wf-background-base)",
         border: "1px solid #e2e8f0",
         borderRadius: 12,
         padding: 16,

@@ -1,4 +1,5 @@
 import { WorkflowCategoryList } from "@/features";
+import { Option } from "../components";
 
 //dummy data will come form Builder or Provider
 export const nodeCategoryConst: WorkflowCategoryList = [
@@ -393,5 +394,11 @@ export const nodeCategoryConst: WorkflowCategoryList = [
         visibility: true,
       },
     ],
+  },
+];
+export const groupIdsConst: Option[] = [
+  {
+    label: "Customers",
+    value: "7dc6184e-2839-425d-8b69-200714b3a1a1",
   },
 ];

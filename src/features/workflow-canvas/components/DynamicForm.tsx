@@ -2,26 +2,22 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useMemo } from "react";
 import { Controller, useForm } from "react-hook-form";
 
-import { cn, formatName } from "@/shared/utils";
-import { DynamicFormProps, FieldConfig } from "../types";
 import {
+  AddOnsConfig,
   AuthConfigFields,
   Button,
   Checkbox,
   CodeEditor,
-  DynamicFiledOptions,
   Input,
   Label,
   Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
   TableField,
   Textarea,
 } from "@/shared";
 import RichTextEditor from "@/shared/components/TextEditor";
+import { DynamicFormProps, FieldConfig } from "../types";
 import { LogicRulesField } from "./ConditionalConfig";
+import { ScheduleConfig } from "@/shared/components/ScheduleConfig";
 
 const splitExpression = (expr = "") => {
   const regex = /(.+?)\s*(==|!=|===|>=|<=|>|<)\s*(.+)/;
@@ -67,7 +63,14 @@ export const DynamicForm = ({
         } else if (f.type === "checkbox") {
           d[f.name] = false;
         } else if (f.type === "select") {
-          d[f.name] = f.options?.[0]?.value ?? "";
+          // Handle both single and multi select defaults
+          if (f.isMulti) {
+            d[f.name] = []; // Empty array for multi-select
+          } else {
+            d[f.name] = f.options?.[0]?.value ?? ""; // First option or empty string
+          }
+        } else if (f.type === "addOn") {
+          d[f.name] = [];
         } else {
           d[f.name] = "";
         }
@@ -77,10 +80,12 @@ export const DynamicForm = ({
     return d;
   }, [defaultValues, fields]);
 
+  console.log(cleanedDefaults);
   const {
     handleSubmit,
     control,
     watch,
+    setValue,
     formState: { errors },
   } = useForm({
     resolver: schema ? zodResolver(schema) : undefined,
@@ -145,38 +150,29 @@ export const DynamicForm = ({
           </div>
         );
 
-      case "select":
+      case "select": {
+        const isMulti = field.type === "select" && field.isMulti === true;
+
         return (
           <div key={field.name} className="space-y-2 w-full">
             <Label>{field.label}</Label>
             <Controller
               control={control}
               name={field.name}
-              render={({ field: { value, onChange } }) => {
-                const selected = field.options?.find(
-                  (opt) => opt.value === value
-                );
-                return (
-                  <Select value={value} onValueChange={onChange}>
-                    <SelectTrigger className="border-(--wf-border-default) text-(--wf-text-default)">
-                      <SelectValue placeholder="Select">
-                        {formatName(selected?.label ?? "Select")}
-                      </SelectValue>
-                    </SelectTrigger>
-                    <SelectContent className="bg-(--wf-background-subtle) border-(--wf-border-default)">
-                      {field.options?.map((opt) => (
-                        <SelectItem key={opt.value} value={opt.value}>
-                          {formatName(opt.label)}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                );
-              }}
+              render={({ field: { value, onChange } }) => (
+                <Select
+                  isMulti={isMulti}
+                  options={field.options || []}
+                  value={value ?? (isMulti ? [] : "")}
+                  onValueChange={onChange}
+                  placeholder={isMulti ? "Select multiple" : "Select"}
+                />
+              )}
             />
             {errorMsg && <p className="text-red-500 text-xs">{errorMsg}</p>}
           </div>
         );
+      }
 
       case "richtext":
         return (
@@ -186,7 +182,11 @@ export const DynamicForm = ({
               control={control}
               name={field.name}
               render={({ field: { value, onChange } }) => (
-                <RichTextEditor value={value} onChange={onChange} height={300} />
+                <RichTextEditor
+                  value={value}
+                  onChange={onChange}
+                  height={300}
+                />
               )}
             />
             {errorMsg && <p className="text-red-500 text-xs">{errorMsg}</p>}
@@ -280,6 +280,25 @@ export const DynamicForm = ({
             control={control}
             key={field.name}
             name={field.name}
+            errors={errors[field.name]}
+          />
+        );
+
+      case "schedule":
+        return (
+          <ScheduleConfig
+            control={control}
+            key={field.name}
+            errors={errors[field.name]}
+          />
+        );
+
+      case "addOn":
+        return (
+          <AddOnsConfig
+            control={control}
+            setValue={setValue}
+            key={field.name}
             errors={errors[field.name]}
           />
         );

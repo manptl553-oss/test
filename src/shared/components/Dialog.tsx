@@ -201,7 +201,7 @@ const DialogContent = React.forwardRef<
     </>
   );
 
-  const portalRoot = document.getElementById("workflow-portal-root");
+  const portalRoot = document.getElementById("my_workflow");
   return createPortal(dialogContent, portalRoot!);
 });
 DialogContent.displayName = "DialogContent";

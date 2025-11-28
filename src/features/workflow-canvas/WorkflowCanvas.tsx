@@ -1,23 +1,21 @@
 import {
   Button,
-  FieldOption,
   formatName,
+  groupIdsConst,
   Input,
+  nodeFieldsConfig,
+  Option,
   Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
   WorkFlowStatus,
 } from "@/shared";
-import { VersionData, Workflow } from "@/shared/types/workflow.types";
+import { GroupIds, VersionData, Workflow } from "@/shared/types/workflow.types";
 import { useFlowStore } from "@/store/workflow-store";
 import { ArrowLeft } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { ReactFlowProvider } from "reactflow";
 import FlowCanvas from "./components/FlowCanvas";
 import { normalizeWorkflowData } from "./helpers/normalize";
-import { WorkflowCategoryList } from "./types";
+import { FieldConfig, WorkflowCategoryList } from "./types";
 export function WorkflowCanvas({
   workflow,
   versions,
@@ -27,6 +25,7 @@ export function WorkflowCanvas({
   handleUpdateWorkflowMeta,
   handleSaveWorkflow,
   handlePublish,
+  groupIds,
 }: {
   workflow: Workflow;
   versions: VersionData[];
@@ -37,6 +36,7 @@ export function WorkflowCanvas({
   handleRunWorkflow: () => void;
   handleSaveWorkflow: (workflow: any) => void;
   handlePublish: (versionId: string, status: WorkFlowStatus) => void;
+  groupIds: GroupIds[];
 }) {
   const {
     getChangesForSync,
@@ -48,7 +48,7 @@ export function WorkflowCanvas({
     voidNode,
     setVoidNode,
     markAsSynced,
-    isDirty
+    isDirty,
   } = useFlowStore();
   const [workflowName, setWorkflowName] = useState(workflow?.name || "");
   const [selectedVersion, setSelectedVersion] = useState(
@@ -79,6 +79,20 @@ export function WorkflowCanvas({
       });
     }
   }, [currentVersion, nodeCategories, workflow.version]);
+
+  //will remove groupIdsConst
+  const groupIdsSelectOptions: Option[] =
+    groupIds?.map((e) => ({
+      label: e.name,
+      value: e.id,
+    })) ?? groupIdsConst;
+  nodeFieldsConfig["membership_invite"] = nodeFieldsConfig?.[
+    "membership_invite"
+  ]?.map((e) =>
+    e.name == "groupIds"
+      ? ({ ...e, options: groupIdsSelectOptions } as FieldConfig)
+      : e
+  );
 
   return (
     <div className="flex-1 flex flex-col animate-fade-in bg-(--wf-background-base) text-(--wf-text-default)">
@@ -116,28 +130,29 @@ export function WorkflowCanvas({
             />
 
             <Select
+              options={
+                versions?.map((version) => ({
+                  value: version.version.toString(),
+                  label: formatName(version.name),
+                })) || []
+              }
               value={selectedVersion}
-              onValueChange={(value) => {
+              onValueChange={(value: string) => {
                 setSelectedVersion(value);
                 handleVersionChange?.(value);
               }}
-            >
-              <SelectTrigger className="w-[180px] border border-(--wf-border-default) bg-(--wf-background-base) text-(--wf-text-default)">
-                <SelectValue placeholder="Select">
-                  {formatName(workflow.version.name)}
-                </SelectValue>
-              </SelectTrigger>
-              <SelectContent className="bg-(--wf-background-base) border border-(--wf-border-default) text-white">
-                {versions?.map((version) => (
-                  <SelectItem
-                    key={version.id}
-                    value={version.version.toString()}
-                  >
-                    {formatName(version.name)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              placeholder="Select"
+              className="w-[180px]"
+            />
+
+            {/* {isNameChanged && (
+              <Button
+                className="bg-(--wf-brand-primary) hover:bg-(--wf-brand-secondary) text-(--wf-text-inverted) "
+                onClick={handleUpdateWorkflowMeta}
+              >
+                Save
+              </Button>
+            )} */}
           </div>
         </div>
         {nodes?.length > 0 && (
@@ -146,17 +161,32 @@ export function WorkflowCanvas({
               className="bg-(--wf-brand-primary) text-(--wf-text-inverted) "
               onClick={() => {
                 const changes = getChangesForSync();
-                if (changes)
-                  handleSaveWorkflow({
-                    ...workflow,
+                if (changes) {
+                  const payload = {
                     versionId: workflow?.version?.id,
+                    name: workflowName,
+                    description: workflow.description,
+                    slug: workflow?.slug,
+                  };
+                  handleSaveWorkflow({
+                    ...payload,
                     ...changes,
                   });
-                markAsSynced();
+                  markAsSynced();
+                } else if (
+                  workflow?.version?.status !== WorkFlowStatus.PUBLISHED
+                ) {
+                  handlePublish(
+                    workflow?.version?.id,
+                    WorkFlowStatus.PUBLISHED
+                  );
+                }
               }}
             >
-              
-              {isDirty() ? 'Save' : 'Publish'}
+              {!isDirty() &&
+              workflow?.version?.status !== WorkFlowStatus.PUBLISHED
+                ? "Publish"
+                : "Save"}
             </Button>
           </div>
         )}

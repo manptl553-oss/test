@@ -4,11 +4,7 @@ import { EAuthType } from "../constants";
 import { Input } from "./Input";
 import { Label } from "./Label";
 import {
-  Select,
-  SelectTrigger,
-  SelectValue,
-  SelectContent,
-  SelectItem,
+  Select
 } from "./Select";
 import { TableField } from "./TableFields";
 
@@ -36,19 +32,15 @@ export function AuthConfigFields({
           control={control}
           name={`${name}.type`}
           render={({ field }) => (
-            <Select value={field.value} onValueChange={field.onChange}>
-              <SelectTrigger className="border-(--wf-border-default) text-(--wf-text-default)">
-                <SelectValue placeholder="Select authentication" />
-              </SelectTrigger>
-
-              <SelectContent className="bg-(--wf-background-subtle) border-(--wf-border-default)">
-                {Object.values(EAuthType).map((t) => (
-                  <SelectItem key={t} value={t}>
-                    {t}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Select
+              options={Object.values(EAuthType).map((t) => ({
+                value: t,
+                label: t,
+              }))}
+              value={field.value}
+              onValueChange={field.onChange}
+              placeholder="Select authentication"
+            />
           )}
         />
         {errors?.[name]?.type && (

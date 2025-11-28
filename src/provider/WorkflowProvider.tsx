@@ -44,7 +44,7 @@ export function WorkflowProvider({
 
   return (
     <WorkflowContext.Provider value={value}>
-      <div style={cssVars} id="workflow-portal-root">
+      <div style={cssVars} id="my_workflow">
         {children}
       </div>
     </WorkflowContext.Provider>

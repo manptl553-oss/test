@@ -1,17 +1,13 @@
 import { useEffect, useRef } from "react";
 import { Controller, useFieldArray } from "react-hook-form";
+import { DynamicFiledOptions, TableFieldProps } from "../types";
+import { cn } from "../utils";
 import { Button } from "./Button";
 import { Input } from "./Input";
 import { Label } from "./Label";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+  Select
 } from "./Select";
-import { DynamicFiledOptions, TableFieldProps } from "../types";
-import { cn, formatName } from "../utils";
 import { Textarea } from "./TextArea";
 import { Delete, DeleteIcon, Trash2 } from "lucide-react";
 
@@ -86,30 +82,14 @@ function TableField({
             <Controller
               control={control}
               name={filedName}
-              render={({ field: { value, onChange } }) => {
-                const selected = column.options?.find(
-                  (opt) => opt.value === value
-                );
-                return (
-                  <Select value={value ?? ""} onValueChange={onChange}>
-                    <SelectTrigger className="border-(--wf-border-default) text-(--wf-text-default)">
-                      <SelectValue placeholder={`Select ${column.label}`}>
-                        {formatName(
-                          selected?.label ?? `Select ${column.label}`
-                        )}
-                      </SelectValue>
-                    </SelectTrigger>
-
-                    <SelectContent className="bg-(--wf-background-subtle) border-(--wf-border-default)">
-                      {column.options?.map((opt) => (
-                        <SelectItem key={opt.value} value={opt.value}>
-                          {formatName(opt.label)}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                );
-              }}
+              render={({ field: { value, onChange } }) => (
+                <Select
+                  options={column.options || []}
+                  value={value ?? ""}
+                  onValueChange={onChange}
+                  placeholder={`Select ${column.label}`}
+                />
+              )}
             />
             {errorMsg && <p className="text-red-500 text-xs">{errorMsg}</p>}
           </div>
@@ -216,3 +196,4 @@ function TableField({
 }
 
 export { TableField };
+

@@ -29,19 +29,19 @@ const DEFAULT_COLORS: Record<
   }),
   dark: (value) => ({
     brand: Object.assign(
-      { primary: "#60a5fa", secondary: "#c4b5fd" },
+      { primary: "#9ed566", secondary: "#b8e986" },
       value?.brand
     ),
     text: Object.assign(
-      { default: "#f3f4f6", muted: "#9ca3af", inverted: "#0b1220" },
+      { default: "#f3f4f6", muted: "#9ca3af", inverted: "#111827" },
       value?.text
     ),
     background: Object.assign(
-      { base: "#0b1220", subtle: "#111827", highlight: "#1f2937" },
+      { base: "#111827", subtle: "#1f2937", highlight: "#374151" },
       value?.background
     ),
     border: Object.assign(
-      { default: "#374151", focus: "#60a5fa", strong: "#4b5563" },
+      { default: "#4b5563", focus: "#60a5fa", strong: "#6b7280" },
       value?.border
     ),
     // feedback: {

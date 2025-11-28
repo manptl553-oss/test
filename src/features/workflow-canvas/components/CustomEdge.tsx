@@ -1,4 +1,4 @@
-import React, { memo, useMemo, useState } from "react";
+import React, { memo, useCallback, useMemo, useState } from "react";
 import {
   BaseEdge,
   EdgeLabelRenderer,
@@ -51,7 +51,7 @@ const CustomEdge = memo((props: EdgeProps) => {
   const nodeInternals = useStore((s) => s.nodeInternals);
 
   const { deleteEdge, addNodeBetweenEdge } = useFlowStore();
-  const sourceNode: any = getNode(source);
+  const sourceNode = getNode(source);
   const targetNode = getNode(target);
   const allNodes = useMemo(
     () => Array.from(nodeInternals.values()),
@@ -125,27 +125,47 @@ const CustomEdge = memo((props: EdgeProps) => {
     </EdgeLabelRenderer>
   );
 
-  const renderEdgeLabel = (
-    x: number,
-    y: number,
-    angleDeg: number,
-    text: string
-  ) => (
-    <EdgeLabelRenderer>
-      <div
-        style={{
-          position: "absolute",
-          transform: `translate(${x}px, ${
-            y - 20
-          }px) translate(-50%, -50%) rotate(${angleDeg}deg)`,
-          pointerEvents: "none",
-          whiteSpace: "nowrap",
-        }}
-        className="nodrag nopan"
-      >
-        <div className="text-xs px-2 py-1 text-(--wf-text-default)">{text}</div>
-      </div>
-    </EdgeLabelRenderer>
+  const renderEdgeLabel = useCallback(
+    (x: number, y: number, angleDeg: number, text: string) => {
+      // Convert angle degrees to radians
+      const offset = 20;
+      const rad = (angleDeg * Math.PI) / 180;
+
+      // Compute perpendicular direction to the edge
+      const offsetX = Math.sin(rad) * offset; // X shift based on slope
+      const offsetY = -Math.cos(rad) * offset; // Y shift based on slope
+
+      return (
+        <EdgeLabelRenderer>
+          <div
+            className="absolute nodrag nopan"
+            style={{
+              transform: `translate(${x + offsetX}px, ${y + offsetY}px)
+                        translate(-50%, -50%)
+                        rotate(${angleDeg}deg)`,
+              pointerEvents: "none",
+              whiteSpace: "nowrap",
+            }}
+          >
+            <span
+              className="
+  text-xs font-medium
+  px-2.5 py-1
+  rounded-md
+  bg-white/80
+  backdrop-blur-sm
+  shadow-sm
+  border border-gray-200
+  text-(--wf-text-default)
+"
+            >
+              {text}
+            </span>
+          </div>
+        </EdgeLabelRenderer>
+      );
+    },
+    []
   );
 
   //  if (isSelfLoop) {

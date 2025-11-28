@@ -43,11 +43,10 @@ const getLabel = (source: string | undefined) => {
 const CustomNode = ({ data, id }: NodeProps) => {
   const { project } = useReactFlow();
   const nodeRef = useRef<HTMLDivElement>(null);
-  const store = useStoreApi();
   const edges = useStore((s) => s.edges);
-  const Icon = data.icon || PlusIcon;
-  const isStartNode = (data as any).type === "start_workflow";
-  const isAddNode = (data as any).type === "void_node";
+  const Icon = data?.icon || PlusIcon;
+  const isStartNode = data?.type === "start_workflow";
+  const isAddNode = data?.type === "void_node";
   const name = data?.name || "start workflow";
   const style = nodeTypeStyles[data?.type as NodeTypeProps] ||
     nodeTypeStyles[data?.name as NodeTypeProps] || {
@@ -61,21 +60,21 @@ const CustomNode = ({ data, id }: NodeProps) => {
 
   // ✅ Report node ref to FlowCanvas (for popover anchor)
   useEffect(() => {
-    if (isStartNode && nodeRef.current && (data as any).onStartNodeMount) {
-      (data as any).onStartNodeMount(nodeRef);
+    if (isStartNode && nodeRef.current && data.onStartNodeMount) {
+      data?.onStartNodeMount(nodeRef);
     }
   }, [isStartNode, data]);
 
   const handleAddClick = useCallback(
     (position: XYPosition, handleId?: string) =>
-      (data as any).onAddClick?.(id, position, handleId),
+      data?.onAddClick?.(id, position, handleId),
     [data, id]
   );
 
   const handleDeleteClick = useCallback(async () => {
     try {
       /* backend deletion hook could go here */
-      (data as any).onDeleteClick?.(id);
+      data?.onDeleteClick?.(id);
     } catch (e) {
       console.error("Failed to delete node", e);
     }
@@ -110,7 +109,7 @@ const CustomNode = ({ data, id }: NodeProps) => {
   const isOutputHandleConnected = useCallback(
     (outputId: string) => {
       const output = normalizeHandle(outputId);
-      const nodeOutputs = (data as any).outputs?.map(normalizeHandle) || [];
+      const nodeOutputs = data?.outputs?.map(normalizeHandle) || [];
       const hasSingleOutput = nodeOutputs.length === 1;
       return edges.some((edge) => {
         if (edge.source !== id) return false;
@@ -120,7 +119,7 @@ const CustomNode = ({ data, id }: NodeProps) => {
           return true;
         if (handle.startsWith("case_") && output.startsWith("case_"))
           return handle === output;
-        const isLoopNode = (data as any).name?.toLowerCase()?.includes("loop");
+        const isLoopNode = data?.name?.toLowerCase()?.includes("loop");
         if (isLoopNode)
           return (
             (handle === "body" && output === "body") ||
@@ -129,7 +128,7 @@ const CustomNode = ({ data, id }: NodeProps) => {
         return false;
       });
     },
-    [edges, id, (data as any).outputs, (data as any).name]
+    [edges, id, data?.outputs, data?.name]
   );
 
   const isInputHandleConnected = useCallback(
@@ -141,7 +140,7 @@ const CustomNode = ({ data, id }: NodeProps) => {
     if (isStartNode || isTriggerNode(data?.type)) return null;
 
     // MERGE NODE (multiple inputs)
-    if ((data as any).name?.toLowerCase() === "merge") {
+    if (data?.name?.toLowerCase() === "merge") {
       return Array.from({ length: 4 }).map((_, i) => (
         <div
           key={`input-${i + 1}`}
@@ -182,7 +181,7 @@ const CustomNode = ({ data, id }: NodeProps) => {
         style={{
           top: "50%",
           background: style.bg,
-          left: `${isConnected ? -2 : '6px'}`,
+          left: `${isConnected ? -2 : "6px"}`,
         }}
         isConnectable={!isConnected}
       />
@@ -191,10 +190,8 @@ const CustomNode = ({ data, id }: NodeProps) => {
 
   const renderOutputHandles = () => {
     if (isStartNode) return null;
-    return (data as any).outputs?.map((outputId: string, i: number) => {
-      const verticalPos = `${
-        (i + 1) * (100 / ((data as any).outputs.length + 1))
-      }%`;
+    return data?.outputs?.map((outputId: string, i: number) => {
+      const verticalPos = `${(i + 1) * (100 / (data?.outputs.length + 1))}%`;
       const isConnected = isAddNode ? true : isOutputHandleConnected(outputId);
       const handleIdForAdd = outputId === "none" ? "next" : outputId;
       const label = getLabel(outputId);
@@ -296,7 +293,11 @@ const CustomNode = ({ data, id }: NodeProps) => {
 
         {!isStartNode && (
           <div
-            className="absolute -top-7 left-1/2 -translate-x-1/2 flex items-center gap-1 z-50 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+            className="absolute flex items-center gap-1 z-50 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+            style={{
+              top: "-44px",
+              left: "44px",
+            }}
             onClick={(e) => e.stopPropagation()}
           >
             <Button

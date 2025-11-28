@@ -1,17 +1,9 @@
-import { Controller, useFieldArray } from "react-hook-form";
-import {
-  Button,
-  Input,
-  Label,
-  Select,
-  SelectTrigger,
-  SelectContent,
-  SelectItem,
-  SelectValue,
-  formatName,
-} from "@/shared";
+import { Button, Input, Label, Select } from "@/shared";
 import { useFlowStore } from "@/store";
+import { Trash2 } from "lucide-react";
 import { useCallback } from "react";
+import { Controller, useFieldArray } from "react-hook-form";
+import { LogicRulesFieldProps } from "../types";
 
 const operators = [
   { label: "EQUALS", value: "==" },
@@ -29,7 +21,7 @@ export const LogicRulesField = ({
   label,
   errors,
   mode = "conditional",
-}: any) => {
+}: LogicRulesFieldProps) => {
   const { fields, append, remove } = useFieldArray({
     name,
     control,
@@ -78,10 +70,7 @@ export const LogicRulesField = ({
 
       <div className="space-y-4">
         {fields.map((item, index) => (
-          <div
-            key={item.id}
-            className="flex gap-2 items-center"
-          >
+          <div key={item.id} className="flex gap-2 items-center">
             {/* Field */}
             <Controller
               control={control}
@@ -100,23 +89,15 @@ export const LogicRulesField = ({
               <Controller
                 control={control}
                 name={`${name}.${index}.operator`}
-                render={({ field }) => {
-                  const selected = operators.find((o) => o.value === field.value);
-                  return (
-                    <Select value={field.value} onValueChange={field.onChange}>
-                      <SelectTrigger className="border-(--wf-border-default) text-(--wf-text-default) w-40">
-                        <span>{formatName(selected?.label ?? "Operator")}</span>
-                      </SelectTrigger>
-                      <SelectContent className="bg-(--wf-background-subtle) border-(--wf-border-default)">
-                        {operators.map((o) => (
-                          <SelectItem key={o.value} value={o.value}>
-                            {formatName(o.label)}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  );
-                }}
+                render={({ field }) => (
+                  <Select
+                    options={operators}
+                    value={field.value}
+                    onValueChange={field.onChange}
+                    placeholder="Operator"
+                    className="w-40"
+                  />
+                )}
               />
             </div>
 
@@ -141,8 +122,9 @@ export const LogicRulesField = ({
                 onClick={() => {
                   mode === "switch" ? removeEdge(index) : remove(index);
                 }}
+                className="text-black"
               >
-                ✕
+                <Trash2 />
               </Button>
             )}
           </div>

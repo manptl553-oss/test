@@ -13,17 +13,12 @@ export interface WorkflowNode {
 
 export interface WorkflowEdge {
   id: string;
-  source: string;
-  target: string;
-  sourceHandle?: string | null;
-  targetHandle?: string | null;
+  sourceId: string;
+  targetId: string;
+  versionId: string;
   condition?: string;
-  type?: string;
-  animated?: boolean;
-  group_id?: string;
-  data?: any;
-  markerEnd?: { type: string; width: number; height: number };
-  style?: { strokeWidth: number };
+  groupId?: string;
+  expression: string;
 }
 
 export interface VersionData {
@@ -34,13 +29,14 @@ export interface VersionData {
   status: string;
   publishedBy: string;
   updatedBy: string;
-  nodes?:WorkflowNode[];
-  edges?:WorkflowEdge[]
+  nodes?: WorkflowNode[];
+  edges?: WorkflowEdge[];
 }
 
 export interface Workflow {
   id: string;
   name: string;
+  slug?:string
   version: VersionData;
   description?: string;
   enabled?: boolean;
@@ -63,4 +59,9 @@ export interface WorkflowCardProps {
   };
   onDelete?: (id: string) => void;
   onOpen: () => void;
+}
+
+export interface GroupIds {
+  id: string;
+  name: string;
 }

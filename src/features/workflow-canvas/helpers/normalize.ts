@@ -1,10 +1,7 @@
 import { getEdgeLabelForNode, getNodeDefinition } from "@/shared";
-import {
-  Workflow,
-  WorkflowEdge,
-} from "@/shared/types/workflow.types";
+import { Workflow, WorkflowEdge } from "@/shared/types/workflow.types";
 import { NodeData } from "@/store";
-import { Edge, Node, XYPosition } from "reactflow";
+import { Edge, Node } from "reactflow";
 
 /**
  *  normalizeWorkflowData
@@ -19,20 +16,20 @@ export const normalizeWorkflowData = (workflow: Workflow): Workflow => {
     const condition = edge.condition?.toLowerCase?.() ?? "";
     const cleanCondition = condition.replace(/^on_/, "").trim();
 
-    const sourceNode = workflow.nodes?.find((n) => n.id === edge.source);
-    const targetNode = workflow.nodes?.find((n) => n.id === edge.target);
+    const sourceNode = workflow.nodes?.find((n) => n.id === edge.sourceId);
+    const targetNode = workflow.nodes?.find((n) => n.id === edge.targetId);
     const sourceType = sourceNode?.type?.toLowerCase?.();
 
     const sourceDef = getNodeDefinition(sourceType);
     const outputs = sourceDef.outputs || [];
 
-    let sourceHandle = edge.sourceHandle ?? edge.condition;
+    let sourceHandle = edge.condition;
 
     //  Loop node handling (handles both parentNode & group_id cases)
     if (sourceType === "loop") {
       const isLoopBody =
         targetNode?.parent_id === sourceNode?.id ||
-        edge.group_id === sourceNode?.id;
+        edge.groupId === sourceNode?.id;
 
       if (isLoopBody) sourceHandle = "body";
       else sourceHandle = "end";
@@ -50,7 +47,7 @@ export const normalizeWorkflowData = (workflow: Workflow): Workflow => {
       }
     }
 
-    const targetHandle = edge.targetHandle || "input";
+    const targetHandle = "input";
 
     const label = getEdgeLabelForNode({ data: sourceNode }, sourceHandle);
     const expression = edge?.expression;
@@ -59,7 +56,7 @@ export const normalizeWorkflowData = (workflow: Workflow): Workflow => {
       ...edge,
       sourceHandle,
       targetHandle,
-      type: edge.type || "custom",
+      type: "custom",
       animated: true,
       data: { expression, label },
       label,
@@ -91,6 +88,11 @@ function mapHandleToCondition(sourceHandle: string | null | undefined): string {
 export function transformNode(node: Node<NodeData>): any {
   const nodeData = node?.data;
 
+  const nodeConfiguration = nodeData?.configuration ?? {};
+  if (nodeData.type == "membership_invite") {
+    nodeConfiguration["appName"] = "KYC";
+    nodeConfiguration["roleIds"] = [17];
+  }
   return {
     id: nodeData?.id,
     versionId: nodeData?.versionId ?? "",
@@ -99,7 +101,7 @@ export function transformNode(node: Node<NodeData>): any {
     type: nodeData.type,
     parentId: nodeData.parentLoop ?? null,
     templateId: nodeData?.templateId ?? "", // Already present in your node
-    config: nodeData.configuration ?? {},
+    config: nodeData?.configuration ?? {},
     retryAttempts: 0,
     retryDelayMs: 0,
     position: {
