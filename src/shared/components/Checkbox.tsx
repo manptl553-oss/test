@@ -37,15 +37,9 @@ const Checkbox = React.forwardRef<HTMLInputElement, CheckboxProps>(
         disabled={disabled}
         data-state={current ? "checked" : "unchecked"}
         onClick={toggle}
-        className={cn(
-          "peer flex h-4 w-4 shrink-0 items-center justify-center rounded-sm border border-primary ring-offset-background",
-          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-          "disabled:cursor-not-allowed disabled:opacity-50",
-          current && "bg-primary text-primary-foreground",
-          className
-        )}
+        className={cn("wf-checkbox", className)}
       >
-        {current && <Check className="h-3.5 w-3.5 text-current" />}
+        {current && <Check className="wf-checkbox-icon" />}
 
         <input
           ref={ref}

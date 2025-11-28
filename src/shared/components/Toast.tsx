@@ -96,10 +96,7 @@ export const ToastViewport = React.forwardRef<
   return (
     <div
       ref={ref}
-      className={cn(
-        "fixed bottom-0 right-0 z-100 flex max-h-screen w-full flex-col gap-2 p-4 sm:max-w-sm",
-        className
-      )}
+      className={cn("wf-toast-viewport", className)}
       {...props}
     >
       {toasts.map((toast) => (
@@ -115,13 +112,13 @@ ToastViewport.displayName = "ToastViewport";
 /* -------------------------------------------------------------------------- */
 
 const toastVariants = cva(
-  "group relative flex w-full items-center justify-between rounded-md border p-4 shadow-md transition-all duration-300 ease-out",
+  "wf-toast",
   {
     variants: {
       variant: {
-        default: "bg-white border-gray-200 text-gray-900",
-        destructive: "bg-red-50 border-red-300 text-red-900",
-        success: "bg-green-50 border-green-500 text-green-800",
+        default: "wf-toast--default",
+        destructive: "wf-toast--destructive",
+        success: "wf-toast--success",
       },
     },
     defaultVariants: { variant: "default" },
@@ -156,15 +153,12 @@ export const Toast = React.forwardRef<HTMLDivElement, ToastProps>(
         data-open={open}
         className={cn(
           toastVariants({ variant }),
-          open
-            ? "opacity-100 translate-x-0"
-            : "opacity-0 translate-x-full",
-          "transform transition-all duration-300 ease-in-out",
+          open ? "wf-toast--visible" : "wf-toast--hidden",
           className
         )}
         {...props}
       >
-        <div className="flex-1">
+        <div className="wf-toast-body">
           {title && <ToastTitle>{title}</ToastTitle>}
           {description && <ToastDescription>{description}</ToastDescription>}
         </div>
@@ -183,7 +177,7 @@ export const ToastTitle = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement>
 >(({ className, ...props }, ref) => (
-  <div ref={ref} className={cn("text-sm font-semibold", className)} {...props} />
+  <div ref={ref} className={cn("wf-toast-title", className)} {...props} />
 ));
 ToastTitle.displayName = "ToastTitle";
 
@@ -191,11 +185,7 @@ export const ToastDescription = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement>
 >(({ className, ...props }, ref) => (
-  <div
-    ref={ref}
-    className={cn("mt-1 text-sm text-gray-600", className)}
-    {...props}
-  />
+  <div ref={ref} className={cn("wf-toast-desc", className)} {...props} />
 ));
 ToastDescription.displayName = "ToastDescription";
 
@@ -206,13 +196,10 @@ export const ToastClose = React.forwardRef<
   <button
     ref={ref}
     type="button"
-    className={cn(
-      "rounded-md p-1 text-gray-500 hover:text-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-400",
-      className
-    )}
+    className={cn("wf-toast-close", className)}
     {...props}
   >
-    <X className="h-4 w-4" />
+    <X className="wf-icon-sm" />
   </button>
 ));
 ToastClose.displayName = "ToastClose";

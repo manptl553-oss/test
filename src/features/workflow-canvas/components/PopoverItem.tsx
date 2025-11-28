@@ -21,20 +21,20 @@ export function PopoverItem({ category, onClick }: CategoryItemProps) {
       key={category.id}
       onClick={onClick}
       onKeyDown={(e) => e.key === "Enter" && onClick?.()}
-      className="w-full flex items-center gap-3 px-3 py-2 rounded-md cursor-pointer hover:bg-gray-100 transition-colors"
+      className="wf-popover-item"
     >
       <span
-        className="w-8 h-8 flex-none rounded-full flex items-center justify-center overflow-hidden"
+        className="wf-popover-item__icon"
         style={{ background: style?.bg }}
         aria-hidden
       >
-        <Icon className="w-4 h-4 text-white" />
+        <Icon />
       </span>
 
       {/* Text (single- or two-line) */}
-      <div className="flex flex-col justify-center w-full min-w-0">
+      <div className="wf-popover-item__text">
         <span
-          className="text-sm text-gray-800 font-semibold truncate"
+          className="wf-popover-item__title"
           title={category.name}
         >
           {category.name}
@@ -42,7 +42,7 @@ export function PopoverItem({ category, onClick }: CategoryItemProps) {
 
         {category?.type && (
           <span
-            className="text-xs text-gray-500 truncate"
+            className="wf-popover-item__subtitle"
             title={category.description || ""}
           >
             {category.description || ""}

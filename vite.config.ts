@@ -17,10 +17,6 @@ export default defineConfig({
     }),
   ],
 
-  css: {
-    postcss: './postcss.config.js',
-  },
-
   resolve: {
     alias: {
       '@': resolve(__dirname, './src'),
@@ -65,28 +61,23 @@ export default defineConfig({
           'react-dom': 'ReactDOM',
         },
 
+        // This ensures the CSS file is always named correctly
         assetFileNames: (assetInfo) => {
-          // Generate CSS with the correct name
-          if (assetInfo.name === 'style.css') {
-            return 'bit-workflow-engine.css'; // Match your package.json exports
+          console.log("🚀 ~ assetInfo:", assetInfo)
+          if (assetInfo.name === 'bit-workflow-engine.css') {
+            return 'bit-workflow-engine.css'; // matches package.json export
           }
-          return assetInfo.name || 'assets/[name][extname]';
+          return 'assets/[name]-[hash][extname]';
         },
-
-        preserveModules: false,
-        exports: 'named',
-      },
-
-      treeshake: {
-        moduleSideEffects: false,
       },
     },
 
-    outDir: 'dist',
+    // These 4 lines are the most important changes
+    cssCodeSplit: false,        // ← Force all CSS into ONE static file
     minify: 'esbuild',
     sourcemap: true,
     emptyOutDir: true,
-    cssCodeSplit: false,
     target: 'es2020',
+    outDir: 'dist',
   },
 });

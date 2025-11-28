@@ -145,26 +145,22 @@ const CustomNode = ({ data, id }: NodeProps) => {
       return Array.from({ length: 4 }).map((_, i) => (
         <div
           key={`input-${i + 1}`}
-          className="absolute flex items-center gap-1"
+          className="wf-merge-input-row"
           style={{
             left: 0,
             top: `${(i + 1) * 20}%`,
             transform: "translateY(-50%)",
           }}
         >
-          <span className="text-xs  text-gray-500">{`Input ${i + 1}`}</span>
+          <span className="wf-merge-input-label">{`Input ${i + 1}`}</span>
 
           {/* LEFT-facing styled handle */}
-          <div className="relative">
+          <div className="wf-handle-wrapper">
             <Handle
               type="target"
               position={Position.Left}
               id={`input-${i + 1}`}
-              className={`
-              !w-6 !h-6
-              !rounded-l-full 
-              !border-none 
-            `}
+              className="wf-handle-rounded"
               style={{ background: style.bg }}
             />
           </div>
@@ -178,7 +174,7 @@ const CustomNode = ({ data, id }: NodeProps) => {
         type="target"
         position={Position.Left}
         id="input"
-          className="!w-4 !h-4 !border-0 !bg-transparent !opacity-0"
+        className="wf-handle-invisible"
         style={{ top: "50%", background: style.bg,  left: -2 }}
       />
     );
@@ -195,13 +191,10 @@ const CustomNode = ({ data, id }: NodeProps) => {
       const label = getLabel(outputId);
 
       return (
-        <div
-          key={outputId}
-          className="absolute right-2 !top-1/2 -translate-y-1/2 flex items-center z-0 "
-        >
-          {label && <div className="text-xs font-semibold pr-4">{label}</div>}
+        <div key={outputId} className="wf-output-row">
+          {label && <div className="wf-output-label">{label}</div>}
 
-          <div className="relative">
+          <div className="wf-handle-wrapper">
             <Handle
               type="source"
               position={Position.Right}
@@ -234,22 +227,9 @@ const CustomNode = ({ data, id }: NodeProps) => {
             />
 
             {/* + only if not connected */}
-            {/* {!isConnected && (
+            {!isConnected && (
               <div
-                className="
-                !top-[3px]
-        absolute inset-0 !-left-0
-        flex items-center justify-center 
-        text-white text-xs font-light
-        pointer-events-none
-      "
-              >
-                +
-              </div>
-            )} */}
-               {!isConnected && (
-              <div
-                className="absolute -right-2 top-1/2 -translate-y-1/2  w-6 h-6 rounded-full flex items-center justify-center text-white text-sm font-bold cursor-pointer hover:scale-110 transition-transform pd-2"
+                className="wf-output-add"
                 style={{
                   background: style.bg,
                   pointerEvents: "auto",
@@ -272,11 +252,11 @@ const CustomNode = ({ data, id }: NodeProps) => {
   };
   return (
     <>
-      <div className="relative group space-y-4 text-center" ref={nodeRef}>
-        <div className="w-30 h-30 mx-auto relative space-y-3">
+      <div className="wf-node-wrapper" ref={nodeRef}>
+        <div className="wf-node-shell">
           {renderInputHandles()}
           <div
-            className={`w-24  mx-auto h-24 border-white border-2 z-10 relative rounded-full transition-all duration-200  flex flex-col items-center justify-center gap-2 cursor-pointer`}
+            className="wf-node-core"
             style={{
               background: style.bg,
               transition: "all 0.3s ease-in-out",
@@ -293,11 +273,11 @@ const CustomNode = ({ data, id }: NodeProps) => {
               el.style.transform = "scale(1)";
             }}
           >
-            <Icon className="w-12 h-12 text-white" />
+            <Icon className="wf-node-icon" />
           </div>
           {renderOutputHandles()}
           {!isAddNode && (
-            <div className="text-black font-medium text-sm text-center">
+            <div className="wf-node-name">
               {name}
             </div>
           )}
@@ -305,14 +285,14 @@ const CustomNode = ({ data, id }: NodeProps) => {
 
         {!isStartNode && (
           <div
-            className="absolute -top-7 left-1/2 -translate-x-1/2 flex items-center gap-1 z-50 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+            className="wf-node-toolbar"
             onClick={(e) => e.stopPropagation()}
           >
             <Button
-              className="w-6 h-6 rounded-full bg-red-500"
+              className="wf-node-toolbar-btn"
               onClick={handleDeleteClick}
             >
-              <Trash2 className="w-3 h-3 text-white" />
+              <Trash2 className="wf-node-toolbar-icon" />
             </Button>
           </div>
         )}

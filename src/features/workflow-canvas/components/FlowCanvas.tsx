@@ -26,7 +26,6 @@ interface PopoverItem {
   name: string;
   description?: string;
   icon: React.ComponentType<any>;
-  color: string;
   secondaryIcons?: React.ComponentType<any>[];
 }
 
@@ -150,28 +149,24 @@ const triggerModules: PopoverItem[] = [
     name: "Webhook",
     description: "Triggers workflow on external webhook event",
     icon: Webhook,
-    color: "text-pink-600 bg-pink-100",
   },
   {
     id: "schedule",
     name: "Schedule",
     description: "Executes workflow at defined intervals or cron expressions",
     icon: Clock,
-    color: "text-green-600 bg-green-100",
   },
   {
     id: "event",
     name: "Event",
     description: "Reacts to system or app-level events",
     icon: Calendar,
-    color: "text-yellow-600 bg-yellow-100",
   },
   {
     id: "http",
     name: "HTTP Request",
     description: "Triggers when a specific HTTP request is made",
     icon: Globe,
-    color: "text-blue-600 bg-blue-100",
   },
 ];
 
@@ -463,7 +458,7 @@ export default function FlowCanvas({ workflow }: any) {
   );
 
   return (
-    <div className="w-full h-full relative bg-white" ref={containerRef}>
+    <div className="wf-flow-root" ref={containerRef}>
       <ReactFlow
         nodes={nodesWithData}
         edges={edgesWithData}
@@ -476,7 +471,7 @@ export default function FlowCanvas({ workflow }: any) {
         onConnectEnd={onConnectEnd}
         onNodeClick={handleNodeClick}
         fitView
-        className="bg-white"
+        className="wf-flow-surface"
         proOptions={{ hideAttribution: true }}
       >
         <Background color="#eee" />
@@ -484,16 +479,13 @@ export default function FlowCanvas({ workflow }: any) {
 
       {isPopoverOpen && <Popover />}
 
-      <div className="absolute bottom-8 left-4 z-20">
+      <div className="wf-autolayout-wrapper">
         <button
           onClick={handleAutoLayout}
           aria-label="Auto layout"
-          className="bg-[var(--wf-background-subtle)] text-[var(--wf-text-default)]
-                 border border-[var(--wf-border-default)]
-                 p-1 rounded-md shadow-xl w-8 h-8
-                 flex items-center justify-center hover:opacity-90"
+          className="wf-autolayout-btn"
         >
-          <Fullscreen className="w-4 h-4" />
+          <Fullscreen className="wf-icon-sm" />
         </button>
       </div>
     </div>

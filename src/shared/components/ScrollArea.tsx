@@ -8,19 +8,9 @@ type ScrollAreaProps = React.HTMLAttributes<HTMLDivElement> & {
 
 const ScrollArea = React.forwardRef<HTMLDivElement, ScrollAreaProps>(
   ({ className, viewportClassName, children, ...props }, ref) => (
-    <div
-      ref={ref}
-      className={cn("relative overflow-hidden", className)}
-      {...props}
-    >
+    <div ref={ref} className={cn("wf-scroll-area", className)} {...props}>
       <div
-        className={cn(
-          // Rounded container with native scrolling
-          "h-full w-full rounded-[inherit] overflow-auto",
-          // If you use tailwind-scrollbar plugin, these will style the bar
-          "scrollbar-thin scrollbar-thumb-rounded-full",
-          viewportClassName
-        )}
+        className={cn("wf-scroll-viewport", viewportClassName)}
       >
         {children}
       </div>

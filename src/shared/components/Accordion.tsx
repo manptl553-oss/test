@@ -22,7 +22,7 @@ const AccordionItem = forwardRef<HTMLDivElement, AccordionItemProps>(
     const toggle = useCallback(() => setIsOpen((prev) => !prev), []);
 
     return (
-      <div ref={ref} className={cn("border-b", className)} {...props}>
+      <div ref={ref} className={cn("wf-accordion-item", className)} {...props}>
         {/* Passing context manually */}
         {React.Children.map(children, (child) => {
           if (!React.isValidElement(child)) return child;
@@ -49,8 +49,8 @@ const AccordionTrigger = forwardRef<HTMLButtonElement, AccordionTriggerProps>(
       ref={ref}
       onClick={toggle}
       className={cn(
-        "flex w-full items-center justify-between py-4 font-medium transition-all hover:underline",
-        isOpen && "text-primary",
+        "wf-accordion-trigger",
+        isOpen && "wf-accordion-trigger--open",
         className
       )}
       {...props}
@@ -58,8 +58,8 @@ const AccordionTrigger = forwardRef<HTMLButtonElement, AccordionTriggerProps>(
       {children}
       <ChevronDown
         className={cn(
-          "h-4 w-4 shrink-0 transition-transform duration-200",
-          isOpen && "rotate-180"
+          "wf-accordion-icon",
+          isOpen && "wf-accordion-icon--open"
         )}
       />
     </button>
@@ -77,13 +77,13 @@ const AccordionContent = forwardRef<HTMLDivElement, AccordionContentProps>(
     <div
       ref={ref}
       className={cn(
-        "overflow-hidden text-sm transition-all duration-300",
-        isOpen ? "max-h-96 opacity-100" : "max-h-0 opacity-0",
+        "wf-accordion-content",
+        isOpen && "wf-accordion-content--open",
         className
       )}
       {...props}
     >
-      <div className="pb-4 pt-0">{children}</div>
+      <div className="wf-accordion-content-inner">{children}</div>
     </div>
   )
 );

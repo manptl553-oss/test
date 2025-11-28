@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Pagination, Table } from "@/shared";
 import { Column, SortOrder } from "@/shared/components/table/types";
+import "./workflow-listing.css";
 
 const DEBOUNCE_DELAY = 400;
 
@@ -118,14 +119,14 @@ export function WorkflowListing<T>({
   const hasActiveFilter = statusFilter !== "all";
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="wf-listing-root">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <h2 className="text-2xl font-bold text-white">
+      <div className="wf-listing-header">
+        <h2 className="wf-listing-title">
           {title || "Workflows"}
         </h2>
 
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="wf-listing-controls">
           {/* Search */}
           {onSearchChange && (
             <input
@@ -133,31 +134,31 @@ export function WorkflowListing<T>({
               placeholder={searchPlaceholder}
               value={localSearch}
               onChange={(e) => setLocalSearch(e.target.value)}
-              className="px-4 py-2 min-w-[240px] rounded-lg bg-gray-800 border border-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-lime-500"
+              className="wf-listing-search"
             />
           )}
 
           {/* Status Filter */}
           {onStatusFilterChange && (
-            <div className="relative" ref={popupRef}>
+            <div className="wf-listing-filter" ref={popupRef}>
               <button
                 onClick={() => setIsFilterOpen((v) => !v)}
-                className={`px-4 py-2 rounded-lg border flex items-center gap-2 transition-all ${
+                className={
                   hasActiveFilter
-                    ? "bg-lime-600 border-lime-600 text-white"
-                    : "bg-gray-800 border-gray-700 text-gray-300 hover:border-gray-600"
-                }`}
+                    ? "wf-listing-filter-btn wf-listing-filter-btn--active"
+                    : "wf-listing-filter-btn"
+                }
               >
                 <span>Filter</span>
                 {hasActiveFilter && (
-                  <div className="w-2 h-2 bg-white rounded-full"></div>
+                  <div className="wf-listing-filter-dot"></div>
                 )}
               </button>
 
               {isFilterOpen && (
-                <div className="absolute right-0 mt-2 w-56 bg-gray-900 border border-gray-700 rounded-lg shadow-xl z-50">
-                  <div className="p-4 space-y-3">
-                    <label className="text-sm font-medium text-gray-300">
+                <div className="wf-listing-filter-menu">
+                  <div className="wf-listing-filter-panel">
+                    <label className="wf-listing-filter-label">
                       Status
                     </label>
                     <select
@@ -173,7 +174,7 @@ export function WorkflowListing<T>({
                           onStatusFilterChange(value);
                         }
                       }}
-                      className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded text-white focus:outline-none focus:border-lime-500"
+                      className="wf-listing-filter-select"
                     >
                       {defaultStatusOptions.map((opt) => (
                         <option key={opt.value} value={opt.value}>
@@ -185,7 +186,7 @@ export function WorkflowListing<T>({
                     {hasActiveFilter && (
                       <button
                         onClick={() => onStatusFilterChange("all")}
-                        className="text-sm text-lime-400 hover:text-lime-300"
+                        className="wf-listing-filter-clear"
                       >
                         Clear filter
                       </button>
@@ -200,7 +201,7 @@ export function WorkflowListing<T>({
           {createButton.show && (
             <button
               onClick={createButton.onClick}
-              className="px-5 py-2 bg-lime-600 text-white font-medium rounded-lg hover:bg-lime-700 transition"
+              className="wf-listing-create-btn"
             >
               {createButton.label}
             </button>
@@ -209,7 +210,7 @@ export function WorkflowListing<T>({
       </div>
 
       {/* Table */}
-      <div className="rounded-xl border border-gray-800 overflow-hidden bg-gray-900/30">
+      <div className="wf-listing-table">
         <Table
           columns={[
             ...columns,
@@ -218,7 +219,7 @@ export function WorkflowListing<T>({
                   {
                     label: "Actions",
                     render: (row: T) => (
-                      <div className="flex items-center gap-3 justify-end">
+                      <div className="wf-listing-row-actions">
                         {rowActions(row)}
                       </div>
                     ),

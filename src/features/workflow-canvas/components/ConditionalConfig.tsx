@@ -70,21 +70,25 @@ export const LogicRulesField = ({
   }, []);
 
   return (
-    <div className="w-full space-y-2">
-      <Label className="block font-medium text-sm text-gray-700">{label}</Label>
+    <div className="wf-field-group">
+      <Label className="wf-field-label">{label}</Label>
 
-      <div className="space-y-3 max-h-[400px] overflow-y-auto border p-3 rounded-md">
+      <div className="wf-logic-rows">
         {fields.map((item, index) => (
           <div
             key={item.id}
-            className="flex gap-2 items-center border p-2 rounded-md"
+            className="wf-logic-row"
           >
             {/* Field */}
             <Controller
               control={control}
               name={`${name}.${index}.field`}
               render={({ field }) => (
-                <Input {...field} placeholder="Field" className="border" />
+                <Input
+                  {...field}
+                  placeholder="Field"
+                  className="wf-input-bordered"
+                />
               )}
             />
 
@@ -96,7 +100,7 @@ export const LogicRulesField = ({
                 const selected = operators.find((o) => o.value === field.value);
                 return (
                   <Select value={field.value} onValueChange={field.onChange}>
-                    <SelectTrigger className="border w-40">
+                    <SelectTrigger className="wf-select-trigger">
                       <span>{selected?.label ?? "Operator"}</span>
                     </SelectTrigger>
                     <SelectContent>
@@ -116,7 +120,11 @@ export const LogicRulesField = ({
               control={control}
               name={`${name}.${index}.value`}
               render={({ field }) => (
-                <Input {...field} placeholder="Value" className="border" />
+                <Input
+                  {...field}
+                  placeholder="Value"
+                  className="wf-input-bordered"
+                />
               )}
             />
 
@@ -139,13 +147,13 @@ export const LogicRulesField = ({
       <Button
         type="button"
         variant="outline"
-        className="bg-primary text-white"
+        className="wf-primary-cta"
         onClick={() => append({ field: "", operator: "==", value: "" })}
       >
         + Add {mode === "switch" ? "Case" : "Condition"}
       </Button>
 
-      {errors && <p className="text-red-500 text-xs">{errors.message}</p>}
+      {errors && <p className="wf-error-text">{errors.message}</p>}
     </div>
   );
 };

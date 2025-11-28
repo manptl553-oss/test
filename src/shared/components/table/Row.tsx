@@ -16,11 +16,11 @@ export function Row<T>({
 }: RowProps<T>) {
   return (
     <tr
-      className={`border-t ${clickable ? "cursor-pointer hover:bg-gray-50" : ""}`}
+      className={`wf-table-body-row ${clickable ? "wf-table-body-row--clickable" : ""}`}
       onClick={() => clickable && onClick?.(record)}
     >
       {columns.map((col) => (
-        <td className="p-3 text-sm text-gray-700" key={String(col.field)}>
+        <td className="wf-table-cell" key={String(col.field)}>
           {col.render ? col.render(record) : String(record[col.field as keyof T] ?? "-")}
         </td>
       ))}

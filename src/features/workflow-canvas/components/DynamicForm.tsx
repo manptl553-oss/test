@@ -112,7 +112,7 @@ export const DynamicForm = ({
     switch (field.type) {
       case "input":
         return (
-          <div key={field.name} className="space-y-2 w-full">
+          <div key={field.name} className="wf-field-group">
             <Label>{field.label}</Label>
             <Controller
               control={control}
@@ -121,13 +121,13 @@ export const DynamicForm = ({
                 <Input {...rhf} placeholder={field.placeholder} />
               )}
             />
-            {errorMsg && <p className="text-red-500 text-xs">{errorMsg}</p>}
+            {errorMsg && <p className="wf-error-text">{errorMsg}</p>}
           </div>
         );
 
       case "textarea":
         return (
-          <div key={field.name} className="space-y-2 w-full">
+          <div key={field.name} className="wf-field-group">
             <Label>{field.label}</Label>
             <Controller
               control={control}
@@ -136,13 +136,13 @@ export const DynamicForm = ({
                 <Textarea {...rhf} placeholder={field.placeholder} />
               )}
             />
-            {errorMsg && <p className="text-red-500 text-xs">{errorMsg}</p>}
+            {errorMsg && <p className="wf-error-text">{errorMsg}</p>}
           </div>
         );
 
       case "select":
         return (
-          <div key={field.name} className="space-y-2 w-full">
+          <div key={field.name} className="wf-field-group">
             <Label>{field.label}</Label>
             <Controller
               control={control}
@@ -162,13 +162,13 @@ export const DynamicForm = ({
                 </Select>
               )}
             />
-            {errorMsg && <p className="text-red-500 text-xs">{errorMsg}</p>}
+            {errorMsg && <p className="wf-error-text">{errorMsg}</p>}
           </div>
         );
 
       case "richtext":
         return (
-          <div key={field.name} className="space-y-2 w-full">
+          <div key={field.name} className="wf-field-group">
             <Label>{field.label}</Label>
             <Controller
               control={control}
@@ -181,13 +181,13 @@ export const DynamicForm = ({
                 />
               )}
             />
-            {errorMsg && <p className="text-red-500 text-xs">{errorMsg}</p>}
+            {errorMsg && <p className="wf-error-text">{errorMsg}</p>}
           </div>
         );
 
       case "checkbox":
         return (
-          <div key={field.name} className="flex items-center gap-3">
+          <div key={field.name} className="wf-checkbox-row">
             <Controller
               control={control}
               name={field.name}
@@ -225,8 +225,8 @@ export const DynamicForm = ({
        case "code": 
         const selectedLanguage = watch("language");
         return (
-          <div key={field.name} className="space-y-2 w-full">
-            <Label className="block font-medium text-sm text-gray-700 mt-4">
+          <div key={field.name} className="wf-field-group">
+            <Label className="wf-field-label wf-field-label--spaced">
               {field.label}
             </Label>
             <Controller
@@ -234,7 +234,7 @@ export const DynamicForm = ({
               name={field.name}
               render={({ field: { value, onChange } }) => (
                 <div
-                  className="border border-gray-300 rounded-md overflow-hidden shadow-sm focus-within:ring-2 focus-within:ring-primary/30"
+                  className="wf-code-editor-shell"
                   onKeyDown={(e) => {
                     if (e.key === " ") e.stopPropagation();
                   }}
@@ -247,7 +247,7 @@ export const DynamicForm = ({
                 </div>
               )}
             />
-            {errorMsg && <p className="text-red-500 text-xs">{errorMsg}</p>}
+            {errorMsg && <p className="wf-error-text">{errorMsg}</p>}
           </div>);
 
       case "conditions":
@@ -274,23 +274,23 @@ export const DynamicForm = ({
   };
 
   return (
-    <form onSubmit={handleSubmit(onSubmitInternal)} className="space-y-4">
-      <div className={twoPane ? "grid grid-cols-2 gap-6" : "space-y-3"}>
-        <div className="space-y-3">
+    <form onSubmit={handleSubmit(onSubmitInternal)} className="wf-dynamic-form">
+      <div className={twoPane ? "wf-form-grid" : "wf-field-column"}>
+        <div className="wf-field-column">
           {(twoPane ? left : visibleFields).map(renderField)}
         </div>
-        {twoPane && <div className="space-y-3">{right.map(renderField)}</div>}
+        {twoPane && <div className="wf-field-column">{right.map(renderField)}</div>}
       </div>
 
-      <div className="flex gap-3 pt-6">
-        <Button type="submit" className="flex-1 text-white">
+      <div className="wf-actions-row">
+        <Button type="submit" className="wf-button-fill wf-button-text-contrast">
           Save
         </Button>
         {onCancel && (
           <Button
             type="button"
             variant="outline"
-            className="flex-1"
+            className="wf-button-fill"
             onClick={onCancel}
           >
             Cancel

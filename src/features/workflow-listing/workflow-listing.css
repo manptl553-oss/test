@@ -1,0 +1,175 @@
+/* ------------------------------------------------------------------
+   Workflow Listing Layout
+------------------------------------------------------------------- */
+.wf-listing-root {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  padding: 1.5rem;
+}
+
+.wf-listing-header {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+@media (min-width: 640px) {
+  .wf-listing-header {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+}
+
+.wf-listing-title {
+  font-size: 1.5rem;
+  line-height: 2rem;
+  font-weight: 700;
+  color: #fff;
+}
+
+.wf-listing-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.wf-listing-search {
+  min-width: 240px;
+  padding: 0.5rem 1rem;
+  border-radius: 0.75rem;
+  border: 1px solid #374151;
+  background-color: #1f2937;
+  color: #f9fafb;
+  font-size: 0.95rem;
+}
+
+.wf-listing-search::placeholder {
+  color: #9ca3af;
+}
+
+.wf-listing-search:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px #65a30d;
+}
+
+.wf-listing-filter {
+  position: relative;
+}
+
+.wf-listing-filter-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border-radius: 0.75rem;
+  border: 1px solid #374151;
+  background-color: #1f2937;
+  color: #d1d5db;
+  font-weight: 500;
+  transition: border-color 0.2s ease, background-color 0.2s ease,
+    color 0.2s ease;
+}
+
+.wf-listing-filter-btn:hover {
+  border-color: #4b5563;
+}
+
+.wf-listing-filter-btn--active {
+  background-color: #65a30d;
+  border-color: #65a30d;
+  color: #fff;
+}
+
+.wf-listing-filter-dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 999px;
+  background-color: #fff;
+}
+
+.wf-listing-filter-menu {
+  position: absolute;
+  right: 0;
+  margin-top: 0.5rem;
+  width: 14rem;
+  border-radius: 0.75rem;
+  border: 1px solid #374151;
+  background-color: #111827;
+  box-shadow: 0 20px 30px rgba(0, 0, 0, 0.3);
+  z-index: 50;
+}
+
+.wf-listing-filter-panel {
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.wf-listing-filter-label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #d1d5db;
+}
+
+.wf-listing-filter-select {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+  border: 1px solid #374151;
+  background-color: #1f2937;
+  color: #f9fafb;
+}
+
+.wf-listing-filter-select:focus {
+  outline: none;
+  border-color: #84cc16;
+}
+
+.wf-listing-filter-clear {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #a3e635;
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: 0;
+  align-self: flex-start;
+}
+
+.wf-listing-filter-clear:hover {
+  color: #bef264;
+}
+
+.wf-listing-create-btn {
+  padding: 0.5rem 1.25rem;
+  border-radius: 0.75rem;
+  background-color: #65a30d;
+  color: #fff;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.wf-listing-create-btn:hover {
+  background-color: #4d7c0f;
+}
+
+.wf-listing-table {
+  border-radius: 1rem;
+  border: 1px solid #1f2937;
+  overflow: hidden;
+  background: rgba(17, 24, 39, 0.3);
+}
+
+.wf-listing-row-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.75rem;
+}
+

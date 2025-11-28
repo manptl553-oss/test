@@ -439,180 +439,239 @@ export const useFlowStore = create<FlowState>((set, get) => ({
     });
   },
 
-  // addNodeBetweenEdge: (node, edge) => {
-  //   const {
-  //     nodes,
-  //     edges,
-  //     versionId,
-  //     syncedEdgeIds,
-  //     deletedEdgeIds,
-  //     dirtyEdgeIds,
-  //   } = get();
-
-  //   if (!edge) return;
-  //   const sourceEdgeId = edge.id;
-  //   // const edge = edges.find((e) => e.id === sourceEdgeId);
-  //   // if (!edge) return;
-
-  //   const sourceNode = nodes.find((n) => n.id === edge.source);
-  //   const targetNode = nodes.find((n) => n.id === edge.target);
-  //   if (!sourceNode || !targetNode) return;
-
-  //   const newNode = { ...node };
-  //   newNode.data.outputs = getOutputsForNode(newNode);
-  //   newNode.data.versionId = versionId;
-  //   const prevId = sourceNode?.data?.id ?? null;
-  //   const prevType = sourceNode?.data?.type ?? null;
-  //   const nextId = targetNode?.data?.id ?? null;
-  //   const nextType = targetNode?.data?.type ?? null;
-
-  //   newNode.data.prev_node_id = prevId;
-  //   newNode.data.prev_node_type = prevType;
-  //   newNode.data.next_node_id = nextId;
-  //   newNode.data.next_node_type = nextType;
-
-  //   let newEdges = edges.filter((e) => e.id !== sourceEdgeId);
-  //   const newDeletedEdgeIds = new Set(deletedEdgeIds);
-  //   const newDirtyEdgeIds = new Set(dirtyEdgeIds);
-
-  //   if (syncedEdgeIds.has(sourceEdgeId)) {
-  //     newDeletedEdgeIds.add(sourceEdgeId);
-  //     newDirtyEdgeIds.delete(sourceEdgeId);
-  //   }
-
-  //   if (isTriggerNode(node?.data?.type?.toLowerCase?.())) {
-  //     set({
-  //       nodes: [...nodes, newNode],
-  //       edges: newEdges,
-  //       sourceEdgeId: null,
-  //       showSidebar: false,
-  //       deletedEdgeIds: newDeletedEdgeIds,
-  //       dirtyEdgeIds: newDirtyEdgeIds,
-  //     });
-  //     return;
-  //   }
-
-  //   const edgeToNew = makeEdge({
-  //     source: sourceNode.id,
-  //     target: newNode.id,
-  //     sourceHandle: edge.sourceHandle ?? "none",
-  //     targetHandle: getTargetHandleForNode(newNode),
-  //   });
-
-  //   const edgeFromNew = makeEdge({
-  //     source: newNode.id,
-  //     target: targetNode.id,
-  //     sourceHandle: getOutputsForNode(newNode)[0],
-  //     targetHandle: edge.targetHandle ?? "input",
-  //   });
-
-  //   newEdges.push(edgeToNew, edgeFromNew);
-
-  //   set({
-  //     nodes: [...nodes, newNode],
-  //     edges: newEdges,
-  //     connectedHandles: computeConnectedHandles(newEdges),
-  //     sourceEdgeId: null,
-  //     showSidebar: false,
-  //     deletedEdgeIds: newDeletedEdgeIds,
-  //     dirtyEdgeIds: newDirtyEdgeIds,
-  //   });
-  // },
-
 addNodeBetweenEdge: (node, edge) => {
-  const {
-    nodes,
-    edges,
-    versionId,
-    syncedEdgeIds,
-    deletedEdgeIds,
-    dirtyEdgeIds,
-  } = get();
-
+  const { nodes, edges, versionId } = get();
   if (!edge) return;
 
-  const sourceNode = nodes.find((n) => n.id === edge.source);
-  const targetNode = nodes.find((n) => n.id === edge.target);
+  const source = nodes.find((n) => n.id === edge.source);
+  const target = nodes.find((n) => n.id === edge.target);
+  if (!source || !target) return;
 
-  if (!sourceNode || !targetNode) return;
-
-  // Create node
-  const newNode = {
-    ...node,
-    data: {
-      ...node.data,
-      versionId,
-      outputs: ["none"],
-      parentLoop: sourceNode.id,         // mark inside loop
-    },
-  };
-
+  // Remove the original clicked edge
   let newEdges = edges.filter((e) => e.id !== edge.id);
 
-  /* ---------------------------------------
-     CASE: INSERT INSIDE LOOP SELF-LOOP
-  ---------------------------------------- */
+  const isBranchingNode = (n?: Node<NodeData>) => {
+    const t = n?.data?.type;
+    return t === "conditional" || t === "switch" || t === "rule-executor";
+  };
+
+  /* ============================================================
+   *  CASE 1: Insert FIRST child from loop self-edge
+   *  (loopType = "self") – only used when loop has no children yet
+   * ========================================================== */
   if (edge.data?.loopType === "self") {
-    console.log("-------------------", edge)
-    // A) Loop -> NewNode
-    const forward = makeEdge({
-      source: sourceNode.id,
-      sourceHandle: "body",
-      target: newNode.id,
-      targetHandle: "input",
-      data: { loopType: "loop-child" },
-    });
+    const loopId = source.id;
 
-    // B) NewNode -> Loop
-    const back = makeEdge({
-      source: newNode.id,
-      sourceHandle: "none",
-      target: sourceNode.id,
-      targetHandle: "body",
-      data: { loopType: "loop-back" },
-    });
+    const newChild: Node<NodeData> = {
+      ...node,
+      data: {
+        ...node.data,
+        parentLoop: loopId,
+        outputs: ["none"],
+        versionId,
+      },
+    };
 
-    newEdges.push(forward, back);
-    console.log(nodes,"------------------",  newEdges)
+    const finalEdges = [
+      ...newEdges,
+
+      // loop → child
+      makeEdge({
+        source: loopId,
+        target: newChild.id,
+        sourceHandle: "body",
+        targetHandle: "input",
+        data: { loopType: "loop-child", loopOwner: loopId },
+      }),
+
+      // child → loop (return)
+      makeEdge({
+        source: newChild.id,
+        target: loopId,
+        sourceHandle: isBranchingNode(newChild) ? "true" : "none",
+        targetHandle: "body",
+        data: { loopType: "loop-back", loopOwner: loopId },
+      }),
+    ];
+
     return set({
-      nodes: [...nodes, newNode],
-      edges: newEdges,
-      connectedHandles: computeConnectedHandles(newEdges),
-      deletedEdgeIds: new Set(deletedEdgeIds),
-      dirtyEdgeIds: new Set(dirtyEdgeIds),
-      sourceEdgeId: null,
-      showSidebar: false,
+      nodes: [...nodes, newChild],
+      edges: finalEdges,
+      connectedHandles: computeConnectedHandles(finalEdges),
     });
   }
 
-  /* ---------------------------------------
-     DEFAULT INSERT (non-loop)
-  ---------------------------------------- */
-  const edgeToNew = makeEdge({
-    source: sourceNode.id,
-    target: newNode.id,
-    sourceHandle: edge.sourceHandle ?? "none",
-    targetHandle: "input",
-  });
+  /* ============================================================
+   *  CASE 2: Insert between siblings of SAME loop body
+   * ========================================================== */
+  const loopA = source.data?.parentLoop;
+  const loopB = target.data?.parentLoop;
 
-  const edgeFromNew = makeEdge({
-    source: newNode.id,
-    target: targetNode.id,
-    sourceHandle: "none",
-    targetHandle: edge.targetHandle ?? "input",
-  });
+  const sameLoopChild =
+    loopA && loopB && loopA === loopB && !edge.data?.loopType;
 
-  newEdges.push(edgeToNew, edgeFromNew);
+  /* ============================================================
+   *  CASE 3: INSERT from loop-return PLUS
+   *  ALWAYS APPEND at END of loop chain
+   * ========================================================== */
+  const isLoopReturn = edge.data?.loopType === "loop-back";
 
-  set({
-    nodes: [...nodes, newNode],
-    edges: newEdges,
-    connectedHandles: computeConnectedHandles(newEdges),
-    deletedEdgeIds: new Set(deletedEdgeIds),
-    dirtyEdgeIds: new Set(dirtyEdgeIds),
-    sourceEdgeId: null,
-    showSidebar: false,
-  });
+  if (sameLoopChild || isLoopReturn) {
+    // Which loop are we modifying?
+    // For return edge, trust loopOwner; for body edge, use parentLoop
+    const loopId = isLoopReturn
+      ? edge.data?.loopOwner ?? target.id
+      : loopA;
+
+    const loopNode = nodes.find((n) => n.id === loopId);
+    if (!loopNode) return;
+
+    // All children of THAT loop ONLY (ordered by x)
+    const children = nodes
+      .filter((n) => n.data?.parentLoop === loopId)
+      .sort((a, b) => a.position.x - b.position.x);
+
+    const SPACING = 220;
+
+    let insertIndex: number;
+    let insertX: number;
+
+    if (sameLoopChild) {
+      // Insert between siblings inside chain
+      insertIndex = children.findIndex((c) => c.id === target.id);
+      if (insertIndex === -1) {
+        // target is not actually in children – just fall back to default
+        return defaultInsert();
+      }
+      insertX = source.position.x + SPACING;
+    } else {
+      // RETURN EDGE → ALWAYS APPEND at the end of loop children
+      insertIndex = children.length;
+
+      if (children.length > 0) {
+        insertX = children[children.length - 1].position.x + SPACING;
+      } else {
+        insertX = loopNode.position.x + SPACING;
+      }
+    }
+
+    // Place vertically below loop node
+    const insertY = loopNode.position.y + 200;
+
+    const newChild: Node<NodeData> = {
+      ...node,
+      position: { x: insertX, y: insertY },
+      data: {
+        ...node.data,
+        parentLoop: loopId,
+        outputs: ["none"],
+        versionId,
+      },
+    };
+
+    // Insert into ordered children list
+    const ordered = [
+      ...children.slice(0, insertIndex),
+      newChild,
+      ...children.slice(insertIndex),
+    ];
+
+    // Remove only THIS LOOP's edges; do not touch parent or nested loops
+    newEdges = newEdges.filter((e) => e.data?.loopOwner !== loopId);
+
+    const rebuilt: Edge[] = [];
+
+    // loop → first child
+    if (ordered.length > 0) {
+      rebuilt.push(
+        makeEdge({
+          source: loopId,
+          target: ordered[0].id,
+          sourceHandle: "body",
+          targetHandle: "input",
+          data: { loopType: "loop-child", loopOwner: loopId },
+        })
+      );
+    }
+
+    // child → child chain
+    for (let i = 0; i < ordered.length - 1; i++) {
+      const a = ordered[i];
+      const b = ordered[i + 1];
+
+      rebuilt.push(
+        makeEdge({
+          source: a.id,
+          target: b.id,
+          sourceHandle: isBranchingNode(a) ? "true" : "none",
+          targetHandle: "input",
+          data: { loopType: "loop-child", loopOwner: loopId },
+        })
+      );
+    }
+
+    // LAST CHILD → LOOP-RETURN
+    const last = ordered[ordered.length - 1];
+
+    rebuilt.push(
+      makeEdge({
+        source: last.id,
+        target: loopId,
+        sourceHandle: isBranchingNode(last) ? "true" : "none",
+        targetHandle: "body",
+        data: { loopType: "loop-back", loopOwner: loopId },
+      })
+    );
+
+    const finalEdges = [...newEdges, ...rebuilt];
+
+    return set({
+      nodes: [...nodes, newChild],
+      edges: finalEdges,
+      connectedHandles: computeConnectedHandles(finalEdges),
+    });
+  }
+
+  /* ============================================================
+   *  CASE 4: DEFAULT NODE INSERTION (non-loop)
+   * ========================================================== */
+  const newDefault: Node<NodeData> = {
+    ...node,
+    data: {
+      ...node.data,
+      outputs: ["none"],
+      versionId,
+    },
+  };
+
+  const outEdges = [
+    ...newEdges,
+
+    // split original edge: source → new → target
+    makeEdge({
+      source: source.id,
+      target: newDefault.id,
+      sourceHandle: edge.sourceHandle ?? "none",
+      targetHandle: "input",
+    }),
+
+    makeEdge({
+      source: newDefault.id,
+      target: target.id,
+      sourceHandle: "none",
+      targetHandle: edge.targetHandle ?? "input",
+    }),
+  ];
+
+  function defaultInsert() {
+    return set({
+      nodes: [...nodes, newDefault],
+      edges: outEdges,
+      connectedHandles: computeConnectedHandles(outEdges),
+    });
+  }
+
+  return defaultInsert();
 },
 
 
@@ -765,12 +824,11 @@ addNodeBetweenEdge: (node, edge) => {
 
       const oldType = oldNode.data.type;
       const newType = nodeData.type ?? oldType;
-      const typeChanged = oldType !== newType;
 
       /* ------------------------------------------------------------
-       Merge updated node data
+       Merge updated data
     ------------------------------------------------------------ */
-      const mergedNode: Node<NodeData> = {
+      const mergedNode = {
         ...oldNode,
         data: { ...oldNode.data, ...nodeData },
       };
@@ -778,46 +836,45 @@ addNodeBetweenEdge: (node, edge) => {
       const newDeletedEdgeIds = new Set(deletedEdgeIds);
       const newDirtyEdgeIds = new Set(dirtyEdgeIds);
       const newDirtyNodeIds = new Set(dirtyNodeIds);
-
       if (syncedNodeIds.has(nodeId)) newDirtyNodeIds.add(nodeId);
 
       /* ------------------------------------------------------------
-       Compute valid outputs
+       Outputs
     ------------------------------------------------------------ */
       const newOutputs = getOutputsForNode(mergedNode);
       mergedNode.data.outputs = newOutputs;
-
       const normalizedOutputs = newOutputs.map((o) => o.toLowerCase());
 
       /* ------------------------------------------------------------
-       Helper to track deleted edges
+      Helper: mark synced edges as deleted
     ------------------------------------------------------------ */
-      const trackDeletedEdges = (list: Edge[]) => {
-        list.forEach((edge) => {
-          if (syncedEdgeIds.has(edge.id)) {
-            newDeletedEdgeIds.add(edge.id);
-            newDirtyEdgeIds.delete(edge.id);
+      const trackDeletedEdges = (list) => {
+        for (const e of list) {
+          if (syncedEdgeIds.has(e.id)) {
+            newDeletedEdgeIds.add(e.id);
+            newDirtyEdgeIds.delete(e.id);
           }
-        });
+        }
       };
 
       /* ------------------------------------------------------------
-       TRIGGER → Remove incoming edges
+       TRIGGER NODES — No incoming allowed
     ------------------------------------------------------------ */
       if (isTriggerNode(newType)) {
         const incoming = edges.filter((e) => e.target === nodeId);
         trackDeletedEdges(incoming);
-
         edges = edges.filter((e) => e.target !== nodeId);
       }
 
       /* ------------------------------------------------------------
-       Remove outgoing edges whose handles are invalid
+       Remove invalid output edges on update
     ------------------------------------------------------------ */
       const invalidOutgoing = edges.filter((e) => {
         if (e.source !== nodeId) return false;
-        const h = e.sourceHandle?.toLowerCase();
-        return h && !normalizedOutputs.includes(h);
+        return (
+          e.sourceHandle &&
+          !normalizedOutputs.includes(e.sourceHandle.toLowerCase())
+        );
       });
 
       trackDeletedEdges(invalidOutgoing);
@@ -825,78 +882,194 @@ addNodeBetweenEdge: (node, edge) => {
       edges = edges.filter((e) => {
         if (e.source !== nodeId) return true;
         const h = e.sourceHandle?.toLowerCase();
-        return h ? normalizedOutputs.includes(h) : true;
+        return !h || normalizedOutputs.includes(h);
       });
 
+      /* ------------------------------------------------------------
+      LOOP NODE
+    ------------------------------------------------------------ */
+      /* ------------------------------------------------------------
+  LOOP NODE
+------------------------------------------------------------ */
       const isLoop = newType === NodeTypeProps.LOOP;
 
       if (isLoop) {
-        // LOOP OUTPUTS
         mergedNode.data.outputs = ["body", "end"];
 
-        // Remove old loop edges (self or end)
+        const parentLoopId = mergedNode.data.parentLoop as string | undefined;
+        const hasParentLoop = !!parentLoopId;
+
+        // remove any old special loop edges that belonged to THIS node
         edges = edges.filter((e) => !(e.source === nodeId && e.data?.loopType));
 
-        // ---- 1️⃣ SELF LOOP EDGE ----
-        const selfLoop = {
+        // common self-edge for any loop (draw its own rectangle)
+        const selfEdge = {
           id: `loop-self-${nodeId}`,
-          type: "custom",
+          type: "custom" as const,
           source: nodeId,
           target: nodeId,
           sourceHandle: "body",
           targetHandle: "body",
           animated: true,
-          data: {
-            loopType: "self",
-            versionId,
-          },
+          data: { loopType: "self",  loopOwner: nodeId,versionId },
         };
 
-        // ---- 2️⃣ PLUS NODE FOR END ----
-        const plusId = uuidv4();
+        // ----------------------------------------------------------
+        // 1️⃣ CHILD LOOP – loop placed INSIDE another loop
+        // ----------------------------------------------------------
+        if (hasParentLoop) {
+          const parentLoop = nodes.find((n) => n.id === parentLoopId);
+          if (!parentLoop) {
+            // safety: fall back to normal loop behaviour
+            const plusId = uuidv4();
+            const plusNode = {
+              id: plusId,
+              type: "custom" as const,
+              position: { x: oldNode.position.x + 260, y: oldNode.position.y },
+              data: {
+                id: plusId,
+                type: "addNode",
+                parent: nodeId,
+                outputs: ["none"],
+                versionId,
+              },
+            };
 
+            const endEdge = {
+              id: uuidv4(),
+              type: "custom" as const,
+              animated: true,
+              source: nodeId,
+              target: plusId,
+              sourceHandle: "end",
+              targetHandle: "input",
+              data: { loopType: "end", loopOwner: nodeId,versionId },
+            };
+
+            const edgesWithLoop = edges.concat(selfEdge, endEdge);
+
+            return {
+              ...state,
+              nodes: nodes
+                .map((n) => (n.id === nodeId ? mergedNode : n))
+                .concat(plusNode),
+              edges: edgesWithLoop,
+              connectedHandles: computeConnectedHandles(edgesWithLoop),
+              dirtyNodeIds: newDirtyNodeIds,
+              dirtyEdgeIds: newDirtyEdgeIds,
+              deletedEdgeIds: newDeletedEdgeIds,
+            };
+          }
+
+          // any existing edge parentLoop -> this node (from + dummy) becomes loop-child
+          edges = edges.map((e) => {
+            if (e.source === parentLoop.id && e.target === nodeId) {
+              return {
+                ...e,
+                sourceHandle: e.sourceHandle ?? "body",
+                targetHandle: "input",
+                data: { ...(e.data || {}), loopType: "loop-child", versionId },
+              };
+            }
+            return e;
+          });
+
+          // create DONE dummy inside the CHILD loop
+          const doneDummyId = uuidv4();
+          const doneDummyNode = {
+            id: doneDummyId,
+            type: "custom" as const,
+            position: { x: oldNode.position.x + 260, y: oldNode.position.y },
+            data: {
+              id: doneDummyId,
+              type: "addNode",
+              // this dummy lives inside the CHILD loop
+              parentLoop: nodeId,
+              outputs: ["none"],
+              versionId,
+            },
+          };
+
+          // childLoop.done -> doneDummy (inside child rectangle)
+          const childEndToDummy = {
+            id: uuidv4(),
+            type: "custom" as const,
+            source: nodeId,
+            target: doneDummyId,
+            sourceHandle: "end",
+            targetHandle: "input",
+            animated: true,
+            data: { loopType: "loop-child", versionId },
+          };
+
+          // doneDummy -> parentLoop  (this draws the BIG parent loop rectangle)
+          const dummyToParentLoop = {
+            id: uuidv4(),
+            type: "custom" as const,
+            source: doneDummyId,
+            target: parentLoop.id,
+            sourceHandle: "none",
+            targetHandle: "body",
+            animated: true,
+            data: { loopType: "loop-back", versionId },
+          };
+
+          const edgesWithLoop = edges.concat(
+            selfEdge,
+            childEndToDummy,
+            dummyToParentLoop
+          );
+
+          return {
+            ...state,
+            nodes: nodes
+              .map((n) => (n.id === nodeId ? mergedNode : n))
+              .concat(doneDummyNode),
+            edges: edgesWithLoop,
+            connectedHandles: computeConnectedHandles(edgesWithLoop),
+            dirtyNodeIds: newDirtyNodeIds,
+            dirtyEdgeIds: newDirtyEdgeIds,
+            deletedEdgeIds: newDeletedEdgeIds,
+          };
+        }
+
+        // ----------------------------------------------------------
+        // 2️⃣ ROOT LEVEL LOOP – your existing behaviour
+        // ----------------------------------------------------------
+        const plusId = uuidv4();
         const plusNode = {
           id: plusId,
-          type: "custom",
-          position: {
-            x: oldNode.position.x + 250,
-            y: oldNode.position.y,
-          },
+          type: "custom" as const,
+          position: { x: oldNode.position.x + 260, y: oldNode.position.y },
           data: {
             id: plusId,
             type: "addNode",
-            versionId,
             parent: nodeId,
-            name: "End",
             outputs: ["none"],
+            versionId,
           },
         };
 
-        // ---- 3️⃣ END EDGE ----
         const endEdge = {
           id: uuidv4(),
-          type: "custom",
+          type: "custom" as const,
+          animated: true,
           source: nodeId,
           target: plusId,
           sourceHandle: "end",
           targetHandle: "input",
-          animated: true,
-          data: {
-            loopType: "end",
-            versionId,
-          },
+          data: { loopType: "end", versionId },
         };
 
-        // ---- FINAL STATE ----
+        const edgesWithLoop = edges.concat(selfEdge, endEdge);
+
         return {
           ...state,
           nodes: nodes
             .map((n) => (n.id === nodeId ? mergedNode : n))
-            .concat([plusNode]),
-          edges: edges.concat([selfLoop, endEdge]),
-          connectedHandles: computeConnectedHandles(
-            edges.concat([selfLoop, endEdge])
-          ),
+            .concat(plusNode),
+          edges: edgesWithLoop,
+          connectedHandles: computeConnectedHandles(edgesWithLoop),
           dirtyNodeIds: newDirtyNodeIds,
           dirtyEdgeIds: newDirtyEdgeIds,
           deletedEdgeIds: newDeletedEdgeIds,
@@ -904,18 +1077,14 @@ addNodeBetweenEdge: (node, edge) => {
       }
 
       /* ------------------------------------------------------------
-       If NOT conditional/switch/rule → Simple update
+      CONDITIONAL / SWITCH LOGIC
     ------------------------------------------------------------ */
       const isConditional =
-        !isLoop &&
-        (newType === NodeTypeProps.CONDITIONAL ||
-          newType === NodeTypeProps.RULE_EXECUTOR ||
-          newType === NodeTypeProps.SWITCH);
+        newType === NodeTypeProps.CONDITIONAL ||
+        newType === NodeTypeProps.RULE_EXECUTOR ||
+        newType === NodeTypeProps.SWITCH;
 
-      if (
-        (!isConditional && newType !== NodeTypeProps.LOOP) ||
-        isTriggerNode(newType)
-      ) {
+      if (!isConditional || isTriggerNode(newType)) {
         return {
           ...state,
           nodes: nodes.map((n) => (n.id === nodeId ? mergedNode : n)),
@@ -928,84 +1097,236 @@ addNodeBetweenEdge: (node, edge) => {
       }
 
       /* ------------------------------------------------------------
-       CONDITIONAL / SWITCH → Build branch nodes
+      CONDITIONAL ***INSIDE LOOP***
     ------------------------------------------------------------ */
-      const x = oldNode.position.x;
-      const y = oldNode.position.y;
 
-      let branchNodes: Node<NodeData>[] = [];
-      let branchEdges: Edge[] = [];
+      const parentLoop = nodes.find((n) => n.id === mergedNode.data.parentLoop);
 
-      const isSwitch = newType === NodeTypeProps.SWITCH;
+      // only LOOP or RULE_EXECUTOR define loop structure
+      const isInsideLoop =
+        parentLoop && parentLoop.data.type === NodeTypeProps.LOOP;
 
-      const branchNames = isSwitch
-        ? newOutputs
-        : newOutputs.map((n) => n.toLowerCase());
+      if (isInsideLoop) {
+        const loopId = parentLoop.id;
+        const px = oldNode.position.x;
+        const py = oldNode.position.y;
 
-      const getOffsetY = (idx: number, total: number, handle: string) => {
-        if (!isSwitch) {
-          const fixed: Record<string, number> = { true: -100, false: 100 };
-          if (fixed[handle] !== undefined) return fixed[handle];
+        const branchNodes = [];
+        const branchEdges = [];
+
+        /* =========================================================
+      1️⃣ CONDITIONAL / RULE EXECUTOR inside loop
+  ========================================================= */
+        if (
+          newType === NodeTypeProps.CONDITIONAL ||
+          newType === NodeTypeProps.RULE_EXECUTOR
+        ) {
+          // TRUE → into loop rectangle
+          const trueDummy = uuidv4();
+          branchNodes.push({
+            id: trueDummy,
+            type: "custom",
+            position: { x: px + 260, y: py },
+            data: {
+              id: trueDummy,
+              type: "addNode",
+              parentLoop: loopId,
+              outputs: ["none"],
+              versionId,
+            },
+          });
+
+          branchEdges.push({
+            id: uuidv4(),
+            type: "custom",
+            source: nodeId,
+            target: trueDummy,
+            sourceHandle: "true",
+            targetHandle: "input",
+            animated: true,
+            data: { loopType: "loop-child", versionId },
+          });
+
+          // dummy → loop rectangle
+          branchEdges.push({
+            id: uuidv4(),
+            type: "custom",
+            source: trueDummy,
+            target: loopId,
+            sourceHandle: "none",
+            targetHandle: "body",
+            animated: true,
+            data: { loopType: "loop-back", versionId },
+          });
+
+          const falseDummy = uuidv4();
+          branchNodes.push({
+            id: falseDummy,
+            type: "custom",
+            position: { x: px + 260, y: py + 180 },
+            data: {
+              id: falseDummy,
+              type: "addNode",
+              parentLoop: loopId,
+              versionId,
+              outputs: ["none"],
+            },
+          });
+
+          branchEdges.push({
+            id: uuidv4(),
+            type: "custom",
+            source: nodeId,
+            target: falseDummy,
+            sourceHandle: "false",
+            targetHandle: "input",
+            animated: true,
+            data: { versionId },
+          });
+
+          return {
+            ...state,
+            nodes: nodes
+              .map((n) => (n.id === nodeId ? mergedNode : n))
+              .concat(branchNodes),
+            edges: edges.concat(branchEdges),
+          };
         }
-        return idx * 140 - ((total - 1) * 140) / 2;
-      };
 
-      branchNames.forEach((handle, index) => {
-        const normalized = handle.toLowerCase();
+        /* =========================================================
+      2️⃣ SWITCH inside loop
+      Case1 → inside loop
+      CaseN → outside stack
+  ========================================================= */
+        if (newType === NodeTypeProps.SWITCH) {
+          const firstHandle = normalizedOutputs[0];
 
-        if (!typeChanged && oldNode.data.outputs?.includes(normalized)) {
-          const dirty = edges.find(
-            (e) => e.source === nodeId && e.sourceHandle === normalized
-          );
-          if (dirty) newDirtyEdgeIds.add(dirty.id);
-          return;
+          // CASE 1: loop child
+          const case1Dummy = uuidv4();
+          branchNodes.push({
+            id: case1Dummy,
+            type: "custom",
+            position: { x: px + 260, y: py },
+            data: {
+              id: case1Dummy,
+              type: "addNode",
+              parentLoop: loopId,
+              outputs: ["none"],
+              versionId,
+            },
+          });
+
+          branchEdges.push({
+            id: uuidv4(),
+            type: "custom",
+            source: nodeId,
+            target: case1Dummy,
+            sourceHandle: firstHandle,
+            targetHandle: "input",
+            animated: true,
+            data: { loopType: "loop-child", versionId },
+          });
+
+          branchEdges.push({
+            id: uuidv4(),
+            type: "custom",
+            source: case1Dummy,
+            target: loopId,
+            sourceHandle: "none",
+            targetHandle: "body",
+            animated: true,
+            data: { loopType: "loop-back", versionId },
+          });
+
+          // CASE 2..N → OUTSIDE
+          for (let i = 1; i < normalizedOutputs.length; i++) {
+            const handle = normalizedOutputs[i];
+
+            const dummyId = uuidv4();
+            branchNodes.push({
+              id: dummyId,
+              type: "custom",
+              position: { x: px + 260, y: py + i * 180 },
+              data: {
+                id: dummyId,
+                type: "addNode",
+                parentLoop: loopId,
+                outputs: ["none"],
+                versionId,
+              },
+            });
+
+            branchEdges.push({
+              id: uuidv4(),
+              type: "custom",
+              source: nodeId,
+              target: dummyId,
+              sourceHandle: handle,
+              targetHandle: "input",
+              animated: true,
+              data: { versionId },
+            });
+          }
+
+          return {
+            ...state,
+            nodes: nodes
+              .map((n) => (n.id === nodeId ? mergedNode : n))
+              .concat(branchNodes),
+            edges: edges.concat(branchEdges),
+          };
         }
+      }
 
-        const childId = uuidv4();
-        const offsetY = getOffsetY(index, branchNames.length, normalized);
+      /* ------------------------------------------------------------
+      CONDITIONAL OUTSIDE LOOP — Standard branching
+    ------------------------------------------------------------ */
+      const bx = oldNode.position.x;
+      const by = oldNode.position.y;
 
-        branchNodes.push({
-          id: childId,
+      const children = [];
+      const cEdges = [];
+
+      normalizedOutputs.forEach((handle, i) => {
+        const id = uuidv4();
+        children.push({
+          id,
           type: "custom",
-          position: { x: x + 250, y: y + offsetY },
+          position: { x: bx + 250, y: by + i * 160 },
           data: {
-            id: childId,
+            id,
             type: "addNode",
             parent: nodeId,
             versionId,
-            name: isSwitch
-              ? handle.replace(/_/g, " ").toUpperCase()
-              : normalized.charAt(0).toUpperCase() + normalized.slice(1),
-            outputs: isSwitch ? ["none"] : [normalized],
+            outputs: ["none"],
           },
         });
 
-        branchEdges.push({
+        cEdges.push({
           id: uuidv4(),
           type: "custom",
           source: nodeId,
-          sourceHandle: normalized,
-          target: childId,
+          target: id,
+          sourceHandle: handle,
           targetHandle: "input",
+          animated: true,
           data: { versionId },
         });
       });
 
-      /* ------------------------------------------------------------
-       Final state update
-    ------------------------------------------------------------ */
       return {
         ...state,
         nodes: nodes
           .map((n) => (n.id === nodeId ? mergedNode : n))
-          .concat(branchNodes),
-        edges: edges.concat(branchEdges),
-        connectedHandles: computeConnectedHandles(edges),
+          .concat(children),
+        edges: edges.concat(cEdges),
+        connectedHandles: computeConnectedHandles(edges.concat(cEdges)),
         dirtyNodeIds: newDirtyNodeIds,
         dirtyEdgeIds: newDirtyEdgeIds,
         deletedEdgeIds: newDeletedEdgeIds,
       };
     }),
+
 
   setEdgeForSidebar: (edgeId, sourceNodeId) =>
     set({ sourceEdgeId: edgeId, sourceNodeId, showSidebar: true }),

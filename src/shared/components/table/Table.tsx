@@ -55,19 +55,19 @@ export function Table<T>({
   };
 
   return (
-    <div className="border rounded-lg overflow-x-auto">
-      <table className="min-w-full divide-y divide-gray-200">
-        <thead className="bg-gray-100">
+    <div className="wf-table-wrapper">
+      <table className="wf-table">
+        <thead className="wf-table-head">
           <tr>
             {columns.map((col) => (
               <th
                 key={String(col.field)}
                 style={{ width: col.width }}
-                className="p-3 text-left text-sm font-medium text-gray-700"
+                className="wf-table-header-cell"
               >
                 <div
-                  className={`flex items-center gap-1 ${
-                    col.sortable ? "cursor-pointer select-none" : ""
+                  className={`wf-table-header-content ${
+                    col.sortable ? "wf-table-header-content--sortable" : ""
                   }`}
                   onClick={() => toggleSort(col)}
                 >
@@ -79,16 +79,16 @@ export function Table<T>({
           </tr>
         </thead>
 
-        <tbody className="divide-y divide-gray-200">
+        <tbody>
           {isLoading ? (
             <tr>
-              <td className="text-center py-8 text-gray-500" colSpan={columns.length}>
+              <td className="wf-table-empty" colSpan={columns.length}>
                 Loading...
               </td>
             </tr>
           ) : records.length === 0 ? (
             <tr>
-              <td className="text-center py-8 text-gray-500" colSpan={columns.length}>
+              <td className="wf-table-empty" colSpan={columns.length}>
                 {emptyText}
               </td>
             </tr>

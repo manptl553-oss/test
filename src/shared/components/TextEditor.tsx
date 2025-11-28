@@ -68,7 +68,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
   };
 
   return (
-    <div className="relative overflow-visible z-9999">
+    <div className="wf-rich-text-editor">
       <JoditEditor
         value={value}
         config={config}

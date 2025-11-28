@@ -88,10 +88,7 @@ const DialogOverlay = React.forwardRef<
       ref={ref}
       onClick={handleClick}
       data-state={open ? "open" : "closed"}
-      className={cn(
-        "fixed inset-0 z-[9998] bg-black/80 backdrop-blur-sm opacity-100 transition-opacity duration-200 animate-in fade-in-0",
-        className
-      )}
+      className={cn("wf-dialog-overlay", className)}
       {...props}
     />
   ) : null;
@@ -155,7 +152,7 @@ const DialogContent = React.forwardRef<
   const dialogContent = (
     <>
       <DialogOverlay />
-      <div className="fixed inset-0 z-[9999] flex items-center justify-center overflow-y-auto p-4 pointer-events-none">
+      <div className="wf-dialog-wrapper">
         <div
           ref={(node) => {
             dialogRef.current = node;
@@ -169,17 +166,13 @@ const DialogContent = React.forwardRef<
             e.stopPropagation();
           }}
           data-state={open ? "open" : "closed"}
-          className={cn(
-            "relative w-full max-w-lg rounded-lg border bg-white p-6 shadow-lg transition-all duration-200 pointer-events-auto",
-            "animate-in fade-in-0 zoom-in-95",
-            className
-          )}
+          className={cn("wf-dialog-shell", className)}
           {...props}
         >
           {children}
 
-          <DialogClose className="absolute right-4 top-4 rounded-sm opacity-70 hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2">
-            <X className="h-4 w-4" />
+          <DialogClose className="wf-dialog-close">
+            <X className="wf-icon-sm" />
             <span className="sr-only">Close</span>
           </DialogClose>
         </div>
@@ -221,13 +214,7 @@ const DialogHeader = ({
   className,
   ...props
 }: React.HTMLAttributes<HTMLDivElement>) => (
-  <div
-    className={cn(
-      "flex flex-col space-y-1.5 text-center sm:text-left",
-      className
-    )}
-    {...props}
-  />
+  <div className={cn("wf-dialog-header", className)} {...props} />
 );
 DialogHeader.displayName = "DialogHeader";
 
@@ -235,13 +222,7 @@ const DialogFooter = ({
   className,
   ...props
 }: React.HTMLAttributes<HTMLDivElement>) => (
-  <div
-    className={cn(
-      "flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2",
-      className
-    )}
-    {...props}
-  />
+  <div className={cn("wf-dialog-footer", className)} {...props} />
 );
 DialogFooter.displayName = "DialogFooter";
 
@@ -252,14 +233,7 @@ const DialogTitle = React.forwardRef<
   HTMLHeadingElement,
   React.HTMLAttributes<HTMLHeadingElement>
 >(({ className, ...props }, ref) => (
-  <h2
-    ref={ref}
-    className={cn(
-      "text-lg font-semibold leading-none tracking-tight",
-      className
-    )}
-    {...props}
-  />
+  <h2 ref={ref} className={cn("wf-dialog-title", className)} {...props} />
 ));
 DialogTitle.displayName = "DialogTitle";
 
@@ -267,11 +241,7 @@ const DialogDescription = React.forwardRef<
   HTMLParagraphElement,
   React.HTMLAttributes<HTMLParagraphElement>
 >(({ className, ...props }, ref) => (
-  <p
-    ref={ref}
-    className={cn("text-sm text-muted-foreground", className)}
-    {...props}
-  />
+  <p ref={ref} className={cn("wf-dialog-description", className)} {...props} />
 ));
 DialogDescription.displayName = "DialogDescription";
 

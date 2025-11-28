@@ -52,7 +52,7 @@ function TableField({
     switch (column.type) {
       case "input":
         return (
-          <div key={filedName} className={cn("space-y-2 w-full", cellClassName)}>
+          <div key={filedName} className={cn("wf-table-field__cell", cellClassName)}>
             <Controller
               control={control}
               name={filedName}
@@ -61,26 +61,25 @@ function TableField({
                   {...field}
                   value={field.value ?? ""}
                   placeholder={column.label}
-                  className="border border-gray-300 focus-visible:ring-0"
                 />
               )}
             />
-            {errorMsg && <p className="text-red-500 text-xs">{errorMsg}</p>}
+            {errorMsg && <p className="wf-table-field__error">{errorMsg}</p>}
           </div>
         );
 
       case "select":
         return (
-          <div key={filedName} className={cn("space-y-2 w-full", cellClassName)}>
+          <div key={filedName} className={cn("wf-table-field__cell", cellClassName)}>
             <Controller
               control={control}
               name={filedName}
               render={({ field: { value, onChange } }) => (
                 <Select value={value ?? ""} onValueChange={onChange}>
-                  <SelectTrigger className="border border-gray-300 focus-visible:ring-0">
+                  <SelectTrigger>
                     <SelectValue placeholder={`Select ${column.label}`} />
                   </SelectTrigger>
-                  <SelectContent className="bg-white border border-gray-300">
+                  <SelectContent>
                     {column.options?.map((opt) => (
                       <SelectItem key={opt.value} value={opt.value}>
                         {opt.label}
@@ -90,7 +89,7 @@ function TableField({
                 </Select>
               )}
             />
-            {errorMsg && <p className="text-red-500 text-xs">{errorMsg}</p>}
+            {errorMsg && <p className="wf-table-field__error">{errorMsg}</p>}
           </div>
         );
 
@@ -100,24 +99,24 @@ function TableField({
   };
 
   return (
-    <div className={cn("space-y-2 w-full", className)}>
-      <Label className="block font-medium text-sm text-gray-700">{label}</Label>
+    <div className={cn("wf-table-field", className)}>
+      <Label className="wf-table-field__label">{label}</Label>
 
-      <div className={cn("flex gap-2 font-semibold text-sm text-gray-700", headerClassName)}>
+      <div className={cn("wf-table-field__header", headerClassName)}>
         {columns &&
           columns.map((col) => (
-            <div key={col.name} className="flex-1">
+            <div key={col.name} className="wf-table-field__header-col">
               {col.label}
             </div>
           ))}
-        <div className="w-20">Actions</div>
+        <div className="wf-table-field__actions">Actions</div>
       </div>
 
       {fields.map((row, idx) => (
-        <div key={row.id} className={cn("flex gap-2 items-start", rowClassName)}>
+        <div key={row.id} className={cn("wf-table-field__row", rowClassName)}>
           {columns
             ? columns.map((col) => (
-                <div key={col.name} className="flex-1">
+                <div key={col.name} className="wf-table-field__cell">
                   {renderCell(
                     col,
                     isTag,
@@ -138,7 +137,7 @@ function TableField({
             variant="destructive"
             size="sm"
             onClick={() => remove(idx)}
-            className="w-20"
+            className="wf-table-field__remove"
             disabled={fields.length === 1}
           >
             ✕

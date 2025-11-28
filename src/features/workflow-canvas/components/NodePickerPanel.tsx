@@ -37,8 +37,8 @@ export default function NodePickerPanel({
   const style = nodeTypeStyles[currentView?.data?.type as NodeTypeProps] ||
     nodeTypeStyles[currentView?.data?.name as NodeTypeProps] || {
       icon: BugIcon,
-      bg: "bg-gray-300",
-      border: "border-gray-500",
+      bg: "#d1d5db",
+      border: "#6b7280",
     };
 
   const goBack = () => setNavigationStack((stack) => stack.slice(0, -1));
@@ -144,48 +144,41 @@ export default function NodePickerPanel({
   };
 
   return (
-    <div ref={panelRef} className="flex flex-col h-full ">
-      <div className="px-0 pb-2 font-medium text-gray-700 border-b border-gray-300 flex items-center gap-2">
+    <div ref={panelRef} className="wf-node-picker">
+      <div className="wf-node-picker__header">
         {navigationStack?.length > 1 && !isStartNode && (
-          <button onClick={goBack} className="hover:bg-gray-100 p-1 rounded">
-            <ChevronLeft className="w-5 h-5" />
+          <button onClick={goBack} className="wf-node-picker__back">
+            <ChevronLeft className="wf-icon-md" />
           </button>
         )}
         {currentView?.data?.name || "Start"}
       </div>
       {currentView.type !== "root" && (
-        <div className="relative py-4 space-y-4">
+        <div className="wf-node-picker__body">
           <div
-            className={`flex flex-col space-y-2 items-center justify-center border-2 border-solid rounded-lg p-5 `}
+            className="wf-node-picker__summary"
             style={{
               background: `${style.bg}20 `,
               border: `1px solid ${style.border}`,
             }}
           >
             <div
-              className="w-16 h-16 rounded-full flex items-center justify-center p-2 bg-white/15"
+              className="wf-node-picker__summary-icon"
               style={{
                 background: style.bg,
               }}
             >
-              <style.icon className="text-white w-8 h-8" />
+              <style.icon />
             </div>
 
-            <span className="text-black text-sm font-medium">
+            <span className="wf-node-picker__summary-title">
               {currentView?.data?.name || "Start"}
             </span>
-            {/* <div className="rounded-md relative pl-8 pr-3.5 py-2 bg-white border border-black/15">
-              <input
-                type="search"
-                placeholder="Search Your Inputs"
-                className="placeholder:text-gray-600 text-sm font-medium text-black"
-              />
-            </div> */}
           </div>
         </div>
       )}
 
-      <div className="flex-1 overflow-y-auto px-2 py-2 h-full max-h-60 space-y-1 ">
+      <div className="wf-node-picker__list">
         {currentView.type === "root" && renderRootView()}
         {currentView.type === "category" && renderCategoryView()}
         {currentView.type === "subcategory" && renderSubCategoryView()}

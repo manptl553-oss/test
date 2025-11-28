@@ -6,6 +6,7 @@ import { useEffect, useMemo, useState } from "react";
 import { ReactFlowProvider } from "reactflow";
 import FlowCanvas from "./components/FlowCanvas";
 import { normalizeWorkflowData } from "./helpers/normalize";
+import "./workflow-canvas.css";
 export function WorkflowCanvas({
   workflow,
   handleBack,
@@ -34,43 +35,30 @@ export function WorkflowCanvas({
   }, [versionId]);
 
   return (
-    <div className="flex-1 flex flex-col animate-fade-in bg-(--wf-background-base) text-(--wf-text-default)">
-      <header className="border-b border-(--wf-border-default) bg-(--wf-background-subtle) px-6 py-3 flex items-center justify-between">
-        <div className="flex items-center gap-3">
+    <div className="wf-canvas">
+      <header className="wf-canvas__header">
+        <div className="wf-header-left">
           <button
             onClick={handleBack}
             aria-label="Back"
-            className="    w-10 h-10 shrink-0 flex items-center justify-center
-    bg-(--wf-brand-primary) hover:brightness-110
-    text-(--wf-text-inverted)
-    rounded-full
-    shadow-md border border-(--wf-border-strong)
-    focus-visible:outline-none focus-visible:ring-2
-    focus-visible:ring-(--wf-border-focus)
-    focus-visible:ring-offset-2 focus-visible:ring-offset-(--wf-background-base)
-"
+            className="wf-back-button"
           >
             <ArrowLeft color="black" size={20} />
           </button>
 
-          <div className="flex gap-2 items-center">
+          <div className="wf-name-row">
             <Input
               id="workflow-name"
               type="text"
               value={workflowName}
               onChange={(e) => setWorkflowName(e.target.value)}
               placeholder="Workflow Name"
-              className="max-w-sm shadow-input
-                     border border-(--wf-border-default)
-                     bg-(--wf-background-base) text-(--wf-text-default)
-
-                     focus-visible:ring-2 focus-visible:ring-(--wf-border-focus)
-                     focus-visible:ring-offset-2 focus-visible:ring-offset-(--wf-background-base)"
+              className="wf-workflow-name-input"
             />
 
             {isNameChanged && (
               <Button
-                className="bg-(--wf-brand-primary) hover:bg-(--wf-brand-secondary) text-(--wf-text-inverted) "
+                className="wf-save-btn"
                 onClick={handleUpdateWorkflowMeta}
               >
                 Save
@@ -82,7 +70,7 @@ export function WorkflowCanvas({
         {nodes?.length > 0 && (
           <div>
             <Button
-              className="bg-(--wf-brand-primary) hover:bg-(--wf-brand-secondary) text-(--wf-text-inverted) "
+              className="wf-save-btn"
               onClick={() => {
                 const changes = getChangesForSync();
                 if (changes)
@@ -99,7 +87,7 @@ export function WorkflowCanvas({
       </header>
 
       <ReactFlowProvider>
-        <div className="relative w-full h-[calc(100vh-90px)] overflow-hidden bg-(--wf-background-base)">
+        <div className="wf-canvas-pane">
           <FlowCanvas workflow={normalizedData} />
         </div>
       </ReactFlowProvider>

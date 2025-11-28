@@ -1,5 +1,4 @@
-@import "tailwindcss";
-@theme {
+:root {
   --color-maastrichtblue: #0b1739;
   --color-primary: #7ec040;
   --color-charcoal: #343b4f;

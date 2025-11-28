@@ -28,7 +28,7 @@ const EditableNodeName = ({
 
   return (
     <div
-      className={cn("flex items-center gap-1", className)}
+      className={cn("wf-editable-name", className)}
       onClick={() => !isEditing && setIsEditing(true)}
     >
       {isEditing ? (
@@ -47,18 +47,10 @@ const EditableNodeName = ({
               onRename?.(value);
             }
           }}
-          className={cn(
-            "border border-gray-300 rounded px-1 py-0.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500",
-            inputClassName
-          )}
+          className={cn("wf-editable-name__input", inputClassName)}
         />
       ) : (
-        <span
-          className={cn(
-            "text-sm font-medium cursor-text hover:bg-gray-100 px-1 rounded transition",
-            spanClassName
-          )}
-        >
+        <span className={cn("wf-editable-name__label", spanClassName)}>
           {nodeName}
         </span>
       )}

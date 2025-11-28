@@ -69,10 +69,7 @@ export const AlertDialogOverlay = React.forwardRef<HTMLDivElement, React.HTMLAtt
     return open ? (
       <div
         ref={ref}
-        className={cn(
-          "fixed inset-0 z-40 bg-black/70 opacity-100 transition-opacity duration-200",
-          className
-        )}
+        className={cn("wf-dialog-overlay", className)}
         {...props}
       />
     ) : null;
@@ -109,7 +106,7 @@ export const AlertDialogContent = React.forwardRef<HTMLDivElement, React.HTMLAtt
     if (!open) return null;
 
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="wf-dialog-wrapper">
         <AlertDialogOverlay />
         <div
           ref={(node) => {
@@ -117,10 +114,7 @@ export const AlertDialogContent = React.forwardRef<HTMLDivElement, React.HTMLAtt
             if (typeof ref === "function") ref(node);
             else if (ref) (ref as React.MutableRefObject<HTMLDivElement | null>).current = node;
           }}
-          className={cn(
-            "relative z-50 w-full max-w-lg rounded-lg bg-background p-6 shadow-lg transition-transform duration-200 scale-100",
-            className
-          )}
+          className={cn("wf-dialog-shell", className)}
           {...props}
         >
           {children}
@@ -136,7 +130,7 @@ export const AlertDialogHeader = ({
   className,
   ...props
 }: React.HTMLAttributes<HTMLDivElement>) => (
-  <div className={cn("flex flex-col space-y-2 text-center sm:text-left", className)} {...props} />
+  <div className={cn("wf-dialog-header", className)} {...props} />
 );
 AlertDialogHeader.displayName = "AlertDialogHeader";
 
@@ -144,14 +138,14 @@ export const AlertDialogFooter = ({
   className,
   ...props
 }: React.HTMLAttributes<HTMLDivElement>) => (
-  <div className={cn("flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2", className)} {...props} />
+  <div className={cn("wf-dialog-footer", className)} {...props} />
 );
 AlertDialogFooter.displayName = "AlertDialogFooter";
 
 // ---------- Title / Description ----------
 export const AlertDialogTitle = React.forwardRef<HTMLHeadingElement, React.HTMLAttributes<HTMLHeadingElement>>(
   ({ className, ...props }, ref) => (
-    <h2 ref={ref} className={cn("text-lg font-semibold", className)} {...props} />
+    <h2 ref={ref} className={cn("wf-dialog-title", className)} {...props} />
   )
 );
 AlertDialogTitle.displayName = "AlertDialogTitle";
@@ -160,7 +154,7 @@ export const AlertDialogDescription = React.forwardRef<
   HTMLParagraphElement,
   React.HTMLAttributes<HTMLParagraphElement>
 >(({ className, ...props }, ref) => (
-  <p ref={ref} className={cn("text-sm text-muted-foreground", className)} {...props} />
+  <p ref={ref} className={cn("wf-dialog-description", className)} {...props} />
 ));
 AlertDialogDescription.displayName = "AlertDialogDescription";
 
@@ -189,7 +183,7 @@ export const AlertDialogCancel = React.forwardRef<HTMLButtonElement, React.Butto
     return (
       <button
         ref={ref}
-        className={cn(buttonVariants({ variant: "outline" }), "mt-2 sm:mt-0", className)}
+        className={cn(buttonVariants({ variant: "outline" }), "wf-alert-cancel", className)}
         onClick={(e) => {
           onClick?.(e);
           if (!e.defaultPrevented) setOpen(false);

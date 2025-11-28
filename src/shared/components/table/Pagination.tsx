@@ -12,12 +12,17 @@ function Button({
   active?: boolean;
   disabled?: boolean;
 }) {
+  const className = [
+    "wf-pagination-button",
+    active && "wf-pagination-button--active",
+    disabled && "wf-pagination-button--disabled",
+  ]
+    .filter(Boolean)
+    .join(" ");
+
   return (
     <button
-      className={`flex items-center justify-center w-9 h-9 rounded-lg text-sm
-        ${active ? "bg-primary-100 border border-primary-500 text-primary-500" : "text-gray-400 border border-gray-200"}
-        ${disabled ? "opacity-50 cursor-not-allowed" : "hover:bg-lime-500 hover:text-white"}
-      `}
+      className={className}
       onClick={onClick}
       disabled={disabled}
     >
@@ -81,14 +86,14 @@ export const Pagination = ({
   }, [pageCount, pageIndex, gotoPage]);
 
   return pageCount ? (
-    <div className="flex justify-between items-center flex-wrap gap-y-4 mt-4">
+    <div className="wf-pagination">
       {/* Rows per page */}
-      <div className="text-sm flex items-center gap-3 text-gray-600">
+      <div className="wf-pagination-info">
         <span>Rows per page:</span>
         <select
           value={perPage}
           onChange={(e) => onPerPageChange(Number(e.target.value))}
-          className="border px-2 py-1 rounded-lg"
+          className="wf-pagination-select"
         >
           {perPageOptions.map((n) => (
             <option key={n}>{n}</option>
@@ -104,7 +109,7 @@ export const Pagination = ({
       </div>
 
       {/* Page numbers */}
-      <ul className="flex gap-2">
+      <ul className="wf-pagination-pages">
         <Button
           content={<ChevronLeft />}
           disabled={!canPreviousPage}

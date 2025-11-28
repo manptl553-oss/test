@@ -118,9 +118,9 @@ export function NodeConfigModal() {
       open={nodeData ? true : false}
       onOpenChange={() => setActiveNode(null)}
     >
-      <DialogContent className="sm:max-w-[750px] bg-white rounded-xl shadow-xl">
-        <DialogHeader className="border-b border-gray-200 pb-4">
-          <DialogTitle className="font-semibold text-lg text-gray-800">
+      <DialogContent className="wf-node-config-dialog">
+        <DialogHeader className="wf-node-config-header">
+          <DialogTitle className="wf-node-config-title">
             <EditableNodeName
               nodeName={nodeName}
               onRename={(val: string) => setNodeName(val)}
