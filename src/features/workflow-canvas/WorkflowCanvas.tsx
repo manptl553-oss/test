@@ -48,6 +48,7 @@ export function WorkflowCanvas({
     voidNode,
     setVoidNode,
     markAsSynced,
+    isDirty
   } = useFlowStore();
   const [workflowName, setWorkflowName] = useState(workflow?.name || "");
   const [selectedVersion, setSelectedVersion] = useState(
@@ -70,7 +71,7 @@ export function WorkflowCanvas({
     if (!voidNode) {
       const voidNode = nodeCategory
         .flatMap((cat) => cat.nodeTemplates)
-        .find((t) => t.type === "void_node");
+        .find((t) => t?.type === "void_node");
       setVoidNode({
         name: voidNode?.name ?? "Void Node",
         type: voidNode?.type ?? "void_node",
@@ -96,7 +97,7 @@ export function WorkflowCanvas({
     focus-visible:ring-offset-0 focus-visible:ring-offset-(--wf-background-base)
 "
           >
-            <ArrowLeft color="black" size={20} />
+            <ArrowLeft color="white" size={20} />
           </button>
 
           <div className="flex gap-2 items-center">
@@ -137,30 +138,6 @@ export function WorkflowCanvas({
                 ))}
               </SelectContent>
             </Select>
-
-            {workflow.version.status == WorkFlowStatus.PUBLISHED ? (
-              <p>published</p>
-            ) : (
-              <Button
-                className="bg-(--wf-brand-primary) text-(--wf-text-inverted) "
-                onClick={() => {
-                  handlePublish(
-                    workflow?.version?.id,
-                    WorkFlowStatus.PUBLISHED
-                  );
-                }}
-              >
-                Publish
-              </Button>
-            )}
-            {/* {isNameChanged && (
-              <Button
-                className="bg-(--wf-brand-primary) hover:bg-(--wf-brand-secondary) text-(--wf-text-inverted) "
-                onClick={handleUpdateWorkflowMeta}
-              >
-                Save
-              </Button>
-            )} */}
           </div>
         </div>
         {nodes?.length > 0 && (
@@ -178,7 +155,8 @@ export function WorkflowCanvas({
                 markAsSynced();
               }}
             >
-              Save
+              
+              {isDirty() ? 'Save' : 'Publish'}
             </Button>
           </div>
         )}

@@ -7,6 +7,8 @@
   --color-primary: #7ec040;
   --color-charcoal: #343b4f;
   --color-gunmetal: #293138;
+  --color-darkGray:#3a4652;
+  --color-borderlight: #eaedf3;
   --shadow-sidebar: 0 8px 28px rgba(35, 54, 112, 30%);
   --shadow-inputout: -1px 3px 11px 0px #0000002b;
 }

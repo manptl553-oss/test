@@ -55,15 +55,15 @@ export function Table<T>({
   };
 
   return (
-    <div className="border border-(--wf-border-default) rounded-lg overflow-x-auto">
-      <table className="min-w-full divide-y divide-(--wf-border-default)">
+    <div className="!border !border-borderlight rounded-lg overflow-x-auto overflow-y-auto scroll-smooth">
+      <table className="min-w-full !border-b !divide-borderlight !bg-white">
         <thead className="bg-(--wf-background-subtle)">
-          <tr>
+          <tr className="bg-darkGray/5">
             {columns.map((col) => (
               <th
                 key={String(col.field)}
                 style={{ width: col.width }}
-                className="p-3 text-left text-sm font-medium text-(--wf-text-default)"
+                className="p-4 text-left text-sm font-medium text-(--wf-text-default)"
               >
                 <div
                   className={`flex items-center gap-1 ${
@@ -81,7 +81,7 @@ export function Table<T>({
           </tr>
         </thead>
 
-        <tbody className="divide-y divide-(--wf-border-default)">
+        <tbody className="!divide-y !divide-borderlight">
           {isLoading ? (
             <tr>
               <td

@@ -308,6 +308,10 @@ export default function FlowCanvas({ workflow }: any) {
     [activeNode, setActiveNode]
   );
 
+   const onPaneClick = useCallback(() => {
+    setActiveNode(null); // This clears the selected node, which makes isPopoverOpen false
+  }, [setActiveNode]);
+
   return (
     <div className="w-full h-full relative bg-(--wf-background-base)" ref={containerRef}>
       <ReactFlow
@@ -323,6 +327,7 @@ export default function FlowCanvas({ workflow }: any) {
         onNodeClick={handleNodeClick}
         onNodeDrag={onNodeDrag}
         onNodeDragStop={onNodeDragStop}
+           onPaneClick={onPaneClick} 
         fitView
         className="bg-(--wf-background-base)"
         // proOptions={{ hideAttribution: true }}

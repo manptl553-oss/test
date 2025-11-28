@@ -2,7 +2,6 @@ import { getEdgeLabelForNode, getNodeDefinition } from "@/shared";
 import {
   Workflow,
   WorkflowEdge,
-  WorkflowNode,
 } from "@/shared/types/workflow.types";
 import { NodeData } from "@/store";
 import { Edge, Node, XYPosition } from "reactflow";

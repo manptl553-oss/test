@@ -34,6 +34,8 @@ export interface VersionData {
   status: string;
   publishedBy: string;
   updatedBy: string;
+  nodes?:WorkflowNode[];
+  edges?:WorkflowEdge[]
 }
 
 export interface Workflow {
@@ -41,7 +43,7 @@ export interface Workflow {
   name: string;
   version: VersionData;
   description?: string;
-  enabled: boolean;
+  enabled?: boolean;
   lastModified?: string;
   nodes?: WorkflowNode[];
   edges?: WorkflowEdge[];

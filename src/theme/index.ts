@@ -11,7 +11,7 @@ const DEFAULT_COLORS: Record<
 > = {
   light: (value) => ({
     brand: Object.assign(
-      { primary: "#3b82f6", secondary: "#a78bfa" },
+      { primary: "#7ec040", secondary: "#6dad35" },
       value?.brand
     ),
     text: Object.assign(
@@ -26,12 +26,6 @@ const DEFAULT_COLORS: Record<
       { default: "#e5e7eb", focus: "#3b82f6", strong: "#cbd5e1" },
       value?.border
     ),
-    // feedback: {
-    //   success: "#10b981",
-    //   warning: "#f59e0b",
-    //   danger: "#ef4444",
-    //   info: "#3b82f6",
-    // },
   }),
   dark: (value) => ({
     brand: Object.assign(

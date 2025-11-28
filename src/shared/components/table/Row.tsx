@@ -15,16 +15,18 @@ export function Row<T>({
   onClick,
 }: RowProps<T>) {
   return (
-    <tr
-      className={`border-t border-(--wf-border-default) ${
-        clickable ? "cursor-pointer hover:bg-(--wf-background-subtle)" : ""
-      }`}
-      onClick={() => clickable && onClick?.(record)}
-    >
+ <tr
+  className={`border-t ${clickable ? "cursor-pointer hover:bg-gray-50" : ""}`}
+  onClick={(e) => {
+    if (!clickable) return;
+    onClick?.(record);
+  }}
+>
+
       {columns.map((col) => (
         <td
           key={String(col.field)}
-          className="p-3 text-sm text-(--wf-text-default)"
+          className="p-4 text-sm text-(--wf-text-default)"
         >
           {col.render
             ? col.render(record)
