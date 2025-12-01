@@ -33,8 +33,40 @@
 }
 
 .wf-tooltip-wrapper {
-  position: relative;
+  position: absolute;
   display: inline-block;
+  bottom: 12px;
+  right: 20px;
+  z-index: 10;
+}
+.wf-status-icon {
+  width: 28px; /* consistent size */
+  height: 28px;
+  border-radius: 50%; /* circle */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 4px;
+  border: 2px solid white;
+  color: white;
+  font-size: 14px;
+
+  box-shadow: 0 2px 4px #00000020; /* subtle elevation */
+  cursor: default;
+  position: relative;
+}
+
+.wf-status-success {
+  background: #22c55e; /* green-500 */
+}
+
+.wf-status-error {
+  background: #ef4444; /* red-500 */
+}
+
+.wf-status-running {
+  background: #f59e0b; /* amber-500 */
 }
 
 .wf-tooltip {
@@ -44,16 +76,32 @@
   opacity: 0;
   pointer-events: none;
   background: #1f2937;
-  border-radius: 6px;
-  padding: 6px 10px;
+  border-radius: 8px;
+  padding: 8px 12px;
   font-size: 12px;
+  font-family: monospace;
+
   transition: opacity 0.15s ease-out;
   position: absolute;
   box-shadow: 0 3px 8px #00000040;
-  left: 110%;
-  top: 0%;
+
+  left: 100%; /* place next to node */
+  top: 50%;
+  transform: translateY(-50%); /* ⭐ perfect vertical centering */
 }
 
 .wf-tooltip-wrapper:hover .wf-tooltip {
   opacity: 1;
+}
+
+@keyframes wf-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+.wf-spin {
+  animation: wf-spin 1s linear infinite;
 }

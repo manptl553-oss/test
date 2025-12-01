@@ -291,55 +291,41 @@ const CustomNode = ({ data, id }: NodeProps) => {
             />
           </div>
           {executionStatus && (
-            <div
-              className="wf-tooltip-wrapper"
-              style={{
-                position: "absolute",
-                bottom: "12px",
-                right: "20px",
-                zIndex: 10,
-              }}
-            >
-              {/* Execution badge */}
+            <div className="wf-tooltip-wrapper">
+              {/* Status Icon */}
               <div
-                className="wf-status-icon"
-                style={{
-                  background:
-                    executionStatus.status === NodeExecutionStatus.Completed
-                      ? "green"
-                      : executionStatus.status === NodeExecutionStatus.Failed
-                      ? "red"
-                      : "orange",
-                  borderRadius: "50%",
-                  padding: "4px",
-                  border: "2px solid white",
-                }}
+                className={`wf-status-icon ${
+                  executionStatus.status === NodeExecutionStatus.Completed
+                    ? "wf-status-success"
+                    : executionStatus.status === NodeExecutionStatus.Failed
+                    ? "wf-status-error"
+                    : "wf-status-running"
+                }`}
               >
                 {executionStatus.status === NodeExecutionStatus.Running && (
-                  <RefreshCw className="animate-spin text-white w-4 h-4" />
+                  <RefreshCw className="w-4 h-4 wf-spin" />
                 )}
                 {executionStatus.status === NodeExecutionStatus.Completed && (
-                  <Check className="w-4 h-4 text-white" />
+                  <Check className="w-4 h-4" />
                 )}
                 {executionStatus.status === NodeExecutionStatus.Failed && (
-                  <CircleAlert className="w-4 h-4 text-white" />
+                  <CircleAlert className="w-4 h-4" />
                 )}
               </div>
 
               {/* Tooltip */}
-              {executionStatus.status === NodeExecutionStatus.Failed && (
-                <div
-                  className="wf-tooltip"
-                  style={{
-                    background: "#FEE2E2",
-                    color: "#B91C1C",
-                    border: "1px solid #FCA5A5",
-                  }}
-                >
-                  {(executionStatus?.data as { error: string })?.error ||
-                    "Execution Failed"}
-                </div>
-              )}
+              <div
+                className={`wf-tooltip ${
+                  executionStatus.status === NodeExecutionStatus.Failed
+                    ? "wf-tooltip-error"
+                    : "wf-tooltip-success"
+                }`}
+              >
+                {executionStatus.status === NodeExecutionStatus.Failed
+                  ? (executionStatus?.data as { error: string })?.error ||
+                    "Execution Failed"
+                  : "Execution Completed"}
+              </div>
             </div>
           )}
           {renderOutputHandles()}
