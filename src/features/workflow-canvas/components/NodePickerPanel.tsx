@@ -1,9 +1,15 @@
-import { NODE_DEFINITIONS, NodeTypeProps, nodeTypeStyles } from "@/shared";
+import {
+  CategoryTypes,
+  formatName,
+  NODE_DEFINITIONS,
+  NodeTypeProps,
+} from "@/shared";
 import { useFlowStore } from "@/store";
 import { BugIcon, ChevronLeft } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { NavigationItem, NodeTemplate, WorkflowCategory } from "../types";
 import { PopoverItem } from "./PopoverItem";
+import WorkflowIcon from "./WorkflowIcon";
 
 export default function NodePickerPanel({
   id,
@@ -12,7 +18,13 @@ export default function NodePickerPanel({
   id: string;
   isStartNode?: boolean;
 }) {
-  const { updateNode, setActiveNode, nodeCategories } = useFlowStore();
+  const {
+    updateNode,
+    setActiveNode,
+    nodeCategories,
+    categoryMeta,
+    nodeTypeMeta,
+  } = useFlowStore();
   const panelRef = useRef<HTMLDivElement>(null);
 
   const nodeCategory = useMemo(
@@ -34,11 +46,11 @@ export default function NodePickerPanel({
   );
 
   const currentView = navigationStack[navigationStack.length - 1];
-  const style = nodeTypeStyles[
-    (currentView?.data as WorkflowCategory)?.name as NodeTypeProps
-  ] || {
+  const style = categoryMeta.get(
+    (currentView?.data as WorkflowCategory)?.name as CategoryTypes
+  ) || {
     icon: BugIcon,
-    bg: "bg-gray-300",
+    color: "bg-gray-300",
     border: "border-gray-500",
   };
 
@@ -56,7 +68,7 @@ export default function NodePickerPanel({
 
   const selectTemplate = (template: NodeTemplate) => {
     const nodeType = template.type as NodeTypeProps;
-    const Icon = nodeTypeStyles[nodeType]?.icon;
+    const Icon = nodeTypeMeta.get(nodeType)?.icon;
     const outputs = NODE_DEFINITIONS[nodeType] || ["none"];
     const nodeData = {
       name: template.name,
@@ -158,7 +170,7 @@ export default function NodePickerPanel({
             <ChevronLeft className="wf-icon-md" />
           </button>
         )}
-        {(currentView?.data as WorkflowCategory)?.name || "Start"}
+        {formatName((currentView?.data as WorkflowCategory)?.name || "Start")}
       </div>
 
       {/* Category Header Preview */}
@@ -167,17 +179,24 @@ export default function NodePickerPanel({
           <div
             className="wf-node-picker__summary"
             style={{
-              background: `${style.bg}20`, // keep dynamic branding tint
-              borderColor: style.border,
+              background: `${style.color}20`, // keep dynamic branding tint
+              borderColor: style.border ?? style.color,
             }}
           >
             <div
               className="wf-node-picker__summary-icon"
               style={{
-                background: style.bg,
+                background: style.color,
               }}
             >
-              <style.icon />
+              <WorkflowIcon
+                nodeType={
+                  ((currentView?.data as WorkflowCategory)
+                    ?.name as CategoryTypes) || ""
+                }
+                isCategory={true}
+                className="text-white w-8 h-8"
+              />
             </div>
 
             <span className="wf-node-picker__summary-title">

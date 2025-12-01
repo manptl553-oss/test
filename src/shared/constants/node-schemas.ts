@@ -1,4 +1,4 @@
-import { email, z } from "zod";
+import {  z } from "zod";
 import { HTTP_METHODS } from "../types";
 import { FieldConfig } from "@/features";
 import { authSchema } from "./auth-schema";

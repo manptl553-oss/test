@@ -3,8 +3,6 @@ import React, {
   useCallback,
   useContext,
   useState,
-  useEffect,
-  useRef,
 } from "react";
 import { cva } from "class-variance-authority";
 import { X } from "lucide-react";
@@ -134,18 +132,8 @@ type ToastProps = ToastType & React.HTMLAttributes<HTMLDivElement>;
 export const Toast = React.forwardRef<HTMLDivElement, ToastProps>(
   ({ id, title, description, variant, open, className, ...props }, ref) => {
     const { removeToast } = useToast();
-    const [visible, setVisible] = useState(open);
 
-    // Handle open/close animation manually
-    useEffect(() => {
-      if (open) setVisible(true);
-      else {
-        const timer = setTimeout(() => setVisible(false), 200);
-        return () => clearTimeout(timer);
-      }
-    }, [open]);
-
-    if (!visible) return null;
+    if (!open) return null;
 
     return (
       <div
@@ -153,7 +141,7 @@ export const Toast = React.forwardRef<HTMLDivElement, ToastProps>(
         data-open={open}
         className={cn(
           toastVariants({ variant }),
-          open ? "wf-toast--visible" : "wf-toast--hidden",
+          "wf-toast--visible",
           className
         )}
         {...props}
@@ -167,6 +155,7 @@ export const Toast = React.forwardRef<HTMLDivElement, ToastProps>(
     );
   }
 );
+
 Toast.displayName = "Toast";
 
 /* -------------------------------------------------------------------------- */

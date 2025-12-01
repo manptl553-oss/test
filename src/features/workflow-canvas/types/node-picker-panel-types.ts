@@ -8,13 +8,21 @@ export type NavigationItem =
       data: WorkflowCategory;
     };
 
+export interface TemplateMeta {
+  icon?: string;
+  color: string;
+  border: string;
+  request?: object;
+  response?: object;
+}
+
 export interface NodeTemplate {
   id: string;
   name: string;
   description: string;
   type: string;
   categoryId: string;
-  metadata: any | null;
+  metadata: TemplateMeta | null;
   visibility: boolean;
 }
 

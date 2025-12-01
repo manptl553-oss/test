@@ -1,4 +1,3 @@
-import React from "react";
 import { Column } from "./types";
 
 interface RowProps<T> {
@@ -17,7 +16,7 @@ export function Row<T>({
   return (
     <tr
       className={`wf-table-body-row ${clickable ? "wf-table-body-row--clickable" : ""}`}
-     onClick={(e) => {
+     onClick={() => {
     if (!clickable) return;
     onClick?.(record);
   }}

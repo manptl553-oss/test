@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import React from "react";
 import {
   Node,
   Edge,
@@ -12,10 +13,11 @@ import {
 } from "reactflow";
 import { computeConnectedHandles, makeEdge } from "@/shared/utils/edge";
 import {
+  CategoryTypes,
   getOutputsForNode,
-  getSelfLoopHandle,
   getTargetHandleForNode,
   isTriggerNode,
+  NodeExecutionEvent,
   NodeTypeProps,
   VersionData,
 } from "@/shared";
@@ -24,7 +26,7 @@ import {
   transformNode,
 } from "@/features/workflow-canvas/helpers/normalize";
 import { v4 as uuidv4 } from "uuid";
-import { WorkflowCategoryList } from "@/features";
+import { TemplateMeta, WorkflowCategoryList } from "@/features";
 
 export interface NodeData {
   id: string;
@@ -78,6 +80,9 @@ interface FlowState {
   workflowId: string | null;
   currentVersion: VersionData | null;
   activeNode: Node | null;
+  nodeTypeMeta: Map<NodeTypeProps, TemplateMeta>;
+  categoryMeta: Map<CategoryTypes, TemplateMeta>;
+  nodeExecutionState: NodeExecutionEvent;
 
   // Initialize from backend
   setNodeCategories: (value: WorkflowCategoryList) => void;
@@ -101,6 +106,11 @@ interface FlowState {
   setActiveNode: (node: Node | null) => void;
   setWorkflowId: (id: string | null) => void;
   setCurrentVersion: (data: VersionData | null) => void;
+
+  buildTemplateRegistry: (categories: WorkflowCategoryList) => void;
+
+  // set running node
+  setNodeExecutionState: (nodeExecutionState: NodeExecutionEvent) => void;
 
   // React Flow API
   onNodeDragStop: (
@@ -184,6 +194,9 @@ export const useFlowStore = create<FlowState>((set, get) => ({
   workflowId: null,
   currentVersion: null,
   activeNode: null,
+  nodeExecutionState: {},
+  nodeTypeMeta: new Map<NodeTypeProps, TemplateMeta>(),
+  categoryMeta: new Map<CategoryTypes, TemplateMeta>(),
 
   // Initialize workflow from backend
   initializeFromBackend: (workflow) => {
@@ -201,6 +214,61 @@ export const useFlowStore = create<FlowState>((set, get) => ({
     });
   },
 
+  setNodeExecutionState: (nodeExecutionState: NodeExecutionEvent) =>
+    set({ nodeExecutionState }),
+
+  // Rebuild registry from categories
+  buildTemplateRegistry: (categories: WorkflowCategoryList) => {
+    const state = get();
+    const nodeTypeMeta = state.nodeTypeMeta;
+    const categoryMeta = state.categoryMeta;
+    nodeTypeMeta.clear();
+    categoryMeta.clear();
+
+    const traverse = (items: any[]) => {
+      for (const item of items) {
+        if (item.visibility !== false) {
+          categoryMeta.set(item.name, {
+            icon: item.metadata?.icon ?? null,
+            color: item.metadata?.color ?? "#6B7280",
+            border: item.metadata?.border ?? "rgba(107, 114, 128, 0.35)",
+            request: item.metadata?.request ?? {},
+            response: item.metadata?.response ?? {},
+          });
+        }
+        if (item.nodeTemplates) {
+          for (const template of item.nodeTemplates) {
+            if (template.visibility === false) continue;
+
+            const type = template.type as NodeTypeProps;
+
+            nodeTypeMeta.set(type, {
+              icon: template.metadata?.icon ?? null,
+              color: template.metadata?.color ?? "#6B7280",
+              border: template.metadata?.border ?? "rgba(107, 114, 128, 0.35)",
+              request: template.metadata?.request ?? {},
+              response: template.metadata?.response ?? {},
+            });
+          }
+        }
+        if (item.subCategories?.length) traverse(item.subCategories);
+      }
+    };
+
+    traverse(categories);
+  },
+  getTemplateMeta: (type: NodeTypeProps | string): TemplateMeta => {
+    const state = get();
+    const meta = state.nodeTypeMeta.get(type as NodeTypeProps);
+    if (meta) return meta;
+
+    return {
+      color: "#6B7280",
+      border: "rgba(107, 114, 128, 0.35)",
+      request: {},
+      response: {},
+    };
+  },
   // Get changes for API sync
   getChangesForSync: () => {
     const state = get();

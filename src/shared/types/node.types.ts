@@ -2,21 +2,21 @@
 
 import { NodeTypeProps } from "../constants";
 
-export type NodeType = "default" | "conditional" | "loop" | "router" | "start" | "end";
+export type NodeType =
+  | "default"
+  | "conditional"
+  | "loop"
+  | "router"
+  | "start"
+  | "end";
 
-export type ConditionalOutput = "true" | "false" | "default" | "route1" | "route2" | "route3";
-
-// export interface NodeData {
-//   label: string;
-//   type: NodeType;                      // Keep string to avoid circular import with enum
-//   parameters?: Record<string, any>;
-//   conditions?: {
-//     type: string;
-//     expression: string;
-//   };
-//   outputs?: ConditionalOutput[];
-// }
-
+export type ConditionalOutput =
+  | "true"
+  | "false"
+  | "default"
+  | "route1"
+  | "route2"
+  | "route3";
 
 
 // Sidebar & UI Node Listing Types
@@ -39,7 +39,6 @@ export interface NodeConfigModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   nodeId: string;
-  nodeData: any;
 }
 
 export interface NodeSidebarProps {
@@ -55,7 +54,6 @@ export type NodeDefinition = {
   labels?: Record<string, string>;
 };
 
-
 export const HTTP_METHODS = ["GET", "POST", "PUT", "PATCH", "DELETE"].map(
   (m) => ({
     label: m,
@@ -63,42 +61,10 @@ export const HTTP_METHODS = ["GET", "POST", "PUT", "PATCH", "DELETE"].map(
   })
 );
 
-/* -------------------------------------------------------
- * ✅ Node UI Field Types
- * ----------------------------------------------------- */
-// export interface FieldOption {
-//   label: string;
-//   value: string;
-// }
 
-// export interface DynamicFiledOptions {
-//   name: string;
-//   label: string;
-//   type: "input" | "textarea" | "select";
-//   placeholder?: string;
-//   required?: boolean;
-//   options?: FieldOption[];
-// }
 
-/* -------------------------------------------------------
- * ✅ Dynamic Form Fields for Standard Nodes
- * ----------------------------------------------------- */
-// export interface FieldConfig {
-//   name: string;
-//   label: string;
-//   type:
-//     | "input"
-//     | "textarea"
-//     | "select"
-//     | "richtext"
-//     | "keyvalue"
-//     | "checkbox"
-//     | "table"
-//     | "tags"
-//     | "code";
-//   placeholder?: string;
-//   required?: boolean;
-//   readOnly?: boolean;
-//   options?: FieldOption[] | DynamicFiledOptions[];
-//   display?: false;
-// }
+export enum NodeExecutionStatus {
+  Running = "started",
+  Completed = "completed",
+  Failed = "failed",
+}

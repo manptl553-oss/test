@@ -26,6 +26,16 @@ const splitExpression = (expr = "") => {
   return { field: m[1].trim(), operator: m[2], value: m[3].trim() };
 };
 
+
+interface ConditionWithExpression {
+  expression?: string;
+  field?: string;
+  operator?: string;
+  value?: string;
+}
+
+type FormValues = Record<string, unknown>;
+
 export const DynamicForm = ({
   fields,
   schema,
@@ -36,51 +46,52 @@ export const DynamicForm = ({
   onClose,
 }: DynamicFormProps) => {
   const cleanedDefaults = useMemo(() => {
-    const d: any = { ...defaultValues };
 
-    if (!Array.isArray(d.conditions) || d.conditions.length === 0) {
-      d.conditions = [{ field: "", operator: "==", value: "" }];
+  const cleanedValues: FormValues = { ...defaultValues };
+
+    if (!Array.isArray(cleanedValues.conditions) || cleanedValues.conditions.length === 0) {
+      cleanedValues.conditions = [{ field: "", operator: "==", value: "" }];
     } else {
-      d.conditions = d.conditions.map((c: any) =>
-        c.expression ? splitExpression(c.expression) : c
+      cleanedValues.conditions = (cleanedValues.conditions as ConditionWithExpression[]).map((condition) =>
+        condition.expression ? splitExpression(condition.expression) : condition
       );
     }
 
-    if (!Array.isArray(d.switchCases) || d.switchCases.length === 0) {
-      d.switchCases = [{ field: "", operator: "==", value: "" }];
+    if (!Array.isArray(cleanedValues.switchCases) || cleanedValues.switchCases.length === 0) {
+      cleanedValues.switchCases = [{ field: "", operator: "==", value: "" }];
     } else {
-      d.switchCases = d.switchCases.map((c: any) =>
-        c.expression ? splitExpression(c.expression) : c
+      cleanedValues.switchCases = (cleanedValues.switchCases as ConditionWithExpression[]).map((switchCase) =>
+        switchCase.expression ? splitExpression(switchCase.expression) : switchCase
       );
     }
 
-    fields.forEach((f) => {
-      if (d[f.name] === undefined) {
-        if (f.type === "conditions" || f.type === "cases") {
-          d[f.name] = [{ field: "", operator: "==", value: "" }];
-        } else if (f.type === "tags") {
-          d[f.name] = [""];
-        } else if (f.type === "checkbox") {
-          d[f.name] = false;
-        } else if (f.type === "select") {
+    fields.forEach((field) => {
+      if (cleanedValues[field.name] === undefined) {
+        if (field.type === "conditions" || field.type === "cases") {
+          cleanedValues[field.name] = [{ field: "", operator: "==", value: "" }];
+        } else if (field.type === "tags") {
+          cleanedValues[field.name] = [""];
+        } else if (field.type === "checkbox") {
+          cleanedValues[field.name] = false;
+        } else if (field.type === "select") {
           // Handle both single and multi select defaults
-          if (f.isMulti) {
-            d[f.name] = []; // Empty array for multi-select
+          if (field.isMulti) {
+            cleanedValues[field.name] = []; // Empty array for multi-select
           } else {
-            d[f.name] = f.options?.[0]?.value ?? ""; // First option or empty string
+            cleanedValues[field.name] = field.options?.[0]?.value ?? ""; // First option or empty string
           }
-        } else if (f.type === "addOn") {
-          d[f.name] = [];
+        } else if (field.type === "addOn") {
+          cleanedValues[field.name] = [];
         } else {
-          d[f.name] = "";
+          cleanedValues[field.name] = "";
         }
       }
     });
 
-    return d;
+    return cleanedValues;
   }, [defaultValues, fields]);
 
-  console.log(cleanedDefaults);
+
   const {
     handleSubmit,
     control,

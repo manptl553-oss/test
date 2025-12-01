@@ -9,7 +9,6 @@ import { Label } from "./Label";
 import {
   Select
 } from "./Select";
-import { Textarea } from "./TextArea";
 
 function TableField({
   control,

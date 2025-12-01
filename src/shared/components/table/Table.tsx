@@ -1,4 +1,3 @@
-import React from "react";
 import { Column, SortOrder } from "./types";
 import { Row } from "./Row";
 import { ArrowUpDown, SortAsc, SortDesc } from "lucide-react";
