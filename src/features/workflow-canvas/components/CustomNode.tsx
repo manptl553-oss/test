@@ -52,7 +52,6 @@ const CustomNode = ({ data, id }: NodeProps) => {
 
   const executionStatus = nodeExecutionState[id] || null;
 
-  console.log("Node Execution Status:", id, executionStatus);
   const nodeRef = useRef<HTMLDivElement>(null);
   const store = useStoreApi();
   const edges = useStore((s) => s.edges);
