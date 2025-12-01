@@ -1,5 +1,6 @@
 import Editor from "@monaco-editor/react";
 import { editor } from "monaco-editor";
+import { useEffect, useState } from "react";
 
 export function CodeEditor({
   selectedLanguage,
@@ -12,6 +13,25 @@ export function CodeEditor({
   onChange: (value: string) => void;
   userOptions?: editor.IStandaloneEditorConstructionOptions;
 }) {
+  const [theme, setTheme] = useState("vs-dark");
+
+  // detect color mode based on CSS variable or WorkflowProvider
+  useEffect(() => {
+    const root = getComputedStyle(document.documentElement);
+    const bg = root.getPropertyValue("--wf-background-base")?.trim();
+
+    // crude detection (can be improved by context hook later)
+    if (!bg) return;
+
+    const isDark =
+      bg.startsWith("#0") ||
+      bg.startsWith("#1") ||
+      bg.startsWith("#2") ||
+      bg === "black";
+
+    setTheme(isDark ? "vs-dark" : "vs-light");
+  }, []);
+
   const options: editor.IStandaloneEditorConstructionOptions = {
     minimap: { enabled: false },
     fontSize: 13,
@@ -37,17 +57,26 @@ export function CodeEditor({
     parameterHints: {
       enabled: false,
     },
-    ...userOptions
+    ...userOptions,
   };
+
   return (
-    <Editor
-      height="250px"
-      language={selectedLanguage}
-      theme={selectedLanguage === "python" ? "vs-light" : "vs-dark"}
-      value={value ?? ""}
-      onChange={(val) => onChange(val || "")}
-      onMount={(editor) => setTimeout(() => editor.focus(), 200)}
-      options={options}
-    />
+    <div
+      className="
+        rounded-md overflow-hidden 
+        border border-(--wf-border-default)
+        bg-(--wf-background-subtle)
+      "
+    >
+      <Editor
+        height="250px"
+        language={selectedLanguage}
+        theme={theme}
+        value={value ?? ""}
+        onChange={(val) => onChange(val || "")}
+        onMount={(editor) => setTimeout(() => editor.focus(), 200)}
+        options={options}
+      />
+    </div>
   );
 }

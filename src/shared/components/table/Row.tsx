@@ -17,7 +17,10 @@ export function Row<T>({
   return (
     <tr
       className={`wf-table-body-row ${clickable ? "wf-table-body-row--clickable" : ""}`}
-      onClick={() => clickable && onClick?.(record)}
+     onClick={(e) => {
+    if (!clickable) return;
+    onClick?.(record);
+  }}
     >
       {columns.map((col) => (
         <td className="wf-table-cell" key={String(col.field)}>

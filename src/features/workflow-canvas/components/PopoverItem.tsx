@@ -1,4 +1,9 @@
-import { NodeIconTypeProps, NodeTypeProps, nodeTypeStyles } from "@/shared";
+import {
+  formatName,
+  NodeIconTypeProps,
+  NodeTypeProps,
+  nodeTypeStyles,
+} from "@/shared";
 import { BugIcon } from "lucide-react";
 
 interface CategoryItemProps {
@@ -7,11 +12,12 @@ interface CategoryItemProps {
 }
 
 export function PopoverItem({ category, onClick }: CategoryItemProps) {
-  const style = nodeTypeStyles[category?.type as NodeTypeProps] ||
+  const style =
+    nodeTypeStyles[category?.type as NodeTypeProps] ||
     nodeTypeStyles[category?.name as NodeIconTypeProps] || {
       icon: BugIcon,
-      bg: "#e5e7eb", // gray-200
-      border: "#9ca3af", // gray-400
+      bg: "#e5e7eb",
+      border: "#9ca3af",
     };
 
   const Icon = style.icon;
@@ -23,6 +29,7 @@ export function PopoverItem({ category, onClick }: CategoryItemProps) {
       onKeyDown={(e) => e.key === "Enter" && onClick?.()}
       className="wf-popover-item"
     >
+      {/* Icon bubble */}
       <span
         className="wf-popover-item__icon"
         style={{ background: style?.bg }}
@@ -37,7 +44,7 @@ export function PopoverItem({ category, onClick }: CategoryItemProps) {
           className="wf-popover-item__title"
           title={category.name}
         >
-          {category.name}
+          {formatName(category.name)}
         </span>
 
         {category?.type && (

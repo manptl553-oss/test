@@ -1,17 +1,15 @@
-import { useEffect } from "react";
+import { Trash2 } from "lucide-react";
+import { useEffect, useRef } from "react";
 import { Controller, useFieldArray } from "react-hook-form";
+import { DynamicFiledOptions, TableFieldProps } from "../types";
+import { cn } from "../utils";
 import { Button } from "./Button";
 import { Input } from "./Input";
 import { Label } from "./Label";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+  Select
 } from "./Select";
-import { DynamicFiledOptions, TableFieldProps } from "../types";
-import { cn } from "../utils";
+import { Textarea } from "./TextArea";
 
 function TableField({
   control,
@@ -30,13 +28,15 @@ function TableField({
     name,
   });
 
+  const initializedRef = useRef(false);
   useEffect(() => {
-    if (!fields || fields.length === 0) {
+    if (!initializedRef.current && (!fields || fields.length === 0)) {
       const emptyRow: any = {};
       columns?.forEach((col) => {
         emptyRow[col.name] = "";
       });
       columns ? append(emptyRow) : append("");
+      initializedRef.current = true;
     }
   }, []);
 
@@ -49,6 +49,7 @@ function TableField({
     const filedName = !isTag
       ? `${name}.${rowIndex}.${column.name}`
       : `${name}.${rowIndex}`;
+
     switch (column.type) {
       case "input":
         return (
@@ -75,24 +76,41 @@ function TableField({
               control={control}
               name={filedName}
               render={({ field: { value, onChange } }) => (
-                <Select value={value ?? ""} onValueChange={onChange}>
-                  <SelectTrigger>
-                    <SelectValue placeholder={`Select ${column.label}`} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {column.options?.map((opt) => (
-                      <SelectItem key={opt.value} value={opt.value}>
-                        {opt.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Select
+                  options={column.options || []}
+                  value={value ?? ""}
+                  onValueChange={onChange}
+                  placeholder={`Select ${column.label}`}
+                />
               )}
             />
             {errorMsg && <p className="wf-table-field__error">{errorMsg}</p>}
           </div>
         );
 
+      // case "textarea":
+      //   return (
+      //     <div key={filedName} className="space-y-2 w-full">
+      //       <Controller
+      //         control={control}
+      //         name={filedName}
+      //         render={({ field: rhf }) => (
+      //           <Textarea
+      //             placeholder={column.label}
+      //             value={
+      //               typeof rhf.value === "string"
+      //                 ? rhf.value
+      //                 : JSON.stringify(rhf.value ?? {}, null, 2)
+      //             }
+      //             onChange={(e) => rhf.onChange(e.target.value)}
+      //             className="border-(--wf-border-default) text-(--wf-text-default)"
+      //           />
+      //         )}
+      //       />
+
+      //       {errorMsg && <p className="wf-error-text">{errorMsg}</p>}
+      //     </div>
+      //   );
       default:
         return null;
     }
@@ -125,13 +143,13 @@ function TableField({
                   )}
                 </div>
               ))
-            : //hardcoded for tab
-              renderCell(
+            : renderCell(
                 { name, type: "input", label },
                 isTag,
                 idx,
                 errors?.[idx]?.message
               )}
+
           <Button
             type="button"
             variant="destructive"
@@ -140,7 +158,7 @@ function TableField({
             className="wf-table-field__remove"
             disabled={fields.length === 1}
           >
-            ✕
+            <Trash2 />
           </Button>
         </div>
       ))}
@@ -150,9 +168,7 @@ function TableField({
         variant="outline"
         onClick={() => {
           const emptyRow: any = {};
-          columns?.forEach((col) => {
-            emptyRow[col.name!] = "";
-          });
+          columns?.forEach((col) => (emptyRow[col.name!] = ""));
           columns ? append(emptyRow) : append("");
         }}
       >

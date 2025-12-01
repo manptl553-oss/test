@@ -10,28 +10,28 @@ interface EdgeSettingsMenuProps {
 }
 
 const EdgeSettingsMenu = ({ edge, onClose }: EdgeSettingsMenuProps) => {
-  const { deleteEdge, addNodeBetweenEdge } = useFlowStore();
   const menuRef = useRef<HTMLDivElement>(null);
+  const { deleteEdge, addNodeBetweenEdge } = useFlowStore();
+
   const handleAddNodeBetween = () => {
     const position = {
       x: edge?.sourceX + 20,
       y: edge?.sourceY + 20,
     };
     const id = uuidv4();
+
     const newNode = {
       id,
       type: "custom",
       position,
-      data: {
-        id,
-        type: "addNode",
-      },
+      data: { id, type: "addNode" },
     };
-    addNodeBetweenEdge(newNode, edge);
+
+    // addNodeBetweenEdge(newNode, edge);
     onClose();
   };
 
-  const handleUnlinkNodes = async () => {
+  const handleUnlinkNodes = () => {
     deleteEdge(edge.id);
     onClose();
   };
@@ -44,7 +44,7 @@ const EdgeSettingsMenu = ({ edge, onClose }: EdgeSettingsMenuProps) => {
       }
     };
 
-    // Use capture phase to catch events before React Flow
+    // capture phase
     document.addEventListener("pointerdown", handleClickOutside, true);
     return () =>
       document.removeEventListener("pointerdown", handleClickOutside, true);

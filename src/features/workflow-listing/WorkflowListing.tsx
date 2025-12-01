@@ -1,182 +1,191 @@
-import { useState, useRef, useEffect } from "react";
-import { Pagination, Table } from "@/shared";
-import { Column, SortOrder } from "@/shared/components/table/types";
-import "./workflow-listing.css";
+import {
+  useEffect,
+  useRef,
+  useState,
+} from "react";
+import { Button, Pagination, Table } from "@/shared";
+import { Column } from "@/shared/components/table/types";
+import { WorkflowFilterConfig, WorkflowListingProps, WorkflowSearchConfig, WorkflowStatus, WorkflowStatusOption } from "./types";
 
-const DEBOUNCE_DELAY = 400;
+const DEFAULT_DEBOUNCE = 400;
 
-// Define the allowed status values
-type StatusFilterValue = "all" | "enabled" | "disabled";
+/**==============================
+ * Defaults
+ *==============================*/
 
-const defaultStatusOptions: { value: StatusFilterValue; label: string }[] = [
+const DEFAULT_STATUS_OPTIONS: WorkflowStatusOption[] = [
   { value: "all", label: "All Workflows" },
   { value: "enabled", label: "Enabled" },
   { value: "disabled", label: "Disabled" },
 ];
 
-export interface WorkflowListingProps<T> {
-  data: T[];
-  loading?: boolean;
-  columns: Column<T>[];
-  keyField: keyof T;
-  title?: string;
+const DEFAULT_SEARCH_CONFIG: Required<WorkflowSearchConfig> = {
+  query: "",
+  onSearch: () => {},
+  placeholder: "Search workflows...",
+  debounce: DEFAULT_DEBOUNCE,
+};
+
+const DEFAULT_FILTER_CONFIG: Required<WorkflowFilterConfig> = {
+  status: "all",
+  onStatusChange: () => {},
+  options: DEFAULT_STATUS_OPTIONS,
+};
+
+/**==============================
+ * Component
+ *==============================*/
+
+export function WorkflowListing<T = unknown>({
+  data,
+  columns,
+  rowKey,
+  title,
+  loading = false,
+
   // Search
-  searchValue?: string;
-  onSearchChange?: (value: string) => void;
-  searchPlaceholder?: string;
+  searchConfig,
 
-  // Filter (Status) — now fully type-safe
-  statusFilter?: StatusFilterValue;
-  onStatusFilterChange?: (status: StatusFilterValue) => void;
+  // Filter
+  filterConfig,
 
-  // Create Button
-  createButton?: {
-    show?: boolean;
-    label?: string;
-    onClick?: () => void;
-  };
+  // Create button
+  showCreateButton = false,
+  createButtonLabel = "Create Workflow",
+  onCreate,
 
   // Sorting
-  sort?: { field: string; order: SortOrder };
-  onSort?: (field: string, order: SortOrder) => void;
+  sortConfig,
+  onSortChange,
 
-  // Row Click
-  clickableRows?: boolean;
-  onRowClick?: (row: T) => void;
-  rowActions?: (row: T) => React.ReactNode;
-  // Pagination
-  pagination?: {
-    page: number;
-    perPage: number;
-    totalPages: number;
-    totalCount: number;
-    perPageOptions?: number[];
-    onPageChange: (page: number) => void;
-    onPerPageChange: (perPage: number) => void;
-  };
-}
-
-export function WorkflowListing<T>({
-  data,
-  loading = false,
-  columns,
-  keyField,
-
-  searchValue = "",
-  onSearchChange,
-  searchPlaceholder = "Search workflows...",
-
-  statusFilter = "all",
-  onStatusFilterChange,
-
-  createButton = { show: true, label: "Create Workflow", onClick: () => {} },
-
-  sort,
-  onSort,
-
-  clickableRows = true,
+  // Row interactions
+  enableRowClick = true,
   onRowClick,
-  rowActions,
-  pagination,
-  title,
-}: WorkflowListingProps<T>) {
-  const [localSearch, setLocalSearch] = useState(searchValue);
-  const [isFilterOpen, setIsFilterOpen] = useState(false);
-  const popupRef = useRef<HTMLDivElement>(null);
-  const debounceTimer = useRef<NodeJS.Timeout | null>(null);
+  renderRowActions,
 
-  // Debounce search
+  // Pagination
+  pagination,
+}: WorkflowListingProps<T>) {
+  /** Normalize configs */
+  const search = { ...DEFAULT_SEARCH_CONFIG, ...searchConfig };
+  const filter = { ...DEFAULT_FILTER_CONFIG, ...filterConfig };
+
+  /** Determine if user intended to display controls */
+  const showSearch = !!searchConfig;
+  const showFilter = !!filterConfig;
+
+  /** UI State */
+  const [localQuery, setLocalQuery] = useState(search.query);
+  const [filterOpen, setFilterOpen] = useState(false);
+
+  // Refs for stability
+  const onSearchRef = useRef(search.onSearch);
+  const popupRef = useRef<HTMLDivElement | null>(null);
+  const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  /** Keep ref in sync with latest prop */
   useEffect(() => {
-    if (debounceTimer.current) clearTimeout(debounceTimer.current);
+    onSearchRef.current = search.onSearch;
+  }, [search.onSearch]);
+
+  /**================================
+   * Debounced search behavior
+   *================================*/
+  useEffect(() => {
+    if (debounceTimer.current) {
+      clearTimeout(debounceTimer.current);
+    }
 
     debounceTimer.current = setTimeout(() => {
-      onSearchChange?.(localSearch.trim());
-    }, DEBOUNCE_DELAY);
+      // Use the stable ref to call the parent
+      if (onSearchRef.current) {
+        onSearchRef.current(localQuery.trim());
+      }
+    }, search.debounce);
 
     return () => {
       if (debounceTimer.current) clearTimeout(debounceTimer.current);
     };
-  }, [localSearch, onSearchChange]);
+    // Only re-run if the query string actually changes
+  }, [localQuery, search.debounce]);
 
-  // Sync external search reset
+  /** External search sync (if parent clears search) */
   useEffect(() => {
-    if (searchValue !== localSearch) {
-      setLocalSearch(searchValue);
+    if (search.query !== localQuery) {
+      setLocalQuery(search.query);
     }
-  }, [searchValue]);
+  }, [search.query]);
 
-  // Close filter on outside click
+  /** Close filter when clicking outside */
   useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (popupRef.current && !popupRef.current.contains(e.target as Node)) {
-        setIsFilterOpen(false);
+    const listener = (e: MouseEvent) => {
+      if (!popupRef.current?.contains(e.target as Node)) {
+        setFilterOpen(false);
       }
     };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    document.addEventListener("mousedown", listener);
+    return () => document.removeEventListener("mousedown", listener);
   }, []);
 
-  const hasActiveFilter = statusFilter !== "all";
+  const hasActiveFilter = filter.status !== "all";
+
+  /**==============================
+   * Render
+   *==============================*/
 
   return (
-    <div className="wf-listing-root">
-      {/* Header */}
+        <div className="wf-listing-root">
+
+      {/* HEADER */}
       <div className="wf-listing-header">
         <h2 className="wf-listing-title">
           {title || "Workflows"}
         </h2>
 
         <div className="wf-listing-controls">
-          {/* Search */}
-          {onSearchChange && (
+
+          {/* SEARCH */}
+          {showSearch && (
             <input
               type="text"
-              placeholder={searchPlaceholder}
-              value={localSearch}
-              onChange={(e) => setLocalSearch(e.target.value)}
-              className="wf-listing-search"
+              placeholder={search.placeholder}
+              value={localQuery}
+              onChange={(e) => setLocalQuery(e.target.value)}
+              className="
+               wf-listing-search
+              "
             />
           )}
 
-          {/* Status Filter */}
-          {onStatusFilterChange && (
+          {/* FILTER */}
+          {showFilter && (
             <div className="wf-listing-filter" ref={popupRef}>
-              <button
-                onClick={() => setIsFilterOpen((v) => !v)}
-                className={
-                  hasActiveFilter
-                    ? "wf-listing-filter-btn wf-listing-filter-btn--active"
-                    : "wf-listing-filter-btn"
-                }
+              <Button
+                type="button"
+                onClick={() => setFilterOpen((v) => !v)}
+                variant={"default"}
               >
-                <span>Filter</span>
+                Filter
                 {hasActiveFilter && (
                   <div className="wf-listing-filter-dot"></div>
                 )}
-              </button>
+              </Button>
 
-              {isFilterOpen && (
+              {filterOpen && (
                 <div className="wf-listing-filter-menu">
                   <div className="wf-listing-filter-panel">
                     <label className="wf-listing-filter-label">
                       Status
                     </label>
+
                     <select
-                      value={statusFilter}
-                      onChange={(e) => {
-                        const value = e.target.value;
-                        // Type assertion is safe because <option> values are restricted
-                        if (
-                          value === "all" ||
-                          value === "enabled" ||
-                          value === "disabled"
-                        ) {
-                          onStatusFilterChange(value);
-                        }
-                      }}
+                      value={filter.status}
+                      onChange={(e) =>
+                        filter.onStatusChange(e.target.value as WorkflowStatus)
+                      }
                       className="wf-listing-filter-select"
                     >
-                      {defaultStatusOptions.map((opt) => (
+                      {filter.options.map((opt) => (
                         <option key={opt.value} value={opt.value}>
                           {opt.label}
                         </option>
@@ -185,7 +194,8 @@ export function WorkflowListing<T>({
 
                     {hasActiveFilter && (
                       <button
-                        onClick={() => onStatusFilterChange("all")}
+                        type="button"
+                        onClick={() => filter.onStatusChange("all")}
                         className="wf-listing-filter-clear"
                       >
                         Clear filter
@@ -197,61 +207,62 @@ export function WorkflowListing<T>({
             </div>
           )}
 
-          {/* Create Button */}
-          {createButton.show && (
-            <button
-              onClick={createButton.onClick}
+          {/* CREATE BUTTON */}
+          {showCreateButton && (
+            <Button
+              type="button"
               className="wf-listing-create-btn"
+              onClick={onCreate}
             >
-              {createButton.label}
-            </button>
+              {createButtonLabel}
+            </Button>
           )}
         </div>
       </div>
 
-      {/* Table */}
-      <div className="wf-listing-table">
-        <Table
-          columns={[
-            ...columns,
-            ...(rowActions
-              ? [
-                  {
-                    label: "Actions",
-                    render: (row: T) => (
-                      <div className="wf-listing-row-actions">
-                        {rowActions(row)}
-                      </div>
-                    ),
-                  } as Column<T>,
-                ]
-              : []),
-          ]}
-          records={data}
-          keyField={keyField}
-          isLoading={loading}
-          currentSort={sort}
-          onSort={onSort}
-          clickableRows={clickableRows}
-          onRowClick={onRowClick}
-        />
-      </div>
+      {/* TABLE */}
+      <Table
+        keyField={rowKey}
+        records={data}
+        columns={[
+          ...columns,
+          ...(renderRowActions
+            ? [
+                {
+                  label: "Actions",
+                  render: (row: T) => (
+                    <div
+                      className="wf-listing-row-actions"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      {renderRowActions(row)}
+                    </div>
+                  ),
+                } as Column<T>,
+              ]
+            : []),
+        ]}
+        isLoading={loading}
+        currentSort={sortConfig}
+        onSort={onSortChange}
+        clickableRows={!renderRowActions && enableRowClick}
+        onRowClick={!renderRowActions ? onRowClick : undefined}
+      />
 
-      {/* Pagination */}
+      {/* PAGINATION */}
       {pagination && (
-        <Pagination
-          pageIndex={pagination.page}
-          pageCount={pagination.totalPages}
-          gotoPage={pagination.onPageChange}
-          canPreviousPage={pagination.page > 0}
-          canNextPage={pagination.page < pagination.totalPages - 1}
-          perPage={pagination.perPage}
-          perPageOptions={pagination.perPageOptions || [10, 20, 50]}
-          onPerPageChange={pagination.onPerPageChange}
-          totalCount={pagination.totalCount}
-          itemsInPage={data.length}
+         <Pagination
+            pageIndex={pagination.page}
+            pageSize={pagination.perPage}
+            totalCount={pagination.totalCount}
+            pageCount={pagination.totalPages}
+            pageSizeOptions={pagination.perPageOptions || [10, 20, 50]}
+            onPageChange={pagination.onPageChange}
+            onPageSizeChange={pagination.onPerPageChange}
         />
       )}
     </div>
   );
 }
+
+export default WorkflowListing;

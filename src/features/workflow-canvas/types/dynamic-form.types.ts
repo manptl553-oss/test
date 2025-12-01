@@ -8,7 +8,10 @@ export type BaseFieldType =
   | "tags"
   | "code"
   | "conditions"
-  | "cases";   
+  | "cases"
+  | "auth"
+  | "schedule"
+  | "addOn";
 
 interface FieldBaseConfig {
   name: string;
@@ -32,13 +35,15 @@ export type FieldConfig =
   | (FieldBaseConfig & {
       type: BaseFieldType;
       options?: never;
+      isMulti?: never;
     })
   | (FieldBaseConfig & {
       type: "select";
       options: FieldOption[];
+      isMulti?: boolean;
     })
   | (FieldBaseConfig & {
       type: "table";
       options: DynamicFiledOptions[];
-    })
-
+      isMulti?: never;
+    });

@@ -11,7 +11,7 @@ const DEFAULT_COLORS: Record<
 > = {
   light: (value) => ({
     brand: Object.assign(
-      { primary: "#3b82f6", secondary: "#a78bfa" },
+      { primary: "#7ec040", secondary: "#6dad35" },
       value?.brand
     ),
     text: Object.assign(
@@ -26,28 +26,37 @@ const DEFAULT_COLORS: Record<
       { default: "#e5e7eb", focus: "#3b82f6", strong: "#cbd5e1" },
       value?.border
     ),
-    // feedback: {
-    //   success: "#10b981",
-    //   warning: "#f59e0b",
-    //   danger: "#ef4444",
-    //   info: "#3b82f6",
-    // },
   }),
   dark: (value) => ({
     brand: Object.assign(
-      { primary: "#60a5fa", secondary: "#c4b5fd" },
+      {
+        primary: "#9ed566", // brand-accent on dark
+        secondary: "#b8e986", // hover / secondary accent
+      },
       value?.brand
     ),
     text: Object.assign(
-      { default: "#f3f4f6", muted: "#9ca3af", inverted: "#0b1220" },
+      {
+        default: "#f3f4f6", // main text
+        muted: "#9ca3af", // secondary
+        inverted: "#111827", // on brand surfaces
+      },
       value?.text
     ),
     background: Object.assign(
-      { base: "#0b1220", subtle: "#111827", highlight: "#1f2937" },
+      {
+        base: "#0f172a", // darker than before for better depth
+        subtle: "#1e293b", // card surfaces
+        highlight: "#334155", // strong surfaces / headers
+      },
       value?.background
     ),
     border: Object.assign(
-      { default: "#374151", focus: "#60a5fa", strong: "#4b5563" },
+      {
+        default: "#475569", // typical separator
+        focus: "#60a5fa", // good blue focus ring for dark
+        strong: "#64748b", // more prominent structure
+      },
       value?.border
     ),
     // feedback: {

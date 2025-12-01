@@ -2,29 +2,23 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useMemo } from "react";
 import { Controller, useForm } from "react-hook-form";
 
-import { cn } from "@/shared/utils";
-import { DynamicFormProps, FieldConfig } from "../types";
 import {
+  AddOnsConfig,
+  AuthConfigFields,
   Button,
   Checkbox,
   CodeEditor,
-  DynamicFiledOptions,
   Input,
   Label,
   Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
   TableField,
   Textarea,
 } from "@/shared";
 import RichTextEditor from "@/shared/components/TextEditor";
+import { DynamicFormProps, FieldConfig } from "../types";
 import { LogicRulesField } from "./ConditionalConfig";
+import { ScheduleConfig } from "@/shared/components/ScheduleConfig";
 
-/* ------------------------------------------------------------------
-   Helper to convert "a == b" → { field: "a", operator: "==", value: "b" }
--------------------------------------------------------------------*/
 const splitExpression = (expr = "") => {
   const regex = /(.+?)\s*(==|!=|===|>=|<=|>|<)\s*(.+)/;
   const m = expr.match(regex);
@@ -44,7 +38,6 @@ export const DynamicForm = ({
   const cleanedDefaults = useMemo(() => {
     const d: any = { ...defaultValues };
 
-    // Parse conditions
     if (!Array.isArray(d.conditions) || d.conditions.length === 0) {
       d.conditions = [{ field: "", operator: "==", value: "" }];
     } else {
@@ -53,7 +46,6 @@ export const DynamicForm = ({
       );
     }
 
-    // Parse switch cases
     if (!Array.isArray(d.switchCases) || d.switchCases.length === 0) {
       d.switchCases = [{ field: "", operator: "==", value: "" }];
     } else {
@@ -61,7 +53,7 @@ export const DynamicForm = ({
         c.expression ? splitExpression(c.expression) : c
       );
     }
-    // Add empty defaults for missing fields
+
     fields.forEach((f) => {
       if (d[f.name] === undefined) {
         if (f.type === "conditions" || f.type === "cases") {
@@ -71,20 +63,29 @@ export const DynamicForm = ({
         } else if (f.type === "checkbox") {
           d[f.name] = false;
         } else if (f.type === "select") {
-          d[f.name] = f.options?.[0]?.value ?? "";
+          // Handle both single and multi select defaults
+          if (f.isMulti) {
+            d[f.name] = []; // Empty array for multi-select
+          } else {
+            d[f.name] = f.options?.[0]?.value ?? ""; // First option or empty string
+          }
+        } else if (f.type === "addOn") {
+          d[f.name] = [];
         } else {
           d[f.name] = "";
         }
       }
     });
-    
+
     return d;
   }, [defaultValues, fields]);
-  
+
+  console.log(cleanedDefaults);
   const {
     handleSubmit,
     control,
     watch,
+    setValue,
     formState: { errors },
   } = useForm({
     resolver: schema ? zodResolver(schema) : undefined,
@@ -92,23 +93,22 @@ export const DynamicForm = ({
     mode: "onSubmit",
     shouldUnregister: false,
   });
-  
+
   const authType = watch("auth_type");
-  
+
   const visibleFields = useMemo(() => {
     if (!twoPane) return fields;
-    
+
     return fields.filter((f) => {
       const isBasicCred = f.name === "username" || f.name === "password";
       if (authType === "header") return !isBasicCred;
       return true;
     });
   }, [fields, twoPane, authType]);
-  
-  console.log(defaultValues,"--------default values")
+
   const renderField = (field: FieldConfig) => {
     const errorMsg = (errors as any)?.[field.name]?.message;
-    
+
     switch (field.type) {
       case "input":
         return (
@@ -129,18 +129,29 @@ export const DynamicForm = ({
         return (
           <div key={field.name} className="wf-field-group">
             <Label>{field.label}</Label>
+
             <Controller
               control={control}
               name={field.name}
               render={({ field: rhf }) => (
-                <Textarea {...rhf} placeholder={field.placeholder} />
+                <Textarea
+                  placeholder={field.placeholder}
+                  value={
+                    typeof rhf.value === "string"
+                      ? rhf.value
+                      : JSON.stringify(rhf.value ?? {}, null, 2)
+                  }
+                  onChange={(e) => rhf.onChange(e.target.value)}
+                />
               )}
             />
             {errorMsg && <p className="wf-error-text">{errorMsg}</p>}
           </div>
         );
 
-      case "select":
+      case "select": {
+        const isMulti = field.type === "select" && field.isMulti === true;
+
         return (
           <div key={field.name} className="wf-field-group">
             <Label>{field.label}</Label>
@@ -148,23 +159,19 @@ export const DynamicForm = ({
               control={control}
               name={field.name}
               render={({ field: { value, onChange } }) => (
-                <Select value={value} onValueChange={onChange}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {field.options?.map((opt) => (
-                      <SelectItem key={opt.value} value={opt.value}>
-                        {opt.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Select
+                  isMulti={isMulti}
+                  options={field.options || []}
+                  value={value ?? (isMulti ? [] : "")}
+                  onValueChange={onChange}
+                  placeholder={isMulti ? "Select multiple" : "Select"}
+                />
               )}
             />
             {errorMsg && <p className="wf-error-text">{errorMsg}</p>}
           </div>
         );
+      }
 
       case "richtext":
         return (
@@ -206,7 +213,7 @@ export const DynamicForm = ({
             control={control}
             name={field.name}
             label={field.label}
-            columns={(field.options as DynamicFiledOptions[]) || []}
+            columns={field?.options || []}
             errors={errors[field.name]}
           />
         );
@@ -222,7 +229,8 @@ export const DynamicForm = ({
             isTag
           />
         );
-       case "code": 
+
+      case "code":
         const selectedLanguage = watch("language");
         return (
           <div key={field.name} className="wf-field-group">
@@ -240,7 +248,7 @@ export const DynamicForm = ({
                   }}
                 >
                   <CodeEditor
-                    onChange={() => {}}
+                    onChange={onChange}
                     selectedLanguage={selectedLanguage}
                     value={value ?? ""}
                   />
@@ -259,6 +267,35 @@ export const DynamicForm = ({
             name={field.name}
             label={field.label}
             mode={field.type === "cases" ? "switch" : "conditional"}
+            errors={errors[field.name]}
+          />
+        );
+
+      case "auth":
+        return (
+          <AuthConfigFields
+            control={control}
+            key={field.name}
+            name={field.name}
+            errors={errors[field.name]}
+          />
+        );
+
+      case "schedule":
+        return (
+          <ScheduleConfig
+            control={control}
+            key={field.name}
+            errors={errors[field.name]}
+          />
+        );
+
+      case "addOn":
+        return (
+          <AddOnsConfig
+            control={control}
+            setValue={setValue}
+            key={field.name}
             errors={errors[field.name]}
           />
         );

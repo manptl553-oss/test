@@ -11,7 +11,11 @@ export interface LabelProps
 const Label = React.forwardRef<HTMLLabelElement, LabelProps>(
   ({ className, ...props }, ref) => {
     return (
-      <label ref={ref} className={cn(labelVariants(), className)} {...props} />
+      <label
+        ref={ref}
+        className={cn(labelVariants(), className)}
+        {...props}
+      />
     );
   }
 );

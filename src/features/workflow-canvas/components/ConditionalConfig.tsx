@@ -1,16 +1,9 @@
-import { Controller, useFieldArray } from "react-hook-form";
-import {
-  Button,
-  Input,
-  Label,
-  Select,
-  SelectTrigger,
-  SelectContent,
-  SelectItem,
-  SelectValue,
-} from "@/shared";
+import { Button, Input, Label, Select } from "@/shared";
 import { useFlowStore } from "@/store";
+import { Trash2 } from "lucide-react";
 import { useCallback } from "react";
+import { Controller, useFieldArray } from "react-hook-form";
+import { LogicRulesFieldProps } from "../types";
 
 const operators = [
   { label: "EQUALS", value: "==" },
@@ -28,7 +21,7 @@ export const LogicRulesField = ({
   label,
   errors,
   mode = "conditional",
-}: any) => {
+}: LogicRulesFieldProps) => {
   const { fields, append, remove } = useFieldArray({
     name,
     control,
@@ -93,27 +86,21 @@ export const LogicRulesField = ({
             />
 
             {/* Operator */}
-            <Controller
-              control={control}
-              name={`${name}.${index}.operator`}
-              render={({ field }) => {
-                const selected = operators.find((o) => o.value === field.value);
-                return (
-                  <Select value={field.value} onValueChange={field.onChange}>
-                    <SelectTrigger className="wf-select-trigger">
-                      <span>{selected?.label ?? "Operator"}</span>
-                    </SelectTrigger>
-                    <SelectContent>
-                      {operators.map((o) => (
-                        <SelectItem key={o.value} value={o.value}>
-                          {o.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                );
-              }}
-            />
+            <div className="wf-select-trigger">
+              <Controller
+                control={control}
+                name={`${name}.${index}.operator`}
+                render={({ field }) => (
+                  <Select
+                    options={operators}
+                    value={field.value}
+                    onValueChange={field.onChange}
+                    placeholder="Operator"
+                    className="w-40"
+                  />
+                )}
+              />
+            </div>
 
             {/* Value */}
             <Controller
@@ -134,10 +121,11 @@ export const LogicRulesField = ({
                 size="icon"
                 type="button"
                 onClick={() => {
-                  mode == "switch" ? removeEdge(index) : remove(index);
+                  mode === "switch" ? removeEdge(index) : remove(index);
                 }}
+                className="text-black"
               >
-                ✕
+                <Trash2 />
               </Button>
             )}
           </div>

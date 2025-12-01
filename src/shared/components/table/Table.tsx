@@ -72,7 +72,9 @@ export function Table<T>({
                   onClick={() => toggleSort(col)}
                 >
                   {col.label}
-                  {col.sortable && getSortIcon(String(col.field))}
+                  {col.sortable && (
+                    <span className="text-(--wf-text-muted)">{getSortIcon(String(col.field))}</span>
+                  )}
                 </div>
               </th>
             ))}

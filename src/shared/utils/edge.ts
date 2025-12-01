@@ -23,6 +23,12 @@ export const makeEdge = (params: Partial<Edge>): Edge => {
   //  Safety: if the node no longer exists or label invalid → clear it
   if (!sourceNode || !label) label = undefined;
 
+  //just get expression for witch node and set in edge data
+  const expression =
+    sourceNode?.data?.configuration?.switchCases?.find(
+      (e: any) => e.condition === sourceHandle
+    ).expression ?? "";
+
   return {
     id: params.id || uuidv4(),
     source: source!,
@@ -32,7 +38,12 @@ export const makeEdge = (params: Partial<Edge>): Edge => {
     type: params.type || "custom",
     animated: true,
     style: params.style || { strokeWidth: 2 },
-    data: { ...params.data, label, versionId: state.versionId },
+    data: {
+      ...params.data,
+      label,
+      versionId: state.currentVersion?.id,
+      expression,
+    },
     label, // ReactFlow displays this directly
   };
 };
@@ -91,4 +102,20 @@ export const makeLoopEdge = (node: Node): Edge => {
     targetHandle: getTargetHandleForNode(node),
     style: { stroke: "#f97316", strokeWidth: 2 },
   });
+};
+
+export const getEdgeLabel = (source: string | undefined) => {
+  switch (source) {
+    case "on_true":
+      return "true";
+    case "on_false":
+      return "false";
+    case "done":
+    case "success":
+    case "next":
+    case "none":
+      return undefined;
+    default:
+      return source;
+  }
 };

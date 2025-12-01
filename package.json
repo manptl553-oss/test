@@ -26,7 +26,7 @@
     "LICENSE"
   ],
   "sideEffects": [
-    "*.css"
+    "**/*.css"
   ],
   "scripts": {
     "dev": "vite build --watch",
@@ -38,7 +38,6 @@
   },
   "dependencies": {
     "@monaco-editor/react": "^4.7.0",
-    "autoprefixer": "^10.4.21",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "dagre": "^0.8.5",
@@ -57,11 +56,13 @@
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "react-hook-form": "^7.66.0",
+    "react-select": "^5.10.2",
     "zod": "^4.1.12"
   },
   "devDependencies": {
+    "@tailwindcss/postcss": "^4.1.17",
     "@types/dagre": "^0.7.53",
-    "@types/node": "^24.10.0",
+    "@types/node": "^24.10.1",
     "@types/react": "^19.1.1",
     "@types/react-dom": "^19.1.1",
     "@vitejs/plugin-react": "^4.3.4",
@@ -70,7 +71,6 @@
     "postcss-nested": "^7.0.2",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
-    "rimraf": "^5.0.0",
     "tailwindcss": "^3.4.13",
     "ts-node": "^10.9.2",
     "typescript": "~5.9.3",

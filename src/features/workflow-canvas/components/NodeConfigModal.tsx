@@ -41,17 +41,26 @@ export function NodeConfigModal() {
 
   const defaultValues = useMemo(() => {
     const saved = nodeData?.configuration ?? {};
-    const result: any = {};
+    console.log(nodeData, "nodedata");
+    let result: any = {};
     fields.forEach((f: any) => {
       const val = saved[f.name];
       if (f.type === "conditions") {
         result[f.name] = Array.isArray(val) ? val : [];
       } else if (f.type === "cases") {
         result[f.name] = Array.isArray(val) ? val : [];
+      } else if (f.type === "textarea") {
+        result[f.name] =
+          typeof val !== "string" ? JSON.stringify(val, null, 2) : val;
+      } else if (f.type == "schedule") {
+        result = saved;
+      } else if (f.type == "addOn") {
+        result[f.name] = Array.isArray(val) ? val : [];
       } else {
         result[f.name] = val ?? "";
       }
     });
+    console.log(result, "result");
     return result;
   }, [nodeData, nodeType]);
 
@@ -78,7 +87,6 @@ export function NodeConfigModal() {
           })
         );
       }
-      console.log(values, "---------values");
       const payload = {
         type: nodeType,
         name: nodeName,
@@ -117,6 +125,7 @@ export function NodeConfigModal() {
     <Dialog
       open={nodeData ? true : false}
       onOpenChange={() => setActiveNode(null)}
+      isModal={nodeData?.configuration ? false : true}
     >
       <DialogContent className="wf-node-config-dialog">
         <DialogHeader className="wf-node-config-header">

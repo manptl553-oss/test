@@ -1,5 +1,14 @@
-import { Button, Input } from "@/shared";
-import { Workflow } from "@/shared/types/workflow.types";
+import {
+  Button,
+  formatName,
+  groupIdsConst,
+  Input,
+  nodeFieldsConfig,
+  Option,
+  Select,
+  WorkFlowStatus,
+} from "@/shared";
+import { GroupIds, VersionData, Workflow } from "@/shared/types/workflow.types";
 import { useFlowStore } from "@/store/workflow-store";
 import { ArrowLeft } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
@@ -7,32 +16,89 @@ import { ReactFlowProvider } from "reactflow";
 import FlowCanvas from "./components/FlowCanvas";
 import { normalizeWorkflowData } from "./helpers/normalize";
 import "./workflow-canvas.css";
+import { FieldConfig, WorkflowCategoryList } from "./types";
 export function WorkflowCanvas({
   workflow,
+  versions,
+  handleVersionChange,
+  nodeCategory,
   handleBack,
   handleUpdateWorkflowMeta,
   handleSaveWorkflow,
+  handlePublish,
+  groupIds,
 }: {
   workflow: Workflow;
+  versions: VersionData[];
+  handleVersionChange: (versionId: string) => void;
+  nodeCategory: WorkflowCategoryList;
   handleBack: () => void;
   handleUpdateWorkflowMeta: () => void;
   handleRunWorkflow: () => void;
   handleSaveWorkflow: (workflow: any) => void;
+  handlePublish: (versionId: string, status: WorkFlowStatus) => void;
+  groupIds: GroupIds[];
 }) {
-  const { getChangesForSync, nodes, setVersionId, versionId } = useFlowStore();
+  const {
+    getChangesForSync,
+    nodes,
+    setCurrentVersion,
+    currentVersion,
+    setNodeCategories,
+    nodeCategories,
+    voidNode,
+    setVoidNode,
+    markAsSynced,
+    isDirty,
+  } = useFlowStore();
   const [workflowName, setWorkflowName] = useState(workflow?.name || "");
+  const [selectedVersion, setSelectedVersion] = useState(
+    workflow?.version?.version?.toString() || ""
+  );
   const normalizedData = useMemo(
     () => (workflow ? normalizeWorkflowData(workflow) : null),
     [workflow]
   );
-  const isNameChanged = useMemo(
-    () => workflow && workflowName.trim() !== workflow.name.trim(),
-    [workflowName, workflow]
-  );
+  // const isNameChanged = useMemo(
+  //   () => workflow && workflowName.trim() !== workflow.name.trim(),
+  //   [workflowName, workflow]
+  // );
 
+  console.log(workflow, "workflow");
+  console.log(nodeCategory, "node category");
   useEffect(() => {
-    if (!versionId) setVersionId(workflow.versionId);
-  }, [versionId]);
+    if (!currentVersion || currentVersion.id != workflow.version.id)
+      setCurrentVersion(workflow.version);
+    if (nodeCategories.length === 0) {
+      console.log("node category");
+      setNodeCategories(nodeCategory);
+    }
+
+    if (!voidNode) {
+      const voidNode = nodeCategory
+        .flatMap((cat) => cat.nodeTemplates)
+        .find((t) => t?.type === "void_node");
+      setVoidNode({
+        name: voidNode?.name ?? "Void Node",
+        type: voidNode?.type ?? "void_node",
+        templateId: voidNode?.id ?? "",
+      });
+    }
+  }, [currentVersion, nodeCategories, workflow.version]);
+
+  //will remove groupIdsConst
+  const groupIdsSelectOptions: Option[] =
+    groupIds?.map((e) => ({
+      label: e.name,
+      value: e.id,
+    })) ?? groupIdsConst;
+  nodeFieldsConfig["membership_invite"] = nodeFieldsConfig?.[
+    "membership_invite"
+  ]?.map((e) =>
+    e.name == "groupIds"
+      ? ({ ...e, options: groupIdsSelectOptions } as FieldConfig)
+      : e
+  );
 
   return (
     <div className="wf-canvas">
@@ -43,7 +109,7 @@ export function WorkflowCanvas({
             aria-label="Back"
             className="wf-back-button"
           >
-            <ArrowLeft color="black" size={20} />
+            <ArrowLeft color="white" size={20} />
           </button>
 
           <div className="wf-name-row">
@@ -56,31 +122,64 @@ export function WorkflowCanvas({
               className="wf-workflow-name-input"
             />
 
-            {isNameChanged && (
+            <Select
+              options={
+                versions?.map((version) => ({
+                  value: version.version.toString(),
+                  label: formatName(version.name),
+                })) || []
+              }
+              value={selectedVersion}
+              onValueChange={(value: string) => {
+                setSelectedVersion(value);
+                handleVersionChange?.(value);
+              }}
+              placeholder="Select"
+              className="w-[180px]"
+            />
+
+            {/* {isNameChanged && (
               <Button
                 className="wf-save-btn"
                 onClick={handleUpdateWorkflowMeta}
               >
                 Save
               </Button>
-            )}
+            )} */}
           </div>
         </div>
-
         {nodes?.length > 0 && (
           <div>
             <Button
               className="wf-save-btn"
               onClick={() => {
                 const changes = getChangesForSync();
-                if (changes)
+                if (changes) {
+                  const payload = {
+                    versionId: workflow?.version?.id,
+                    name: workflowName,
+                    description: workflow.description,
+                    slug: workflow?.slug,
+                  };
                   handleSaveWorkflow({
-                    ...workflow,
+                    ...payload,
                     ...changes,
                   });
+                  markAsSynced();
+                } else if (
+                  workflow?.version?.status !== WorkFlowStatus.PUBLISHED
+                ) {
+                  handlePublish(
+                    workflow?.version?.id,
+                    WorkFlowStatus.PUBLISHED
+                  );
+                }
               }}
             >
-              Save
+              {!isDirty() &&
+              workflow?.version?.status !== WorkFlowStatus.PUBLISHED
+                ? "Publish"
+                : "Save"}
             </Button>
           </div>
         )}

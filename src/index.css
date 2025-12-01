@@ -7,22 +7,27 @@
   --color-primary: #7ec040;
   --color-charcoal: #343b4f;
   --color-gunmetal: #293138;
+  --color-darkGray: #3a4652;
+  --color-borderlight: #eaedf3;
   --shadow-sidebar: 0 8px 28px rgba(35, 54, 112, 30%);
   --shadow-inputout: -1px 3px 11px 0px #0000002b;
+  --wf-overlay-bg: rgba(0, 0, 0, 0.8);
+  --wf-shadow-strong: rgba(0, 0, 0, 0.2);
+  --wf-brand-primary-soft: rgba(126, 192, 64, 0.15);
 }
 .card-gradient-color {
   background: linear-gradient(177deg, #6db92a 1%, #487c19 95%);
 }
-.text-eclipscs{
+.text-eclipscs {
   overflow: hidden;
   display: -webkit-box;
-  -webkit-line-clamp: 2; 
+  -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   text-overflow: ellipsis;
 }
 .arrow:hover {
   background: var(--arrow-hover);
 }
-.pd-2{
+.pd-2 {
   padding-left: 10px !important;
 }

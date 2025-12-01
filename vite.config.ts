@@ -53,6 +53,7 @@ export default defineConfig({
         'tailwindcss-animate',
         'zod',
         'zustand',
+        "react-select"
       ],
 
       output: {
