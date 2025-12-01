@@ -1,7 +1,12 @@
-import { Button, isTriggerNode, NodeTypeProps, nodeTypeStyles } from "@/shared";
+import {
+  Button,
+  isTriggerNode,
+  NodeExecutionStatus,
+  NodeTypeProps,
+} from "@/shared";
 import { useFlowStore } from "@/store";
-import { PlusIcon, Trash2 } from "lucide-react";
-import React, { memo, useCallback, useEffect, useRef } from "react";
+import { Check, CircleAlert, RefreshCw, Trash2 } from "lucide-react";
+import { memo, useCallback, useEffect, useRef } from "react";
 import {
   Handle,
   NodeProps,
@@ -12,6 +17,7 @@ import {
   XYPosition,
 } from "reactflow";
 import { NodeConfigModal } from "./NodeConfigModal";
+import WorkflowIcon from "./WorkflowIcon";
 
 const closedModel = ["vip_membership_invite", "pep_check_invite"];
 const normalizeHandle = (handle?: string | null) =>
@@ -42,19 +48,22 @@ const getLabel = (source: string | undefined) => {
 
 const CustomNode = ({ data, id }: NodeProps) => {
   const { project } = useReactFlow();
+  const { activeNode, nodeTypeMeta, nodeExecutionState } = useFlowStore();
+
+  const executionStatus = nodeExecutionState[id] || null;
+
   const nodeRef = useRef<HTMLDivElement>(null);
   const edges = useStore((s) => s.edges);
-  const Icon = data?.icon || PlusIcon;
-  const isStartNode = data?.type === "start_workflow";
-  const isAddNode = data?.type === "void_node";
-  const name = data?.name || "start workflow";
-  const style = nodeTypeStyles[data?.type as NodeTypeProps] ||
-    nodeTypeStyles[data?.name as NodeTypeProps] || {
-      bg: "#22c55e",
-      border: "#15803d", // gray-400
-    };
+  const style = nodeTypeMeta.get(data?.type as NodeTypeProps) || {
+    icon: undefined,
+    color: "#6B7280",
+    border: "rgba(107, 114, 128, 0.35)",
+  };
 
-  const { activeNode } = useFlowStore();
+  const isStartNode = data.type === "start_workflow";
+  const isAddNode = data.type === "void_node";
+  const name = data?.name || "start workflow";
+
   const open = activeNode?.id === id;
   const isNodeConfigModelOpen = !isStartNode && !isAddNode && open;
 
@@ -160,7 +169,7 @@ const CustomNode = ({ data, id }: NodeProps) => {
               position={Position.Left}
               id={`input-${i + 1}`}
               className="wf-handle-rounded"
-              style={{ background: style.bg }}
+              style={{ background: style.color }}
             />
           </div>
         </div>
@@ -176,7 +185,7 @@ const CustomNode = ({ data, id }: NodeProps) => {
         className={`wf-handle-invisible`}
         style={{
           top: "50%",
-          background: style.bg,
+          background: style.color,
           left: `${isConnected ? -2 : "6px"}`,
         }}
         isConnectable={!isConnected}
@@ -233,7 +242,7 @@ const CustomNode = ({ data, id }: NodeProps) => {
               <div
                 className="wf-output-add"
                 style={{
-                  background: style.bg,
+                  background: style.color,
                   pointerEvents: "auto",
                   zIndex: 10, // BELOW handle
                 }}
@@ -260,7 +269,7 @@ const CustomNode = ({ data, id }: NodeProps) => {
           <div
             className="wf-node-core"
             style={{
-              background: style.bg,
+              background: style.color,
               transition: "all 0.3s ease-in-out",
             }}
             // onClick={handleClick}
@@ -275,25 +284,71 @@ const CustomNode = ({ data, id }: NodeProps) => {
               el.style.transform = "scale(1)";
             }}
           >
-            <Icon className="wf-node-icon" />
+            <WorkflowIcon
+              nodeType={data.type}
+              size={40}
+              className="w-10 wf-node-icon"
+            />
           </div>
-          {renderOutputHandles()}
-          {!isAddNode && (
-            <div className="wf-node-name">
-              {name}
+          {executionStatus && (
+            <div
+              className="wf-tooltip-wrapper"
+              style={{
+                position: "absolute",
+                bottom: "12px",
+                right: "20px",
+                zIndex: 10,
+              }}
+            >
+              {/* Execution badge */}
+              <div
+                className="wf-status-icon"
+                style={{
+                  background:
+                    executionStatus.status === NodeExecutionStatus.Completed
+                      ? "green"
+                      : executionStatus.status === NodeExecutionStatus.Failed
+                      ? "red"
+                      : "orange",
+                  borderRadius: "50%",
+                  padding: "4px",
+                  border: "2px solid white",
+                }}
+              >
+                {executionStatus.status === NodeExecutionStatus.Running && (
+                  <RefreshCw className="animate-spin text-white w-4 h-4" />
+                )}
+                {executionStatus.status === NodeExecutionStatus.Completed && (
+                  <Check className="w-4 h-4 text-white" />
+                )}
+                {executionStatus.status === NodeExecutionStatus.Failed && (
+                  <CircleAlert className="w-4 h-4 text-white" />
+                )}
+              </div>
+
+              {/* Tooltip */}
+              {executionStatus.status === NodeExecutionStatus.Failed && (
+                <div
+                  className="wf-tooltip"
+                  style={{
+                    background: "#FEE2E2",
+                    color: "#B91C1C",
+                    border: "1px solid #FCA5A5",
+                  }}
+                >
+                  {(executionStatus?.data as { error: string })?.error ||
+                    "Execution Failed"}
+                </div>
+              )}
             </div>
           )}
+          {renderOutputHandles()}
+          {!isAddNode && <div className="wf-node-name">{name}</div>}
         </div>
 
         {!isStartNode && (
-          <div
-            className="wf-node-toolbar"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <Button
-              className="wf-btn--destructive"
-              onClick={handleDeleteClick}
-            >
+          <div className="wf-node-toolbar" onClick={(e) => e.stopPropagation()}>
+            <Button className="wf-btn--destructive" onClick={handleDeleteClick}>
               <Trash2 className="wf-node-toolbar-icon" />
             </Button>
           </div>

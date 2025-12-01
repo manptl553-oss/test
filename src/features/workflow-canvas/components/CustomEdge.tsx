@@ -7,13 +7,7 @@ import {
   useReactFlow,
   useStore,
 } from "reactflow";
-import {
-  cn,
-  formatName,
-  getEdgeLabel,
-  NodeTypeProps,
-  nodeTypeStyles,
-} from "@/shared";
+import { cn, formatName, getEdgeLabel, NodeTypeProps } from "@/shared";
 import { useFlowStore } from "@/store";
 import { Plus, Unlink } from "lucide-react";
 
@@ -50,7 +44,7 @@ const CustomEdge = memo((props: EdgeProps) => {
   const { getNode } = useReactFlow();
   const nodeInternals = useStore((s) => s.nodeInternals);
 
-  const { deleteEdge, addNodeBetweenEdge } = useFlowStore();
+  const { deleteEdge, addNodeBetweenEdge, nodeTypeMeta } = useFlowStore();
   const sourceNode = getNode(source);
   const targetNode = getNode(target);
   const allNodes = useMemo(
@@ -61,9 +55,12 @@ const CustomEdge = memo((props: EdgeProps) => {
   const isSelf = source === target;
 
   const sourceColor =
-    nodeTypeStyles[sourceNode?.data?.type as NodeTypeProps]?.bg ?? "#3b82f6";
+    nodeTypeMeta.get(sourceNode?.data?.type as NodeTypeProps)?.color ??
+    "#3b82f6";
+
   const targetColor =
-    nodeTypeStyles[targetNode?.data?.type as NodeTypeProps]?.bg ?? "#10b981";
+    nodeTypeMeta.get(targetNode?.data?.type as NodeTypeProps)?.color ??
+    "#6B7280";
 
   //  SELF LOOP (clean U-shape)
   const isSelfLoop = props?.data?.loopType === "self";

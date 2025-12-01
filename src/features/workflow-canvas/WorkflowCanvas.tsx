@@ -8,7 +8,12 @@ import {
   Select,
   WorkFlowStatus,
 } from "@/shared";
-import { GroupIds, VersionData, Workflow } from "@/shared/types/workflow.types";
+import {
+  GroupIds,
+  NodeExecutionEvent,
+  VersionData,
+  Workflow,
+} from "@/shared/types/workflow.types";
 import { useFlowStore } from "@/store/workflow-store";
 import { ArrowLeft } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
@@ -18,6 +23,7 @@ import { normalizeWorkflowData } from "./helpers/normalize";
 import "./workflow-canvas.css";
 import { FieldConfig, WorkflowCategoryList } from "./types";
 export function WorkflowCanvas({
+  nodeExecution,
   workflow,
   versions,
   handleVersionChange,
@@ -25,16 +31,18 @@ export function WorkflowCanvas({
   handleBack,
   handleUpdateWorkflowMeta,
   handleSaveWorkflow,
+  handleRunWorkflow,
   handlePublish,
   groupIds,
 }: {
+  nodeExecution: NodeExecutionEvent;
   workflow: Workflow;
   versions: VersionData[];
   handleVersionChange: (versionId: string) => void;
   nodeCategory: WorkflowCategoryList;
   handleBack: () => void;
   handleUpdateWorkflowMeta: () => void;
-  handleRunWorkflow: () => void;
+  handleRunWorkflow: (_: { workflowId: string; versionId: string }) => void;
   handleSaveWorkflow: (workflow: any) => void;
   handlePublish: (versionId: string, status: WorkFlowStatus) => void;
   groupIds: GroupIds[];
@@ -50,7 +58,10 @@ export function WorkflowCanvas({
     setVoidNode,
     markAsSynced,
     isDirty,
+    buildTemplateRegistry,
+    setNodeExecutionState,
   } = useFlowStore();
+
   const [workflowName, setWorkflowName] = useState(workflow?.name || "");
   const [selectedVersion, setSelectedVersion] = useState(
     workflow?.version?.version?.toString() || ""
@@ -69,11 +80,8 @@ export function WorkflowCanvas({
   useEffect(() => {
     if (!currentVersion || currentVersion.id != workflow.version.id)
       setCurrentVersion(workflow.version);
-    if (nodeCategories.length === 0) {
-      console.log("node category");
-      setNodeCategories(nodeCategory);
-    }
-
+    if (nodeCategories.length === 0) setNodeCategories(nodeCategory);
+    buildTemplateRegistry(nodeCategory);
     if (!voidNode) {
       const voidNode = nodeCategory
         .flatMap((cat) => cat.nodeTemplates)
@@ -99,6 +107,9 @@ export function WorkflowCanvas({
       ? ({ ...e, options: groupIdsSelectOptions } as FieldConfig)
       : e
   );
+  useEffect(() => {
+    setNodeExecutionState(nodeExecution);
+  }, [nodeExecution]);
 
   return (
     <div className="wf-canvas">
@@ -180,6 +191,22 @@ export function WorkflowCanvas({
               workflow?.version?.status !== WorkFlowStatus.PUBLISHED
                 ? "Publish"
                 : "Save"}
+              {isDirty() ? "Save" : "Publish"}
+            </Button>
+          </div>
+        )}
+        {nodes?.length > 0 && (
+          <div>
+            <Button
+              className="bg-(--wf-brand-primary) text-(--wf-text-inverted) "
+              onClick={() => {
+                handleRunWorkflow({
+                  workflowId: workflow?.id,
+                  versionId: workflow?.version?.id,
+                });
+              }}
+            >
+              Dry Run
             </Button>
           </div>
         )}

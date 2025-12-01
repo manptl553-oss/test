@@ -36,7 +36,7 @@ export interface VersionData {
 export interface Workflow {
   id: string;
   name: string;
-  slug?:string
+  slug?: string;
   version: VersionData;
   description?: string;
   enabled?: boolean;
@@ -65,3 +65,4 @@ export interface GroupIds {
   id: string;
   name: string;
 }
+export type NodeExecutionEvent = Record<string, Record<string, unknown>>;

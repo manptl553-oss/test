@@ -1,10 +1,6 @@
-import {
-  formatName,
-  NodeIconTypeProps,
-  NodeTypeProps,
-  nodeTypeStyles,
-} from "@/shared";
-import { BugIcon } from "lucide-react";
+import { CategoryTypes, formatName, NodeTypeProps } from "@/shared";
+import { useFlowStore } from "@/store";
+import WorkflowIcon from "./WorkflowIcon";
 
 interface CategoryItemProps {
   category: any;
@@ -12,16 +8,18 @@ interface CategoryItemProps {
 }
 
 export function PopoverItem({ category, onClick }: CategoryItemProps) {
-  const style =
-    nodeTypeStyles[category?.type as NodeTypeProps] ||
-    nodeTypeStyles[category?.name as NodeIconTypeProps] || {
-      icon: BugIcon,
-      bg: "#e5e7eb",
-      border: "#9ca3af",
-    };
-
-  const Icon = style.icon;
-
+  const { nodeTypeMeta, categoryMeta } = useFlowStore();
+  let style = {
+    color: "#6B7280",
+    border: "rgba(107, 114, 128, 0.35)",
+  };
+  if (category?.type) {
+    const templateMeta = nodeTypeMeta.get(category.type as NodeTypeProps);
+    style = templateMeta ?? style;
+  } else if (category?.name) {
+    const categoryMetaItem = categoryMeta.get(category.name as CategoryTypes);
+    style = categoryMetaItem ?? style;
+  }
   return (
     <div
       key={category.id}
@@ -32,18 +30,19 @@ export function PopoverItem({ category, onClick }: CategoryItemProps) {
       {/* Icon bubble */}
       <span
         className="wf-popover-item__icon"
-        style={{ background: style?.bg }}
+        style={{ background: style?.color }}
         aria-hidden
       >
-        <Icon />
+        <WorkflowIcon
+          nodeType={category.type ?? category.name}
+          size={40}
+          isCategory={!category.type}
+        />
       </span>
 
       {/* Text (single- or two-line) */}
       <div className="wf-popover-item__text">
-        <span
-          className="wf-popover-item__title"
-          title={category.name}
-        >
+        <span className="wf-popover-item__title" title={category.name}>
           {formatName(category.name)}
         </span>
 
