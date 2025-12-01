@@ -1,10 +1,6 @@
-import {
-  formatName,
-  NodeIconTypeProps,
-  NodeTypeProps,
-  nodeTypeStyles,
-} from "@/shared";
-import { BugIcon } from "lucide-react";
+import { CategoryTypes, formatName, NodeTypeProps } from "@/shared";
+import { useFlowStore } from "@/store";
+import WorkflowIcon from "./WorkflowIcon";
 
 interface CategoryItemProps {
   category: any;
@@ -12,16 +8,18 @@ interface CategoryItemProps {
 }
 
 export function PopoverItem({ category, onClick }: CategoryItemProps) {
-  const style =
-    nodeTypeStyles[category?.type as NodeTypeProps] ||
-    nodeTypeStyles[category?.name as NodeIconTypeProps] || {
-      icon: BugIcon,
-      bg: "#e5e7eb",
-      border: "#9ca3af",
-    };
-
-  const Icon = style.icon;
-
+  const { nodeTypeMeta, categoryMeta } = useFlowStore();
+  let style = {
+    color: "#6B7280",
+    border: "rgba(107, 114, 128, 0.35)",
+  };
+  if (category?.type) {
+    const templateMeta = nodeTypeMeta.get(category.type as NodeTypeProps);
+    style = templateMeta ?? style;
+  } else if (category?.name) {
+    const categoryMetaItem = categoryMeta.get(category.name as CategoryTypes);
+    style = categoryMetaItem ?? style;
+  }
   return (
     <div
       key={category.id}
@@ -32,11 +30,15 @@ export function PopoverItem({ category, onClick }: CategoryItemProps) {
     >
       {/* Icon bubble */}
       <span
-        className="w-8 h-8 flex-none rounded-full flex items-center justify-center overflow-hidden"
-        style={{ background: style?.bg }}  // keep dynamic branding
+        className="w-10 h-10 p-2 flex-none rounded-full flex items-center justify-center overflow-hidden"
+        style={{ background: style?.color }}
         aria-hidden
       >
-        <Icon className="w-4 h-4 text-white" />
+        <WorkflowIcon
+          nodeType={category.type ?? category.name}
+          size={40}
+          isCategory={!category.type}
+        />
       </span>
 
       {/* Name + description */}

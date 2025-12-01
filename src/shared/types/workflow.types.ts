@@ -34,8 +34,8 @@ export interface VersionData {
   status: string;
   publishedBy: string;
   updatedBy: string;
-  nodes?:WorkflowNode[];
-  edges?:WorkflowEdge[]
+  nodes?: WorkflowNode[];
+  edges?: WorkflowEdge[];
 }
 
 export interface Workflow {
@@ -64,3 +64,5 @@ export interface WorkflowCardProps {
   onDelete?: (id: string) => void;
   onOpen: () => void;
 }
+
+export type NodeExecutionEvent = Record<string, Record<string, unknown>>;

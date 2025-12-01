@@ -1,6 +1,6 @@
 import { Calendar, Clock, Globe, Webhook } from "lucide-react";
 // import dagre from "dagre";
-import { NodeTypeProps, nodeTypeStyles } from "@/shared";
+import { NodeTypeProps } from "@/shared";
 import { getAutoLayoutedElements } from "@/shared/utils/layout";
 import { NodeData, useFlowStore } from "@/store";
 import { Fullscreen } from "lucide-react";
@@ -27,8 +27,6 @@ export function mapWorkflowToFlow(workflow: any, actions?: any) {
   if (!workflow) return { nodes, edges };
   // Workflow nodes
   workflow.nodes?.forEach((wfNode: any, index: number) => {
-    const icon =
-      wfNode?.icon ?? nodeTypeStyles[wfNode.type as NodeTypeProps]?.icon;
     let outputs: string[] = [];
 
     switch (wfNode.type) {
@@ -59,7 +57,6 @@ export function mapWorkflowToFlow(workflow: any, actions?: any) {
         templateId: wfNode.templateId,
         name: wfNode.name,
         type: wfNode.type,
-        icon,
         configuration: wfNode.config,
         outputs,
         ...actions,
@@ -308,12 +305,15 @@ export default function FlowCanvas({ workflow }: any) {
     [activeNode, setActiveNode]
   );
 
-   const onPaneClick = useCallback(() => {
+  const onPaneClick = useCallback(() => {
     setActiveNode(null); // This clears the selected node, which makes isPopoverOpen false
   }, [setActiveNode]);
 
   return (
-    <div className="w-full h-full relative bg-(--wf-background-base)" ref={containerRef}>
+    <div
+      className="w-full h-full relative bg-(--wf-background-base)"
+      ref={containerRef}
+    >
       <ReactFlow
         nodes={nodesWithData}
         edges={edgesWithData}
@@ -327,7 +327,7 @@ export default function FlowCanvas({ workflow }: any) {
         onNodeClick={handleNodeClick}
         onNodeDrag={onNodeDrag}
         onNodeDragStop={onNodeDragStop}
-           onPaneClick={onPaneClick} 
+        onPaneClick={onPaneClick}
         fitView
         className="bg-(--wf-background-base)"
         // proOptions={{ hideAttribution: true }}

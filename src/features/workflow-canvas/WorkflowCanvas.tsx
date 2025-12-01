@@ -1,6 +1,5 @@
 import {
   Button,
-  FieldOption,
   formatName,
   Input,
   Select,
@@ -10,7 +9,11 @@ import {
   SelectValue,
   WorkFlowStatus,
 } from "@/shared";
-import { VersionData, Workflow } from "@/shared/types/workflow.types";
+import {
+  NodeExecutionEvent,
+  VersionData,
+  Workflow,
+} from "@/shared/types/workflow.types";
 import { useFlowStore } from "@/store/workflow-store";
 import { ArrowLeft } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
@@ -19,6 +22,7 @@ import FlowCanvas from "./components/FlowCanvas";
 import { normalizeWorkflowData } from "./helpers/normalize";
 import { WorkflowCategoryList } from "./types";
 export function WorkflowCanvas({
+  nodeExecution,
   workflow,
   versions,
   handleVersionChange,
@@ -26,15 +30,17 @@ export function WorkflowCanvas({
   handleBack,
   handleUpdateWorkflowMeta,
   handleSaveWorkflow,
+  handleRunWorkflow,
   handlePublish,
 }: {
+  nodeExecution: NodeExecutionEvent;
   workflow: Workflow;
   versions: VersionData[];
   handleVersionChange: (versionId: string) => void;
   nodeCategory: WorkflowCategoryList;
   handleBack: () => void;
   handleUpdateWorkflowMeta: () => void;
-  handleRunWorkflow: () => void;
+  handleRunWorkflow: (_: { workflowId: string; versionId: string }) => void;
   handleSaveWorkflow: (workflow: any) => void;
   handlePublish: (versionId: string, status: WorkFlowStatus) => void;
 }) {
@@ -48,8 +54,11 @@ export function WorkflowCanvas({
     voidNode,
     setVoidNode,
     markAsSynced,
-    isDirty
+    isDirty,
+    buildTemplateRegistry,
+    setNodeExecutionState,
   } = useFlowStore();
+
   const [workflowName, setWorkflowName] = useState(workflow?.name || "");
   const [selectedVersion, setSelectedVersion] = useState(
     workflow?.version?.version?.toString() || ""
@@ -67,7 +76,7 @@ export function WorkflowCanvas({
     if (!currentVersion || currentVersion.id != workflow.version.id)
       setCurrentVersion(workflow.version);
     if (nodeCategories.length === 0) setNodeCategories(nodeCategory);
-
+    buildTemplateRegistry(nodeCategory);
     if (!voidNode) {
       const voidNode = nodeCategory
         .flatMap((cat) => cat.nodeTemplates)
@@ -79,6 +88,10 @@ export function WorkflowCanvas({
       });
     }
   }, [currentVersion, nodeCategories, workflow.version]);
+
+  useEffect(() => {
+    setNodeExecutionState(nodeExecution);
+  }, [nodeExecution]);
 
   return (
     <div className="flex-1 flex flex-col animate-fade-in bg-(--wf-background-base) text-(--wf-text-default)">
@@ -155,8 +168,22 @@ export function WorkflowCanvas({
                 markAsSynced();
               }}
             >
-              
-              {isDirty() ? 'Save' : 'Publish'}
+              {isDirty() ? "Save" : "Publish"}
+            </Button>
+          </div>
+        )}
+        {nodes?.length > 0 && (
+          <div>
+            <Button
+              className="bg-(--wf-brand-primary) text-(--wf-text-inverted) "
+              onClick={() => {
+                handleRunWorkflow({
+                  workflowId: workflow?.id,
+                  versionId: workflow?.version?.id,
+                });
+              }}
+            >
+              Dry Run
             </Button>
           </div>
         )}

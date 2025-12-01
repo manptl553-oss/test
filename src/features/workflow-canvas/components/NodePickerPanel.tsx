@@ -1,9 +1,15 @@
-import { NODE_DEFINITIONS, NodeTypeProps, nodeTypeStyles } from "@/shared";
+import {
+  CategoryTypes,
+  formatName,
+  NODE_DEFINITIONS,
+  NodeTypeProps,
+} from "@/shared";
 import { useFlowStore } from "@/store";
 import { BugIcon, ChevronLeft } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { NavigationItem, NodeTemplate, WorkflowCategory } from "../types";
 import { PopoverItem } from "./PopoverItem";
+import WorkflowIcon from "./WorkflowIcon";
 
 export default function NodePickerPanel({
   id,
@@ -12,7 +18,13 @@ export default function NodePickerPanel({
   id: string;
   isStartNode?: boolean;
 }) {
-  const { updateNode, setActiveNode, nodeCategories } = useFlowStore();
+  const {
+    updateNode,
+    setActiveNode,
+    nodeCategories,
+    categoryMeta,
+    nodeTypeMeta,
+  } = useFlowStore();
   const panelRef = useRef<HTMLDivElement>(null);
 
   const nodeCategory = useMemo(
@@ -34,14 +46,13 @@ export default function NodePickerPanel({
   );
 
   const currentView = navigationStack[navigationStack.length - 1];
-  const style = nodeTypeStyles[
-    (currentView?.data as WorkflowCategory)?.name as NodeTypeProps
-  ] || {
+  const style = categoryMeta.get(
+    (currentView?.data as WorkflowCategory)?.name as CategoryTypes
+  ) || {
     icon: BugIcon,
-    bg: "bg-gray-300",
+    color: "bg-gray-300",
     border: "border-gray-500",
   };
-  // nodeTypeStyles[(currentView?.data as WorkflowCategory)?.type as NodeTypeProps] ||
 
   const goBack = () => setNavigationStack((stack) => stack.slice(0, -1));
   const navigateToCategory = (category: WorkflowCategory) =>
@@ -57,7 +68,7 @@ export default function NodePickerPanel({
 
   const selectTemplate = (template: NodeTemplate) => {
     const nodeType = template.type as NodeTypeProps;
-    const Icon = nodeTypeStyles[nodeType]?.icon;
+    const Icon = nodeTypeMeta.get(nodeType)?.icon;
     const outputs = NODE_DEFINITIONS[nodeType] || ["none"];
     const nodeData = {
       name: template.name,
@@ -166,7 +177,7 @@ export default function NodePickerPanel({
             <ChevronLeft className="w-5 h-5 text-(--wf-text-default)" />
           </button>
         )}
-        {(currentView?.data as WorkflowCategory)?.name || "Start"}
+        {formatName((currentView?.data as WorkflowCategory)?.name || "Start")}
       </div>
 
       {/* Category Header Preview */}
@@ -176,19 +187,26 @@ export default function NodePickerPanel({
             className="flex flex-col space-y-2 items-center justify-center rounded-lg p-5
                      border border-(--wf-border-default)"
             style={{
-              background: `${style.bg}20`, // keep dynamic branding tint
-              borderColor: style.border,
+              background: `${style.color}20`, // keep dynamic branding tint
+              borderColor: style.border ?? style.color,
             }}
           >
             <div
               className="w-16 h-16 rounded-full flex items-center justify-center p-2"
-              style={{ background: style.bg }}
+              style={{ background: style.color }}
             >
-              <style.icon className="text-white w-8 h-8" />
+              <WorkflowIcon
+                nodeType={
+                  ((currentView?.data as WorkflowCategory)
+                    ?.name as CategoryTypes) || ""
+                }
+                isCategory={true}
+                className="text-white w-8 h-8"
+              />
             </div>
 
             <span className="text-(--wf-text-default) text-sm font-medium">
-              {currentView?.data?.name || "Start"}
+              {formatName(currentView?.data?.name || "Start")}
             </span>
           </div>
         </div>

@@ -1,7 +1,12 @@
-import { Button, isTriggerNode, NodeTypeProps, nodeTypeStyles } from "@/shared";
+import {
+  Button,
+  isTriggerNode,
+  NodeExecutionStatus,
+  NodeTypeProps,
+} from "@/shared";
 import { useFlowStore } from "@/store";
-import { PlusIcon, Trash2 } from "lucide-react";
-import React, { memo, useCallback, useEffect, useRef } from "react";
+import { Check, CircleAlert, RefreshCw, Trash2 } from "lucide-react";
+import { memo, useCallback, useEffect, useRef } from "react";
 import {
   Handle,
   NodeProps,
@@ -12,6 +17,7 @@ import {
   XYPosition,
 } from "reactflow";
 import { NodeConfigModal } from "./NodeConfigModal";
+import WorkflowIcon from "./WorkflowIcon";
 
 const closedModel = ["vip_membership_invite", "pep_check_invite"];
 const normalizeHandle = (handle?: string | null) =>
@@ -42,20 +48,24 @@ const getLabel = (source: string | undefined) => {
 
 const CustomNode = ({ data, id }: NodeProps) => {
   const { project } = useReactFlow();
+  const { activeNode, nodeTypeMeta, nodeExecutionState } = useFlowStore();
+
+  const executionStatus = nodeExecutionState[id] || null;
+
+  console.log("Node Execution Status:", id, executionStatus);
   const nodeRef = useRef<HTMLDivElement>(null);
   const store = useStoreApi();
   const edges = useStore((s) => s.edges);
-  const Icon = data.icon || PlusIcon;
+  const style = nodeTypeMeta.get(data?.type as NodeTypeProps) || {
+    icon: undefined,
+    color: "#6B7280",
+    border: "rgba(107, 114, 128, 0.35)",
+  };
+
   const isStartNode = (data as any).type === "start_workflow";
   const isAddNode = (data as any).type === "void_node";
   const name = data?.name || "start workflow";
-  const style = nodeTypeStyles[data?.type as NodeTypeProps] ||
-    nodeTypeStyles[data?.name as NodeTypeProps] || {
-      bg: "#22c55e",
-      border: "#15803d", // gray-400
-    };
 
-  const { activeNode } = useFlowStore();
   const open = activeNode?.id === id;
   const isNodeConfigModelOpen = !isStartNode && !isAddNode && open;
 
@@ -165,7 +175,7 @@ const CustomNode = ({ data, id }: NodeProps) => {
               !rounded-l-full 
               !border-none 
             `}
-              style={{ background: style.bg }}
+              style={{ background: style.color }}
             />
           </div>
         </div>
@@ -181,8 +191,8 @@ const CustomNode = ({ data, id }: NodeProps) => {
         className={`!w-6 !h-6 !border-0 ${isConnected && "opacity-0"}`}
         style={{
           top: "50%",
-          background: style.bg,
-          left: `${isConnected ? -2 : '6px'}`,
+          background: style.color,
+          left: `${isConnected ? -2 : "6px"}`,
         }}
         isConnectable={!isConnected}
       />
@@ -242,7 +252,7 @@ const CustomNode = ({ data, id }: NodeProps) => {
               <div
                 className="absolute -right-2 top-1/2 -translate-y-1/2  w-6 h-6 rounded-full flex items-center justify-center text-white text-sm font-bold cursor-pointer hover:scale-110 transition-transform pd-2"
                 style={{
-                  background: style.bg,
+                  background: style.color,
                   pointerEvents: "auto",
                   zIndex: 10, // BELOW handle
                 }}
@@ -269,7 +279,7 @@ const CustomNode = ({ data, id }: NodeProps) => {
           <div
             className={`w-24  mx-auto h-24 border-(--wf-background-base) border-2 z-10 relative rounded-full transition-all duration-200  flex flex-col items-center justify-center gap-2 cursor-pointer`}
             style={{
-              background: style.bg,
+              background: style.color,
               transition: "all 0.3s ease-in-out",
             }}
             // onClick={handleClick}
@@ -284,8 +294,59 @@ const CustomNode = ({ data, id }: NodeProps) => {
               el.style.transform = "scale(1)";
             }}
           >
-            <Icon className="w-12 h-12 text-white" />
+            <WorkflowIcon nodeType={data.type} size={40} className="w-10" />
           </div>
+          {executionStatus && (
+            <div
+              className="wf-tooltip-wrapper"
+              style={{
+                position: "absolute",
+                bottom: "12px",
+                right: "20px",
+                zIndex: 10,
+              }}
+            >
+              {/* Execution badge */}
+              <div
+                className="wf-status-icon"
+                style={{
+                  background:
+                    executionStatus.status === NodeExecutionStatus.Completed
+                      ? "green"
+                      : executionStatus.status === NodeExecutionStatus.Failed
+                      ? "red"
+                      : "orange",
+                  borderRadius: "50%",
+                  padding: "4px",
+                  border: "2px solid white",
+                }}
+              >
+                {executionStatus.status === NodeExecutionStatus.Running && (
+                  <RefreshCw className="animate-spin text-white w-4 h-4" />
+                )}
+                {executionStatus.status === NodeExecutionStatus.Completed && (
+                  <Check className="w-4 h-4 text-white" />
+                )}
+                {executionStatus.status === NodeExecutionStatus.Failed && (
+                  <CircleAlert className="w-4 h-4 text-white" />
+                )}
+              </div>
+
+              {/* Tooltip */}
+              {executionStatus.status === NodeExecutionStatus.Failed && (
+                <div
+                  className="wf-tooltip"
+                  style={{
+                    background: "#FEE2E2",
+                    color: "#B91C1C",
+                    border: "1px solid #FCA5A5",
+                  }}
+                >
+                  {executionStatus?.data?.error || "Execution Failed"}
+                </div>
+              )}
+            </div>
+          )}
           {renderOutputHandles()}
           {!isAddNode && (
             <div className="text-(--wf-text-default) font-medium text-sm text-center">
