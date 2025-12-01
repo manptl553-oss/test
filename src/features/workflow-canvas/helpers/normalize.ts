@@ -1,5 +1,5 @@
 import { getEdgeLabelForNode, getNodeDefinition } from "@/shared";
-import { Workflow, WorkflowEdge } from "@/shared/types/workflow.types";
+import { Workflow, WorkflowEdge, WorkflowNode } from "@/shared/types/workflow.types";
 import { NodeData } from "@/store";
 import { Edge, Node } from "reactflow";
 
@@ -25,18 +25,7 @@ export const normalizeWorkflowData = (workflow: Workflow): Workflow => {
 
     let sourceHandle = edge.condition;
 
-    //  Loop node handling (handles both parentNode & group_id cases)
-    if (sourceType === "loop") {
-      const isLoopBody =
-        targetNode?.parent_id === sourceNode?.id ||
-        edge.groupId === sourceNode?.id;
-
-      if (isLoopBody) sourceHandle = "body";
-      else sourceHandle = "end";
-    }
-
-    // For other node types (fallback to current logic)
-    else if (!sourceHandle) {
+   if (!sourceHandle) {
       if (outputs.includes(cleanCondition)) {
         sourceHandle = cleanCondition;
       } else {
@@ -49,7 +38,7 @@ export const normalizeWorkflowData = (workflow: Workflow): Workflow => {
 
     const targetHandle = "input";
 
-    const label = getEdgeLabelForNode({ data: sourceNode }, sourceHandle);
+    const label = getEdgeLabelForNode( sourceNode , sourceHandle);
     const expression = edge?.expression;
 
     return {
@@ -85,7 +74,7 @@ function mapHandleToCondition(sourceHandle: string | null | undefined): string {
 }
 
 // 3. Transform a single node
-export function transformNode(node: Node<NodeData>): any {
+export function transformNode(node: Node<NodeData>): WorkflowNode {
   const nodeData = node?.data;
 
   const nodeConfiguration = nodeData?.configuration ?? {};
@@ -112,7 +101,7 @@ export function transformNode(node: Node<NodeData>): any {
 }
 
 // 4. Transform a single edge
-export function transformEdge(edge: Edge): any {
+export function transformEdge(edge: Edge): WorkflowEdge {
   return {
     id: edge.id,
     versionId: edge.data.versionId,

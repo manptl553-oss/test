@@ -1,5 +1,12 @@
+import { Node } from "reactflow";
 import { NODE_DEFINITIONS } from "../constants";
-import { NodeDefinition } from "../types";
+import { NodeDefinition, WorkflowNode } from "../types";
+import { NodeData } from "@/store";
+
+interface SwitchCase {
+  condition?: string;
+}
+
 
 export const getNodeDefinition = (type?: string): NodeDefinition => {
   const key = type?.toLowerCase?.();
@@ -15,28 +22,28 @@ export const getNodeDefinition = (type?: string): NodeDefinition => {
   );
 };
 
-export const getOutputsForNode = (node: any): string[] => {
+export const getOutputsForNode = (node: Node<NodeData>): string[] => {
   const type = node?.data?.type?.toLowerCase();
   const def = getNodeDefinition(type);
 
   if (type === "switch") {
     const cases = node?.data?.configuration?.switchCases;
     if (Array.isArray(cases) && cases.length > 0)
-      return cases.map((c: any, i: number) => c?.condition || `case_${i + 1}`);
+      return cases.map((c: SwitchCase, i: number) => c?.condition || `case_${i + 1}`);
     return ["case_1"];
   }
 
   return def.outputs;
 };
 
-export const getTargetHandleForNode = (node: any): string =>
+export const getTargetHandleForNode = (node: Node<NodeData>): string =>
   getNodeDefinition(node?.data?.type).defaultTarget;
 
-export const getSelfLoopHandle = (node: any): string | null =>
+export const getSelfLoopHandle = (node: Node<NodeData>): string | null =>
   getNodeDefinition(node?.data?.type).selfLoopHandle ?? null;
 
 export const getEdgeLabelForNode = (
-  node: any,
+  node: WorkflowNode | undefined,
   handle?: string
 ): string | undefined => {
   if (!handle) return;

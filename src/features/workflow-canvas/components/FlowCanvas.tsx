@@ -137,7 +137,6 @@ export default function FlowCanvas({ workflow }: any) {
 
   const isEditMode = !!workflow?.id;
 
-  // ✅ OPTIMIZATION 2: Memoize all callbacks properly
   const handleDeleteClick = useCallback(
     (nodeId: string) => deleteNode(nodeId),
     [deleteNode]
@@ -206,7 +205,7 @@ export default function FlowCanvas({ workflow }: any) {
     setNodes,
   ]);
 
-  //  OPTIMIZATION 4: Create stable node data object
+  // Create stable node data object
   const nodeDataCallbacks = useMemo(
     () => ({
       onDeleteClick: handleDeleteClick,
@@ -314,7 +313,7 @@ export default function FlowCanvas({ workflow }: any) {
         onNodeClick={handleNodeClick}
         onNodeDrag={onNodeDrag}
         onNodeDragStop={onNodeDragStop}
-           onPaneClick={onPaneClick} 
+        onPaneClick={onPaneClick} 
         fitView
         className="wf-flow-surface"
         proOptions={{ hideAttribution: true }}

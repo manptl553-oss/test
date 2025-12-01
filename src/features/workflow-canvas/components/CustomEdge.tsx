@@ -1,4 +1,4 @@
-import React, { memo, useCallback, useMemo, useState } from "react";
+import  { memo, useCallback, useMemo, useState } from "react";
 import {
   BaseEdge,
   EdgeLabelRenderer,
@@ -58,17 +58,13 @@ const CustomEdge = memo((props: EdgeProps) => {
     [nodeInternals]
   );
   const label = getEdgeLabel(props?.sourceHandleId ?? undefined);
-  const isSelf = source === target;
+
 
   const sourceColor =
     nodeTypeStyles[sourceNode?.data?.type as NodeTypeProps]?.bg ?? "#3b82f6";
   const targetColor =
     nodeTypeStyles[targetNode?.data?.type as NodeTypeProps]?.bg ?? "#10b981";
 
-  //  SELF LOOP (clean U-shape)
-  const isSelfLoop = props?.data?.loopType === "self";
-  const isLoopChild = props?.data?.loopType === "loop-child"; // loop → child
-  const isLoopBack = props?.data?.loopType === "loop-back"; // child → loop
 
   const handleAddNodeBetween = () => {
     const position = {
@@ -151,125 +147,6 @@ const CustomEdge = memo((props: EdgeProps) => {
     []
   );
 
-  //  if (isSelfLoop) {
-  //     const pos = sourceNode.positionAbsolute;
-  //     const width = sourceNode.width;
-  //     const height = sourceNode.height;
-
-  //     const left = pos.x - 80;
-  //     const right = pos.x + width + 80;
-  //     const top = pos.y - 40;
-  //     const bottom = pos.y + height + 40;
-
-  //     const path = `
-  //       M ${pos.x + width} ${pos.y + height / 2}
-  //       L ${right} ${pos.y + height / 2}
-  //       L ${right} ${bottom}
-  //       L ${left} ${bottom}
-  //       L ${left} ${pos.y + height / 2}
-  //       L ${pos.x} ${pos.y + height / 2}
-  //     `;
-
-  //     return (
-  //       <g
-  //         onMouseEnter={() => setHovered(true)}
-  //         onMouseLeave={() => setHovered(false)}
-  //       >
-  //         <path d={path} stroke={sourceColor} strokeWidth={3} fill="none" />
-  //         {renderEdgeActions(pos.x + width / 2, bottom)}
-  //       </g>
-  //     );
-  //   }
-
-  /* =====================================================================================
-     2) LOOP → CHILD  (simple smooth path)
-  ===================================================================================== */
-  // if (isLoopChild) {
-  //   const [path] = getSmoothStepPath({
-  //     sourceX,
-  //     sourceY,
-  //     targetX,
-  //     targetY,
-  //     borderRadius: 30,
-  //   });
-
-  //   return (
-  //     <g
-  //       onMouseEnter={() => setHovered(true)}
-  //       onMouseLeave={() => setHovered(false)}
-  //     >
-  //       <BaseEdge id={id} path={path} />
-
-  //       {/* Render caps */}
-  //       <g transform={`translate(${sourceX}, ${sourceY}) rotate(0)`}>
-  //         <path
-  //           d={`M 0 -${EDGE_CAP_RADIUS} A ${EDGE_CAP_RADIUS} ${EDGE_CAP_RADIUS} 0 0 1 0 ${EDGE_CAP_RADIUS} Z`}
-  //           fill={sourceColor}
-  //         />
-  //       </g>
-
-  //       <g transform={`translate(${targetX}, ${targetY}) rotate(180)`}>
-  //         <path
-  //           d={`M 0 -${EDGE_CAP_RADIUS} A ${EDGE_CAP_RADIUS} ${EDGE_CAP_RADIUS} 0 0 1 0 ${EDGE_CAP_RADIUS} Z`}
-  //           fill={targetColor}
-  //         />
-  //       </g>
-
-  //       {renderEdgeActions((sourceX + targetX) / 2, (sourceY + targetY) / 2)}
-  //     </g>
-  //   );
-  // }
-
-  /* =====================================================================================
-     3) CHILD → LOOP (N8N style rectangular loop-back)
-  ===================================================================================== */
-  // if (isLoopBack) {
-  //   const loop = targetNode;
-  //   const child = sourceNode;
-
-  //   const L = loop.positionAbsolute;
-  //   const C = child.positionAbsolute;
-
-  //   const left = L.x - 120;
-  //   const right = C.x + child.width + 120;
-  //   const top = L.y + loop.height + 30;
-  //   const bottom = C.y + child.height + 30;
-
-  //   const path = `
-  //     M ${C.x + child.width} ${C.y + child.height / 2}
-  //     L ${right} ${C.y + child.height / 2}
-  //     L ${right} ${bottom}
-  //     L ${left} ${bottom}
-  //     L ${left} ${L.y + loop.height / 2}
-  //     L ${L.x} ${L.y + loop.height / 2}
-  //   `;
-
-  //   return (
-  //     <g
-  //       onMouseEnter={() => setHovered(true)}
-  //       onMouseLeave={() => setHovered(false)}
-  //     >
-  //       <path d={path} stroke={sourceColor} strokeWidth={3} fill="none" />
-
-  //       {/* caps */}
-  //       <circle
-  //         cx={C.x + child.width}
-  //         cy={C.y + child.height / 2}
-  //         r={6}
-  //         fill={sourceColor}
-  //       />
-
-  //       <circle
-  //         cx={L.x}
-  //         cy={L.y + loop.height / 2}
-  //         r={6}
-  //         fill={targetColor}
-  //       />
-
-  //       {renderEdgeActions(right, bottom)}
-  //     </g>
-  //   );
-  // }
 
   /* ---------------------------------------------------------------
      NORMAL EDGES (with dotted animation + half-caps)

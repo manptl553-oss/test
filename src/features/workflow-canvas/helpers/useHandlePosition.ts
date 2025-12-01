@@ -7,7 +7,7 @@ export const useHandlePosition = (
   type: "source" | "target",
   handleId?: string
 ) => {
-  const { getNode, getEdges } = useReactFlow();
+  const { getNode } = useReactFlow();
   const edges = useStore((s) => s.edges);
 
   return useMemo(() => {

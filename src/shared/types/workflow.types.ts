@@ -5,10 +5,15 @@ export interface WorkflowNode {
   name: string;
   type: string; // NodeTypeProps as string to avoid circular dependency
   parentNode?: string;
-  parent_id?: string | null;
+  parentId?: string | null;
   position?: { x: number; y: number };
   config?: any;
   data?: any;
+  versionId?:string;
+  description?:string;
+  templateId?:string;
+  retryAttempts?:number;
+  retryDelayMs?:number;
 }
 
 export interface WorkflowEdge {
@@ -17,7 +22,7 @@ export interface WorkflowEdge {
   targetId: string;
   versionId: string;
   condition?: string;
-  groupId?: string;
+  groupId?: string | null;
   expression: string;
 }
 

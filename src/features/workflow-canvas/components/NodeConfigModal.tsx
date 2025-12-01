@@ -35,13 +35,12 @@ export function NodeConfigModal() {
     nodeData?.name || nodeType?.toUpperCase()
   );
 
-  const isTrigger = ["webhook", "event"].includes(nodeType);
+
   const fields = nodeFieldsConfig[nodeType] ?? [];
   const schema = nodeValidationSchema[nodeType];
 
   const defaultValues = useMemo(() => {
     const saved = nodeData?.configuration ?? {};
-    console.log(nodeData, "nodedata");
     let result: any = {};
     fields.forEach((f: any) => {
       const val = saved[f.name];

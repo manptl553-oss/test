@@ -41,7 +41,6 @@ export default function NodePickerPanel({
     bg: "bg-gray-300",
     border: "border-gray-500",
   };
-  // nodeTypeStyles[(currentView?.data as WorkflowCategory)?.type as NodeTypeProps] ||
 
   const goBack = () => setNavigationStack((stack) => stack.slice(0, -1));
   const navigateToCategory = (category: WorkflowCategory) =>
@@ -90,7 +89,7 @@ export default function NodePickerPanel({
         category.visibility && (
           <PopoverItem
             key={category.id}
-            category={category}
+            category={category} 
             onClick={() => navigateToCategory(category)}
           />
         )
