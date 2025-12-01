@@ -21,6 +21,8 @@ import {
   NodeExecutionStatus,
   NodeTypeProps,
   VersionData,
+  WorkflowEdge,
+  WorkflowNode,
 } from "@/shared";
 import {
   transformEdge,
@@ -44,9 +46,9 @@ export interface NodeData {
 }
 
 interface WorkflowDiff {
-  nodes: Node<NodeData>[];
+  nodes: WorkflowNode[];
   deletedNodes: string[];
-  edges: Edge[];
+  edges: WorkflowEdge[];
   deletedEdges: string[];
 }
 
@@ -350,7 +352,9 @@ export const useFlowStore = create<FlowState>((set, get) => ({
     );
   },
 
-  setActiveNode: (node) => set({ activeNode: node }),
+  setActiveNode: (node) => {
+    set({ activeNode: node });
+  },
   setWorkflowId: (id) => set({ workflowId: id }),
   setCurrentVersion: (data) => set({ currentVersion: data }),
 

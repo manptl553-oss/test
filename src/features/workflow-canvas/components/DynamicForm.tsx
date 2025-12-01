@@ -80,7 +80,6 @@ export const DynamicForm = ({
     return d;
   }, [defaultValues, fields]);
 
-  console.log(cleanedDefaults);
   const {
     handleSubmit,
     control,
@@ -118,7 +117,11 @@ export const DynamicForm = ({
               control={control}
               name={field.name}
               render={({ field: rhf }) => (
-                <Input {...rhf} placeholder={field.placeholder} />
+                <Input
+                  {...rhf}
+                  placeholder={field.placeholder}
+                  disabled={field.readOnly}
+                />
               )}
             />
             {errorMsg && <p className="wf-error-text">{errorMsg}</p>}
@@ -142,6 +145,7 @@ export const DynamicForm = ({
                       : JSON.stringify(rhf.value ?? {}, null, 2)
                   }
                   onChange={(e) => rhf.onChange(e.target.value)}
+                  disabled={field.readOnly}
                 />
               )}
             />
@@ -165,6 +169,7 @@ export const DynamicForm = ({
                   value={value ?? (isMulti ? [] : "")}
                   onValueChange={onChange}
                   placeholder={isMulti ? "Select multiple" : "Select"}
+                  isDisabled={field.readOnly}
                 />
               )}
             />
@@ -199,7 +204,11 @@ export const DynamicForm = ({
               control={control}
               name={field.name}
               render={({ field: rhf }) => (
-                <Checkbox checked={rhf.value} onCheckedChange={rhf.onChange} />
+                <Checkbox
+                  checked={rhf.value}
+                  onCheckedChange={rhf.onChange}
+                  disabled={field.readOnly}
+                />
               )}
             />
             <Label>{field.label}</Label>
@@ -256,7 +265,8 @@ export const DynamicForm = ({
               )}
             />
             {errorMsg && <p className="wf-error-text">{errorMsg}</p>}
-          </div>);
+          </div>
+        );
 
       case "conditions":
       case "cases":
@@ -313,14 +323,21 @@ export const DynamicForm = ({
   return (
     <form onSubmit={handleSubmit(onSubmitInternal)} className="wf-dynamic-form">
       <div className={twoPane ? "wf-form-grid" : "wf-field-column"}>
-        <div className="wf-field-column">
+        <div className="wf-field-column wf-scroll-hide">
           {(twoPane ? left : visibleFields).map(renderField)}
         </div>
-        {twoPane && <div className="wf-field-column">{right.map(renderField)}</div>}
+        {twoPane && (
+          <div className="wf-field-column wf-scroll-hide">
+            {right.map(renderField)}
+          </div>
+        )}
       </div>
 
       <div className="wf-actions-row">
-        <Button type="submit" className="wf-button-fill wf-button-text-contrast">
+        <Button
+          type="submit"
+          className="wf-button-fill wf-button-text-contrast"
+        >
           Save
         </Button>
         {onCancel && (

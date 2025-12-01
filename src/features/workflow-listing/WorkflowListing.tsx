@@ -1,11 +1,13 @@
-import {
-  useEffect,
-  useRef,
-  useState,
-} from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button, Pagination, Table } from "@/shared";
 import { Column } from "@/shared/components/table/types";
-import { WorkflowFilterConfig, WorkflowListingProps, WorkflowSearchConfig, WorkflowStatus, WorkflowStatusOption } from "./types";
+import {
+  WorkflowFilterConfig,
+  WorkflowListingProps,
+  WorkflowSearchConfig,
+  WorkflowStatus,
+  WorkflowStatusOption,
+} from "./types";
 
 const DEFAULT_DEBOUNCE = 400;
 
@@ -134,16 +136,12 @@ export function WorkflowListing<T = unknown>({
    *==============================*/
 
   return (
-        <div className="wf-listing-root">
-
+    <div className="wf-listing-root">
       {/* HEADER */}
       <div className="wf-listing-header">
-        <h2 className="wf-listing-title">
-          {title || "Workflows"}
-        </h2>
+        <h2 className="wf-listing-title">{title || "Workflows"}</h2>
 
         <div className="wf-listing-controls">
-
           {/* SEARCH */}
           {showSearch && (
             <input
@@ -174,9 +172,7 @@ export function WorkflowListing<T = unknown>({
               {filterOpen && (
                 <div className="wf-listing-filter-menu">
                   <div className="wf-listing-filter-panel">
-                    <label className="wf-listing-filter-label">
-                      Status
-                    </label>
+                    <label className="wf-listing-filter-label">Status</label>
 
                     <select
                       value={filter.status}
@@ -251,14 +247,14 @@ export function WorkflowListing<T = unknown>({
 
       {/* PAGINATION */}
       {pagination && (
-         <Pagination
-            pageIndex={pagination.page}
-            pageSize={pagination.perPage}
-            totalCount={pagination.totalCount}
-            pageCount={pagination.totalPages}
-            pageSizeOptions={pagination.perPageOptions || [10, 20, 50]}
-            onPageChange={pagination.onPageChange}
-            onPageSizeChange={pagination.onPerPageChange}
+        <Pagination
+          pageIndex={pagination.page}
+          pageSize={pagination.perPage}
+          totalCount={pagination.totalCount}
+          pageCount={pagination.totalPages}
+          pageSizeOptions={pagination.perPageOptions || [10, 20, 50]}
+          onPageChange={pagination.onPageChange}
+          onPageSizeChange={pagination.onPerPageChange}
         />
       )}
     </div>

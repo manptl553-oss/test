@@ -66,13 +66,12 @@ export const LogicRulesField = ({
     <div className="wf-field-group">
       <Label className="wf-field-label">{label}</Label>
 
-      <div className="wf-logic-rows">
-        {fields.map((item, index) => (
-          <div
-            key={item.id}
-            className="wf-logic-row"
-          >
-            {/* Field */}
+      {/* <div className="wf-logic-rows"> */}
+
+      {fields.map((item, index) => (
+        <div key={item.id} className="wf-logic-row">
+          {/* Field */}
+          <div className="wf-field-wrapper">
             <Controller
               control={control}
               name={`${name}.${index}.field`}
@@ -84,25 +83,32 @@ export const LogicRulesField = ({
                 />
               )}
             />
+            {errors?.[index]?.field && (
+              <p className="wf-error-inline">
+                {errors?.[index]?.field.message}
+              </p>
+            )}
+          </div>
 
-            {/* Operator */}
-            <div className="wf-select-trigger">
-              <Controller
-                control={control}
-                name={`${name}.${index}.operator`}
-                render={({ field }) => (
-                  <Select
-                    options={operators}
-                    value={field.value}
-                    onValueChange={field.onChange}
-                    placeholder="Operator"
-                    className="w-40"
-                  />
-                )}
-              />
-            </div>
+          {/* Operator */}
+          <div className="wf-field-wrapper">
+            <Controller
+              control={control}
+              name={`${name}.${index}.operator`}
+              render={({ field }) => (
+                <Select
+                  options={operators}
+                  value={field.value}
+                  onValueChange={field.onChange}
+                  placeholder="Operator"
+                  className="w-40"
+                />
+              )}
+            />
+          </div>
 
-            {/* Value */}
+          {/* Value */}
+          <div className="wf-field-wrapper">
             <Controller
               control={control}
               name={`${name}.${index}.value`}
@@ -114,23 +120,28 @@ export const LogicRulesField = ({
                 />
               )}
             />
-
-            {fields.length > 1 && (
-              <Button
-                variant="destructive"
-                size="icon"
-                type="button"
-                onClick={() => {
-                  mode === "switch" ? removeEdge(index) : remove(index);
-                }}
-                className="text-black"
-              >
-                <Trash2 />
-              </Button>
+            {errors?.[index]?.value && (
+              <p className="wf-error-inline">
+                {errors?.[index]?.value.message}
+              </p>
             )}
           </div>
-        ))}
-      </div>
+
+          {fields.length > 1 && (
+            <Button
+              variant="destructive"
+              size="icon"
+              type="button"
+              onClick={() =>
+                mode === "switch" ? removeEdge(index) : remove(index)
+              }
+            >
+              <Trash2 />
+            </Button>
+          )}
+        </div>
+      ))}
+      {/* </div> */}
 
       <Button
         type="button"

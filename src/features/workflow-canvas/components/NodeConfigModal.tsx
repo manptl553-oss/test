@@ -41,7 +41,6 @@ export function NodeConfigModal() {
 
   const defaultValues = useMemo(() => {
     const saved = nodeData?.configuration ?? {};
-    console.log(nodeData, "nodedata");
     let result: any = {};
     fields.forEach((f: any) => {
       const val = saved[f.name];
@@ -60,7 +59,6 @@ export function NodeConfigModal() {
         result[f.name] = val ?? "";
       }
     });
-    console.log(result, "result");
     return result;
   }, [nodeData, nodeType]);
 
@@ -114,7 +112,6 @@ export function NodeConfigModal() {
           )
         );
       }
-
       setActiveNode(null);
     } catch (e) {
       console.error("Save failed", e);
@@ -124,7 +121,9 @@ export function NodeConfigModal() {
   return (
     <Dialog
       open={nodeData ? true : false}
-      onOpenChange={() => setActiveNode(null)}
+      onOpenChange={() => {
+        setActiveNode(null);
+      }}
       isModal={nodeData?.configuration ? false : true}
     >
       <DialogContent className="wf-node-config-dialog">
@@ -142,7 +141,9 @@ export function NodeConfigModal() {
           defaultValues={defaultValues}
           onSubmit={handleFormSubmit}
           schema={schema as any}
-          onClose={() => setActiveNode(null)}
+          onClose={() => {
+            setActiveNode(null);
+          }}
         />
       </DialogContent>
     </Dialog>

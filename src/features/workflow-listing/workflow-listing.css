@@ -6,12 +6,17 @@
   flex-direction: column;
   gap: 1.5rem;
   padding: 1.5rem;
+  background-color: var(--wf-background-base, #ffffff);
+  color: var(--wf-text-default, #111827);
 }
 
 .wf-listing-header {
   display: flex;
   flex-direction: column;
   gap: 1rem;
+  background-color: var(--wf-background-subtle, #f9fafb);
+  color: var(--wf-text-default, #111827);
+  border-bottom: 1px solid var(--wf-border-default, #e5e7eb);
 }
 
 @media (min-width: 640px) {
@@ -26,7 +31,7 @@
   font-size: 1.5rem;
   line-height: 2rem;
   font-weight: 700;
-  color: var(--wf-text-inverted, #ffffff);
+  color: var(--wf-text-default, #ffffff);
 }
 
 .wf-listing-controls {

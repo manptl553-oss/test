@@ -57,3 +57,14 @@
 .wf-tooltip-wrapper:hover .wf-tooltip {
   opacity: 1;
 }
+
+.wf-scroll-hide {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* Internet Explorer + Edge */
+}
+
+.wf-scroll-hide::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none; /* Chrome, Safari */
+}

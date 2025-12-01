@@ -207,7 +207,7 @@ export default function NodePickerPanel({
       )}
 
       {/* Items */}
-      <div className="flex-1 overflow-y-auto px-2 py-2 h-full max-h-80 space-y-1">
+      <div className="wf-node-picker__list wf-scroll-hide">
         {renderRootView()}
         {renderCategoryView()}
         {renderSubCategoryView()}

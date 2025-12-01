@@ -119,25 +119,24 @@ export function AddOnsConfig({
     setValue(name, updatedAddons, { shouldDirty: true, shouldValidate: true });
   };
   return (
-    <div className="space-y-4">
-      <Label className="text-lg font-semibold">Select Add-Ons</Label>
+    <div className="wf-addon-root">
+      <Label className="wf-addon-title">Select Add-Ons</Label>
 
-      <div className="space-y-3">
+      <div className="wf-addon-list">
         {Object.values(EOnboardingAddonType).map((addonType) => {
           const isChecked =
             selectedAddons?.some(
               (addon: any) => addon.addonType === addonType
             ) || false;
 
-          // Disable Bank Auth checkbox only when it's checked AND Bank Statements is also checked
           const isDisabled =
             addonType === EOnboardingAddonType.BankAuth &&
             isChecked &&
             isBankStatementsSelected;
 
           return (
-            <div key={addonType} className="flex flex-col gap-2">
-              <div className="flex items-center gap-2">
+            <div key={addonType} className="wf-addon-item">
+              <div className="wf-addon-row">
                 <input
                   type="checkbox"
                   id={addonType}
@@ -146,26 +145,30 @@ export function AddOnsConfig({
                     handleAddonToggle(addonType, e.target.checked)
                   }
                   disabled={isDisabled}
-                  className="w-4 h-4 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
+                  className="wf-checkbox"
                 />
+
                 <label
                   htmlFor={addonType}
-                  className={`cursor-pointer ${isDisabled ? "opacity-50" : ""}`}
+                  className={`wf-addon-label ${
+                    isDisabled ? "wf-disabled" : ""
+                  }`}
                 >
                   {addOnLabels[addonType]}
                   {isDisabled && (
-                    <span className="text-xs text-gray-500 ml-2">
+                    <span className="wf-addon-note">
                       (Required for Bank Statements)
                     </span>
                   )}
                 </label>
               </div>
 
-              {/* Bank Statements Duration Select */}
               {addonType === EOnboardingAddonType.BankStatements &&
                 isBankStatementsSelected && (
-                  <div className="ml-6 space-y-1">
-                    <Label className="text-sm">Select range</Label>
+                  <div className="wf-addon-select-block">
+                    <Label className="wf-addon-select-label">
+                      Select range
+                    </Label>
                     <Select
                       options={Object.entries(durationLabels).map(
                         ([value, label]) => ({

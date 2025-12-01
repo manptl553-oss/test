@@ -1,5 +1,10 @@
-import { getEdgeLabelForNode, getNodeDefinition } from "@/shared";
-import { Workflow, WorkflowEdge } from "@/shared/types/workflow.types";
+import {
+  EAuthType,
+  getEdgeLabelForNode,
+  getNodeDefinition,
+  HTTP_METHODS,
+} from "@/shared";
+import { Workflow, WorkflowEdge, WorkflowNode } from "@/shared/types/workflow.types";
 import { NodeData } from "@/store";
 import { Edge, Node } from "reactflow";
 
@@ -28,7 +33,7 @@ export const normalizeWorkflowData = (workflow: Workflow): Workflow => {
     //  Loop node handling (handles both parentNode & group_id cases)
     if (sourceType === "loop") {
       const isLoopBody =
-        targetNode?.parent_id === sourceNode?.id ||
+        targetNode?.parentId === sourceNode?.id ||
         edge.groupId === sourceNode?.id;
 
       if (isLoopBody) sourceHandle = "body";
@@ -85,13 +90,19 @@ function mapHandleToCondition(sourceHandle: string | null | undefined): string {
 }
 
 // 3. Transform a single node
-export function transformNode(node: Node<NodeData>): any {
+export function transformNode(node: Node<NodeData>): WorkflowNode {
   const nodeData = node?.data;
 
   const nodeConfiguration = nodeData?.configuration ?? {};
   if (nodeData.type == "membership_invite") {
     nodeConfiguration["appName"] = "KYC";
     nodeConfiguration["roleIds"] = [17];
+  }
+  if (nodeData.type == "webhook") {
+    nodeConfiguration["method"] = "POST";
+    nodeConfiguration["authentication"] = {
+      type: EAuthType.NONE,
+    };
   }
   return {
     id: nodeData?.id,
@@ -112,7 +123,7 @@ export function transformNode(node: Node<NodeData>): any {
 }
 
 // 4. Transform a single edge
-export function transformEdge(edge: Edge): any {
+export function transformEdge(edge: Edge): WorkflowEdge {
   return {
     id: edge.id,
     versionId: edge.data.versionId,

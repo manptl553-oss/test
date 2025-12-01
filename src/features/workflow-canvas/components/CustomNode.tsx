@@ -50,7 +50,7 @@ const CustomNode = ({ data, id }: NodeProps) => {
   const { project } = useReactFlow();
   const { activeNode, nodeTypeMeta, nodeExecutionState } = useFlowStore();
 
-  const executionStatus = nodeExecutionState[id] || null;
+  const executionStatus = nodeExecutionState?.[id] || null;
 
   const nodeRef = useRef<HTMLDivElement>(null);
   const edges = useStore((s) => s.edges);
@@ -63,9 +63,6 @@ const CustomNode = ({ data, id }: NodeProps) => {
   const isStartNode = data.type === "start_workflow";
   const isAddNode = data.type === "void_node";
   const name = data?.name || "start workflow";
-
-  const open = activeNode?.id === id;
-  const isNodeConfigModelOpen = !isStartNode && !isAddNode && open;
 
   // ✅ Report node ref to FlowCanvas (for popover anchor)
   useEffect(() => {
@@ -182,7 +179,7 @@ const CustomNode = ({ data, id }: NodeProps) => {
         type="target"
         position={Position.Left}
         id="input"
-        className={`wf-handle-invisible`}
+        className={`wf-input-row ${isConnected && "wf-handle-invisible"}`}
         style={{
           top: "50%",
           background: style.color,
@@ -196,13 +193,16 @@ const CustomNode = ({ data, id }: NodeProps) => {
   const renderOutputHandles = () => {
     if (isStartNode) return null;
     return data?.outputs?.map((outputId: string, i: number) => {
-      const verticalPos = `${(i + 1) * (100 / (data?.outputs.length + 1))}%`;
+      // const verticalPos = `${(i + 1) * (100 / (data?.outputs.length + 1))}%`;
       const isConnected = isAddNode ? true : isOutputHandleConnected(outputId);
       const handleIdForAdd = outputId === "none" ? "next" : outputId;
-      const label = getLabel(outputId);
 
       return (
-        <div key={outputId} className="wf-output-row">
+        <div
+          key={outputId}
+          className="wf-output-row"
+          style={{ zIndex: isConnected ? 50 : 51 }}
+        >
           {/* {label && <div className="wf-output-label">{label}</div>} */}
 
           <div className="wf-handle-wrapper">
@@ -225,7 +225,7 @@ const CustomNode = ({ data, id }: NodeProps) => {
                 opacity: 0,
                 background: "transparent",
                 right: "-1px",
-                zIndex: 50, // ABOVE the + button
+                zIndex: isConnected ? 50 : 51,
                 position: "absolute",
               }}
               onClick={(e) => {
@@ -280,7 +280,7 @@ const CustomNode = ({ data, id }: NodeProps) => {
             }}
             onMouseLeave={(e) => {
               const el = e.currentTarget as HTMLDivElement;
-              el.style.borderColor = "(--wf-background-base)";
+              el.style.borderColor = "(--wf-background-subtle)";
               el.style.transform = "scale(1)";
             }}
           >
@@ -354,7 +354,6 @@ const CustomNode = ({ data, id }: NodeProps) => {
           </div>
         )}
       </div>
-      {isNodeConfigModelOpen && <NodeConfigModal />}
     </>
   );
 };

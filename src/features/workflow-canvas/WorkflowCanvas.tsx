@@ -1,7 +1,6 @@
 import {
   Button,
   formatName,
-  groupIdsConst,
   Input,
   nodeFieldsConfig,
   Option,
@@ -11,6 +10,7 @@ import {
 import {
   GroupIds,
   NodeExecutionEvent,
+  SaveWorkFlowPayload,
   VersionData,
   Workflow,
 } from "@/shared/types/workflow.types";
@@ -20,8 +20,8 @@ import { useEffect, useMemo, useState } from "react";
 import { ReactFlowProvider } from "reactflow";
 import FlowCanvas from "./components/FlowCanvas";
 import { normalizeWorkflowData } from "./helpers/normalize";
-import "./workflow-canvas.css";
 import { FieldConfig, WorkflowCategoryList } from "./types";
+import "./workflow-canvas.css";
 export function WorkflowCanvas({
   nodeExecution,
   workflow,
@@ -29,7 +29,6 @@ export function WorkflowCanvas({
   handleVersionChange,
   nodeCategory,
   handleBack,
-  handleUpdateWorkflowMeta,
   handleSaveWorkflow,
   handleRunWorkflow,
   handlePublish,
@@ -43,7 +42,7 @@ export function WorkflowCanvas({
   handleBack: () => void;
   handleUpdateWorkflowMeta: () => void;
   handleRunWorkflow: (_: { workflowId: string; versionId: string }) => void;
-  handleSaveWorkflow: (workflow: any) => void;
+  handleSaveWorkflow: (workflow: SaveWorkFlowPayload) => Promise<boolean>;
   handlePublish: (versionId: string, status: WorkFlowStatus) => void;
   groupIds: GroupIds[];
 }) {
@@ -75,8 +74,6 @@ export function WorkflowCanvas({
   //   [workflowName, workflow]
   // );
 
-  console.log(workflow, "workflow");
-  console.log(nodeCategory, "node category");
   useEffect(() => {
     if (!currentVersion || currentVersion.id != workflow.version.id)
       setCurrentVersion(workflow.version);
@@ -95,11 +92,10 @@ export function WorkflowCanvas({
   }, [currentVersion, nodeCategories, workflow.version]);
 
   //will remove groupIdsConst
-  const groupIdsSelectOptions: Option[] =
-    groupIds?.map((e) => ({
-      label: e.name,
-      value: e.id,
-    })) ?? groupIdsConst;
+  const groupIdsSelectOptions: Option[] = groupIds?.map((e) => ({
+    label: e.name,
+    value: e.id,
+  }));
   nodeFieldsConfig["membership_invite"] = nodeFieldsConfig?.[
     "membership_invite"
   ]?.map((e) =>
@@ -163,7 +159,7 @@ export function WorkflowCanvas({
           <div>
             <Button
               className="wf-save-btn"
-              onClick={() => {
+              onClick={async () => {
                 const changes = getChangesForSync();
                 if (changes) {
                   const payload = {
@@ -172,11 +168,11 @@ export function WorkflowCanvas({
                     description: workflow.description,
                     slug: workflow?.slug,
                   };
-                  handleSaveWorkflow({
+                  const isSaved = await handleSaveWorkflow({
                     ...payload,
                     ...changes,
                   });
-                  markAsSynced();
+                  if (isSaved) markAsSynced();
                 } else if (
                   workflow?.version?.status !== WorkFlowStatus.PUBLISHED
                 ) {

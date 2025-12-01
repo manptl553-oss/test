@@ -5,7 +5,12 @@ export interface WorkflowNode {
   name: string;
   type: string; // NodeTypeProps as string to avoid circular dependency
   parentNode?: string;
-  parent_id?: string | null;
+  parentId?: string | null;
+  templateId?: string;
+  versionId: string;
+  description?: string;
+  retryAttempts: number;
+  retryDelayMs: number;
   position?: { x: number; y: number };
   config?: any;
   data?: any;
@@ -17,7 +22,7 @@ export interface WorkflowEdge {
   targetId: string;
   versionId: string;
   condition?: string;
-  groupId?: string;
+  groupId?: string | null;
   expression: string;
 }
 
@@ -66,3 +71,16 @@ export interface GroupIds {
   name: string;
 }
 export type NodeExecutionEvent = Record<string, Record<string, unknown>>;
+
+export interface SaveWorkFlowPayload {
+  versionId: string;
+  name: string;
+  description?: string;
+  slug?: string;
+
+  nodes: WorkflowNode[];
+  edges: WorkflowEdge[];
+
+  deletedNodes: string[];
+  deletedEdges: string[];
+}

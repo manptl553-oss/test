@@ -118,8 +118,8 @@ export const Popover = () => {
           height: 0,
           borderTop: "8px solid transparent",
           borderBottom: "8px solid transparent",
-          borderLeft: side === "left" ? "8px solid #fff" : "none",
-          borderRight: side === "right" ? "8px solid #fff" : "none",
+          borderLeft: side === "left" ? "8px solid var(--wf-background-base, #ffffff)" : "none",
+          borderRight: side === "right" ? "8px solid var(--wf-background-base, #ffffff)" : "none",
         }}
       />
 

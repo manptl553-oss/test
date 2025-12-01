@@ -20,6 +20,7 @@ import CustomEdge from "./CustomEdge";
 import { Popover } from "./Popover";
 import { v4 as uuidv4 } from "uuid";
 import CustomNode from "./CustomNode";
+import { NodeConfigModal } from "./NodeConfigModal";
 
 export function mapWorkflowToFlow(workflow: any, actions?: any) {
   const nodes: Node<NodeData>[] = [];
@@ -124,6 +125,11 @@ export default function FlowCanvas({ workflow }: any) {
   const isPopoverOpen = useMemo(
     () => ["start_workflow", "void_node"].includes(activeNode?.data?.type),
     [activeNode?.data?.type]
+  );
+
+  const idModalOpen = useMemo(
+    () => !isPopoverOpen && activeNode != null,
+    [isPopoverOpen, activeNode]
   );
 
   const containerRef = useRef<HTMLDivElement>(null);
@@ -320,6 +326,7 @@ export default function FlowCanvas({ workflow }: any) {
       </ReactFlow>
 
       {isPopoverOpen && <Popover />}
+      {idModalOpen && <NodeConfigModal />}
 
       <div className="wf-autolayout-wrapper">
         <button

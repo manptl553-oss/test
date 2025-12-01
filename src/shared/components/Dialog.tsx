@@ -142,8 +142,14 @@ const DialogContent = React.forwardRef<
   }, [open, setOpen, isModal]);
 
   // Close on outside click (with race condition protection)
+  // Close on outside click (with race condition protection)
   useEffect(() => {
-    if (!open || !isReadyForOutsideClick || isModal) return;
+
+
+    if (!open || !isReadyForOutsideClick || isModal) {
+      return;
+    }
+
 
     const onClickOutside = (e: MouseEvent) => {
       const target = e.target as Node;
@@ -151,11 +157,14 @@ const DialogContent = React.forwardRef<
       // Only close if clicking outside the dialog content
       if (dialogRef.current && !dialogRef.current.contains(target)) {
         setOpen(false);
-      }
+      } 
     };
 
-    document.addEventListener("mousedown", onClickOutside);
-    return () => document.removeEventListener("mousedown", onClickOutside);
+    // Use capture phase to handle this before other listeners
+    document.addEventListener("mousedown", onClickOutside, true);
+    return () => {
+      document.removeEventListener("mousedown", onClickOutside, true);
+    };
   }, [open, isReadyForOutsideClick, setOpen, isModal]);
 
   if (!open) return null;

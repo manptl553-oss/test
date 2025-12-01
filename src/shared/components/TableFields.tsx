@@ -6,9 +6,7 @@ import { cn } from "../utils";
 import { Button } from "./Button";
 import { Input } from "./Input";
 import { Label } from "./Label";
-import {
-  Select
-} from "./Select";
+import { Select } from "./Select";
 import { Textarea } from "./TextArea";
 
 function TableField({
@@ -53,7 +51,10 @@ function TableField({
     switch (column.type) {
       case "input":
         return (
-          <div key={filedName} className={cn("wf-table-field__cell", cellClassName)}>
+          <div
+            key={filedName}
+            className={cn("wf-table-field__cell", cellClassName)}
+          >
             <Controller
               control={control}
               name={filedName}
@@ -71,7 +72,10 @@ function TableField({
 
       case "select":
         return (
-          <div key={filedName} className={cn("wf-table-field__cell", cellClassName)}>
+          <div
+            key={filedName}
+            className={cn("wf-table-field__cell", cellClassName)}
+          >
             <Controller
               control={control}
               name={filedName}
@@ -127,7 +131,7 @@ function TableField({
               {col.label}
             </div>
           ))}
-        <div className="wf-table-field__actions">Actions</div>
+        {/* <div className="wf-table-field__actions">Actions</div> */}
       </div>
 
       {fields.map((row, idx) => (
@@ -155,13 +159,17 @@ function TableField({
             variant="destructive"
             size="sm"
             onClick={() => remove(idx)}
-            className="wf-table-field__remove"
+            className="wf-btn wf-btn--destructive wf-btn--size-icon text-black"
             disabled={fields.length === 1}
           >
             <Trash2 />
           </Button>
         </div>
       ))}
+
+      {errors?.root?.message && (
+        <p className="wf-error-text">{errors?.root?.message}</p>
+      )}
 
       <Button
         type="button"

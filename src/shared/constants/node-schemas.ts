@@ -61,12 +61,13 @@ export const nodeFieldsConfig: Record<string, FieldConfig[]> = {
       type: "textarea",
       required: false,
     },
-    {
-      name: "authentication",
-      label: "Authentication",
-      type: "auth",
-      required: true,
-    },
+    // {
+    //   name: "authentication",
+    //   label: "Authentication",
+    //   type: "auth",
+    //   required: true,
+    //   readOnly: true,
+    // },
   ],
 
   schedule: [
@@ -264,7 +265,7 @@ export const nodeFieldsConfig: Record<string, FieldConfig[]> = {
   concat: [
     { name: "sources", label: "Source Fields", type: "tags", required: true },
     { name: "target", label: "Target Field", type: "input", required: true },
-    { name: "separator", label: "Separator", type: "input", required: true },
+    { name: "separator", label: "Separator", type: "input", required: false },
   ],
 
   formula: [
@@ -500,8 +501,8 @@ export const nodeFieldsConfig: Record<string, FieldConfig[]> = {
  * ----------------------------------------------------- */
 export const nodeValidationSchema: Record<string, z.ZodSchema<any>> = {
   webhook: z.object({
-    endpoint: z.string().url("Invalid URL"),
-    method: z.string().min(1, "HTTP Method required"),
+    endpoint: z.string().optional(),
+    method: z.string().optional(),
     mockData: z
       .string()
       .min(1, "Mock data is required")
@@ -515,8 +516,9 @@ export const nodeValidationSchema: Record<string, z.ZodSchema<any>> = {
           });
         }
       })
-      .transform((val) => JSON.parse(val)),
-    authentication: authSchema,
+      .transform((val) => JSON.parse(val))
+      .optional(),
+    // authentication: authSchema.optional(),
   }),
 
   schedule: scheduleSchema,
@@ -682,7 +684,7 @@ export const nodeValidationSchema: Record<string, z.ZodSchema<any>> = {
       .array(z.string().min(1, "Sources Value required"))
       .min(2, "At least two Sources required"),
     target: z.string("Target required").min(1),
-    separator: z.string("separator required").min(1, "separator required"),
+    separator: z.string().optional(),
   }),
 
   formula: z.object({
