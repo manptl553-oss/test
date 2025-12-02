@@ -34,10 +34,13 @@
     "clean": "rimraf dist",
     "typecheck": "tsc --noEmit",
     "release": "node scripts/release.js",
-    "prepublishOnly": "npm run clean && npm run build"
+    "prepublishOnly": "npm run clean && npm run build",
+    "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,css,md}\"",
+    "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix"
   },
   "dependencies": {
     "@monaco-editor/react": "^4.7.0",
+     "monaco-editor": "^0.47.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "dagre": "^0.8.5",
@@ -46,18 +49,14 @@
     "lucide-react": "^0.452.0",
     "reactflow": "^11.11.4",
     "tailwind-merge": "^2.6.0",
-    "tailwindcss-animate": "^1.0.7",
     "uuid": "^13.0.0",
     "zustand": "^5.0.8"
   },
   "peerDependencies": {
-    "@headlessui/react": "^2.2.0",
-    "@hookform/resolvers": "^5.2.2",
-    "react": "^19.1.1",
-    "react-dom": "^19.1.1",
-    "react-hook-form": "^7.66.0",
+   "@hookform/resolvers": "^3.0.0 || ^4.0.0 || >=5.0.0",
+    "react-hook-form": ">=7",
     "react-select": "^5.10.2",
-    "zod": "^4.1.12"
+    "zod":  "^3.0.0 || ^>=4.0.0"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.1.17",
@@ -67,14 +66,15 @@
     "@types/react-dom": "^19.1.1",
     "@vitejs/plugin-react": "^4.3.4",
     "autoprefixer": "^10.4.21",
-    "postcss": "^8.4.49",
-    "postcss-nested": "^7.0.2",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
-    "tailwindcss": "^3.4.13",
     "ts-node": "^10.9.2",
     "typescript": "~5.9.3",
     "vite": "^6.0.0",
-    "vite-plugin-dts": "^4.3.0"
+    "vite-plugin-dts": "^4.3.0",
+    "@hookform/resolvers": "^5.2.2",
+    "react-select": "^5.10.2",
+    "zod": "^4.1.12",
+    "react-hook-form": "^7.66.0"
   }
 }
