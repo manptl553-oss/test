@@ -2,7 +2,6 @@ import {
   EAuthType,
   getEdgeLabelForNode,
   getNodeDefinition,
-  HTTP_METHODS,
 } from "@/shared";
 import {
   Workflow,

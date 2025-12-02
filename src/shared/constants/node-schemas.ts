@@ -8,8 +8,8 @@ import { scheduleSchema } from "./schedule-schema";
  * Nodes that use DynamicForm only.
  * Conditional & Switch are not included here.
  */
-const CRON_REGEX =
-  /^(\*|([0-5]?\d)) (\*|([01]?\d|2[0-3])) (\*|([01]?\d|2[0-9]|3[01])) (\*|(1[0-2]|0?[1-9])) (\*|([0-6]))$/;
+// const CRON_REGEX =
+//   /^(\*|([0-5]?\d)) (\*|([01]?\d|2[0-3])) (\*|([01]?\d|2[0-9]|3[01])) (\*|(1[0-2]|0?[1-9])) (\*|([0-6]))$/;
 
 export enum EDelayUnit {
   SECONDS = "seconds",

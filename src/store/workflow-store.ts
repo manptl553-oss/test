@@ -1,4 +1,5 @@
-import { create } from "zustand";
+import { create } from 'zustand';
+import React from 'react';
 import {
   Node,
   Edge,
@@ -9,27 +10,25 @@ import {
   applyNodeChanges,
   applyEdgeChanges,
   XYPosition,
-} from "reactflow";
-import { computeConnectedHandles, makeEdge } from "@/shared/utils/edge";
+} from 'reactflow';
+import { computeConnectedHandles, makeEdge } from '@/shared/utils/edge';
 import {
   CategoryTypes,
   getOutputsForNode,
-  getSelfLoopHandle,
   getTargetHandleForNode,
   isTriggerNode,
   NodeExecutionEvent,
-  NodeExecutionStatus,
   NodeTypeProps,
   VersionData,
   WorkflowEdge,
   WorkflowNode,
-} from "@/shared";
+} from '@/shared';
 import {
   transformEdge,
   transformNode,
-} from "@/features/workflow-canvas/helpers/normalize";
-import { v4 as uuidv4 } from "uuid";
-import { TemplateMeta, WorkflowCategoryList } from "@/features";
+} from '@/features/workflow-canvas/helpers/normalize';
+import { v4 as uuidv4 } from 'uuid';
+import { TemplateMeta, WorkflowCategoryList } from '@/features';
 
 export interface NodeData {
   id: string;
@@ -118,11 +117,11 @@ interface FlowState {
   // React Flow API
   onNodeDragStop: (
     event: React.MouseEvent | React.PointerEvent,
-    node: Node
+    node: Node,
   ) => void;
   onNodeDrag: (
     event: React.MouseEvent | React.PointerEvent,
-    node: Node
+    node: Node,
   ) => void;
   onNodesChange: (changes: NodeChange[]) => void;
   onEdgesChange: (changes: EdgeChange[]) => void;
@@ -143,7 +142,7 @@ interface FlowState {
   addNodeAfter: (
     position: XYPosition,
     sourceNodeId: string,
-    sourceHandleId?: string
+    sourceHandleId?: string,
   ) => void;
   addNodeBetweenEdge: (position: XYPosition, edge: Edge) => void;
   deleteNode: (nodeId: string) => void;
@@ -233,8 +232,8 @@ export const useFlowStore = create<FlowState>((set, get) => ({
         if (item.visibility !== false) {
           categoryMeta.set(item.name, {
             icon: item.metadata?.icon ?? null,
-            color: item.metadata?.color ?? "#6B7280",
-            border: item.metadata?.border ?? "rgba(107, 114, 128, 0.35)",
+            color: item.metadata?.color ?? '#6B7280',
+            border: item.metadata?.border ?? 'rgba(107, 114, 128, 0.35)',
             request: item.metadata?.request ?? {},
             response: item.metadata?.response ?? {},
           });
@@ -247,8 +246,8 @@ export const useFlowStore = create<FlowState>((set, get) => ({
 
             nodeTypeMeta.set(type, {
               icon: template.metadata?.icon ?? null,
-              color: template.metadata?.color ?? "#6B7280",
-              border: template.metadata?.border ?? "rgba(107, 114, 128, 0.35)",
+              color: template.metadata?.color ?? '#6B7280',
+              border: template.metadata?.border ?? 'rgba(107, 114, 128, 0.35)',
               request: template.metadata?.request ?? {},
               response: template.metadata?.response ?? {},
             });
@@ -266,8 +265,8 @@ export const useFlowStore = create<FlowState>((set, get) => ({
     if (meta) return meta;
 
     return {
-      color: "#6B7280",
-      border: "rgba(107, 114, 128, 0.35)",
+      color: '#6B7280',
+      border: 'rgba(107, 114, 128, 0.35)',
       request: {},
       response: {},
     };
@@ -290,12 +289,12 @@ export const useFlowStore = create<FlowState>((set, get) => ({
 
     // New nodes = nodes not in syncedNodeIds
     const addedNodes = state.nodes.filter(
-      (n) => !state.syncedNodeIds.has(n.id)
+      (n) => !state.syncedNodeIds.has(n.id),
     );
 
     // Updated nodes = nodes in dirtyNodeIds
     const updatedNodes = state.nodes.filter((n) =>
-      state.dirtyNodeIds.has(n.id)
+      state.dirtyNodeIds.has(n.id),
     );
 
     // Deleted nodes = IDs in deletedNodeIds
@@ -303,10 +302,10 @@ export const useFlowStore = create<FlowState>((set, get) => ({
 
     // Same for edges
     const addedEdges = state.edges.filter(
-      (e) => !state.syncedEdgeIds.has(e.id)
+      (e) => !state.syncedEdgeIds.has(e.id),
     );
     const updatedEdges = state.edges.filter((e) =>
-      state.dirtyEdgeIds.has(e.id)
+      state.dirtyEdgeIds.has(e.id),
     );
     const deletedEdges = Array.from(state.deletedEdgeIds);
 
@@ -417,7 +416,7 @@ export const useFlowStore = create<FlowState>((set, get) => ({
     const { edges, currentVersion } = get();
     const newEdges = addEdge(
       { ...edge, data: { ...edge.data, versionId: currentVersion?.id } },
-      edges
+      edges,
     );
 
     // Don't mark as dirty - it's a new edge
@@ -481,7 +480,7 @@ export const useFlowStore = create<FlowState>((set, get) => ({
     const nodeIds = new Set(state.nodes.map((n) => n.id));
 
     const cleanedEdges = updatedEdges.filter(
-      (e) => nodeIds.has(e.source) && nodeIds.has(e.target)
+      (e) => nodeIds.has(e.source) && nodeIds.has(e.target),
     );
 
     //i think we don't need it bcs we have other function to delete edge
@@ -505,8 +504,8 @@ export const useFlowStore = create<FlowState>((set, get) => ({
     const newEdge = makeEdge({
       source: connection.source!,
       target: connection.target!,
-      sourceHandle: connection.sourceHandle ?? "none",
-      targetHandle: connection.targetHandle ?? "input",
+      sourceHandle: connection.sourceHandle ?? 'none',
+      targetHandle: connection.targetHandle ?? 'input',
     });
 
     const newEdges = addEdge(newEdge, edges);
@@ -517,12 +516,12 @@ export const useFlowStore = create<FlowState>((set, get) => ({
     });
   },
 
-  addNodeAfter: (position, sourceNodeId, sourceHandleId = "none") => {
+  addNodeAfter: (position, sourceNodeId, sourceHandleId = 'none') => {
     const { nodes, edges, getNewNode } = get();
     const newNode = getNewNode(position);
 
     const filteredEdges = edges.filter(
-      (e) => !(e.source === sourceNodeId && e.sourceHandle === sourceHandleId)
+      (e) => !(e.source === sourceNodeId && e.sourceHandle === sourceHandleId),
     );
 
     const newEdges: Edge[] = [...filteredEdges];
@@ -535,7 +534,7 @@ export const useFlowStore = create<FlowState>((set, get) => ({
           target: newNode.id,
           sourceHandle: sourceHandleId,
           targetHandle: getTargetHandleForNode(newNode),
-        })
+        }),
       );
     }
 
@@ -576,7 +575,7 @@ export const useFlowStore = create<FlowState>((set, get) => ({
     const edgeToNew = makeEdge({
       source: sourceNode.id,
       target: newNode.id,
-      sourceHandle: edge.sourceHandle ?? "none",
+      sourceHandle: edge.sourceHandle ?? 'none',
       targetHandle: getTargetHandleForNode(newNode),
       data: edge.data,
     });
@@ -585,7 +584,7 @@ export const useFlowStore = create<FlowState>((set, get) => ({
       source: newNode.id,
       target: targetNode.id,
       sourceHandle: getOutputsForNode(newNode)[0],
-      targetHandle: edge.targetHandle ?? "input",
+      targetHandle: edge.targetHandle ?? 'input',
     });
 
     newEdges.push(edgeToNew, edgeFromNew);
@@ -612,7 +611,7 @@ export const useFlowStore = create<FlowState>((set, get) => ({
         nodes: state.nodes.map((node) =>
           node.id === nodeId
             ? { ...node, data: { ...node.data, name: newName } }
-            : node
+            : node,
         ),
         dirtyNodeIds,
       };
@@ -633,18 +632,18 @@ export const useFlowStore = create<FlowState>((set, get) => ({
     if (activeNode && activeNode?.id == nodeId) setActiveNode(null);
 
     const deletedNode = nodes.find((n) => n.id === nodeId);
-    const isLoop = deletedNode?.data?.type === "loop";
+    const isLoop = deletedNode?.data?.type === 'loop';
 
     const incoming = edges.filter((e) => e.target === nodeId);
     const outgoing = edges.filter((e) => e.source === nodeId);
 
     // Track which edges are being removed
     const removedEdges = edges.filter(
-      (e) => e.source === nodeId || e.target === nodeId
+      (e) => e.source === nodeId || e.target === nodeId,
     );
 
     let updatedEdges = edges.filter(
-      (e) => e.source !== nodeId && e.target !== nodeId
+      (e) => e.source !== nodeId && e.target !== nodeId,
     );
 
     if (isLoop) {
@@ -656,16 +655,16 @@ export const useFlowStore = create<FlowState>((set, get) => ({
         (e) =>
           e.source === nodeId ||
           e.target === nodeId ||
-          (childIds.has(e.source) && e.target === nodeId)
+          (childIds.has(e.source) && e.target === nodeId),
       );
 
       removedEdges.push(...loopEdges);
 
       updatedEdges = updatedEdges.filter(
-        (e) => !(e.source === nodeId || e.target === nodeId)
+        (e) => !(e.source === nodeId || e.target === nodeId),
       );
       updatedEdges = updatedEdges.filter(
-        (e) => !(childIds.has(e.source) && e.target === nodeId)
+        (e) => !(childIds.has(e.source) && e.target === nodeId),
       );
     } else {
       // Reconnect previous → next
@@ -675,8 +674,8 @@ export const useFlowStore = create<FlowState>((set, get) => ({
           return makeEdge({
             source: inEdge.source,
             target: outEdge.target,
-            sourceHandle: inEdge.sourceHandle ?? "none",
-            targetHandle: outEdge.targetHandle ?? "input",
+            sourceHandle: inEdge.sourceHandle ?? 'none',
+            targetHandle: outEdge.targetHandle ?? 'input',
             data: inEdge?.data ?? {},
           });
         });
@@ -689,7 +688,7 @@ export const useFlowStore = create<FlowState>((set, get) => ({
     const updatedNodes = nodes.filter((n) => n.id !== nodeId);
     const validNodeIds = new Set(updatedNodes.map((n) => n.id));
     const cleanedEdges = updatedEdges.filter(
-      (e) => validNodeIds.has(e.source) && validNodeIds.has(e.target)
+      (e) => validNodeIds.has(e.source) && validNodeIds.has(e.target),
     );
     setDeletedNodeId(nodeId);
 
@@ -755,7 +754,11 @@ export const useFlowStore = create<FlowState>((set, get) => ({
     };
 
     //set nodeId dirty or delete node
-    typeChanged ? setDeletedNodeId(nodeId) : setDirtyNodeId(nodeId);
+    if (typeChanged) {
+      setDeletedNodeId(nodeId);
+    } else {
+      setDirtyNodeId(nodeId);
+    }
 
     // SPECIAL RULE: If the node is a TRIGGER → remove all incoming edges
     if (isTriggerNode(newType)) {
@@ -769,7 +772,7 @@ export const useFlowStore = create<FlowState>((set, get) => ({
     // Update invalid edges for this node (only outgoing)
     if (typeChanged) {
       const affectedEdges = edges.filter(
-        (edge) => edge.source === nodeId || edge.target === nodeId
+        (edge) => edge.source === nodeId || edge.target === nodeId,
       );
 
       // Track old edges as deleted
@@ -797,7 +800,7 @@ export const useFlowStore = create<FlowState>((set, get) => ({
 
       //hot fix critical here
       const sourceEdgeId = edges.find(
-        (edge) => edge.source === mergedNode.id
+        (edge) => edge.source === mergedNode.id,
       )?.id;
       if (sourceEdgeId) oldNode.data.outputs?.push(normalizedOutputs[0]);
     }
@@ -861,7 +864,7 @@ export const useFlowStore = create<FlowState>((set, get) => ({
           const caseData =
             isSwitch && nodeData?.configuration
               ? nodeData?.configuration?.switchCases?.find(
-                  (c: any) => c.condition === normalized
+                  (c: any) => c.condition === normalized,
                 )
               : null;
 
@@ -875,7 +878,7 @@ export const useFlowStore = create<FlowState>((set, get) => ({
         });
 
         const dirtyEdge = edges.find(
-          (e) => e.source == mergedNode.id && e.sourceHandle == normalized
+          (e) => e.source == mergedNode.id && e.sourceHandle == normalized,
         );
 
         if (dirtyEdge) setDirtyEdgeId(dirtyEdge.id);
@@ -890,13 +893,13 @@ export const useFlowStore = create<FlowState>((set, get) => ({
       // Edge
       branchEdges.push({
         id: uuidv4(),
-        type: "custom",
+        type: 'custom',
         source: mergedNode.id,
         sourceHandle: normalized,
         target: newBranchNode.id,
-        targetHandle: "input",
+        targetHandle: 'input',
         ...(isSwitch && {
-          label: handle.replace(/_/g, " ").toUpperCase(),
+          label: handle.replace(/_/g, ' ').toUpperCase(),
           labelStyle: { fontWeight: 600, fontSize: 12 },
         }),
         data: {
@@ -905,7 +908,7 @@ export const useFlowStore = create<FlowState>((set, get) => ({
           ...(isSwitch &&
             nodeData?.configuration && {
               ...nodeData?.configuration?.switchCases.find(
-                (e: any) => e.condition == normalized
+                (e: any) => e.condition == normalized,
               ),
             }),
         },
@@ -917,18 +920,18 @@ export const useFlowStore = create<FlowState>((set, get) => ({
     if (isSwitch) {
       const oldConditions =
         oldNode.data?.configuration?.switchCases?.flatMap(
-          (e: any) => e.condition
+          (e: any) => e.condition,
         ) ?? [];
       const newConditions =
         nodeData?.configuration?.switchCases?.flatMap(
-          (e: any) => e.condition
+          (e: any) => e.condition,
         ) ?? [];
       const casesToDelete = oldConditions?.filter(
-        (e: any) => !newConditions?.includes(e)
+        (e: any) => !newConditions?.includes(e),
       );
       const deletedEdges = edges.filter(
         (e) =>
-          e.source === mergedNode.id && casesToDelete?.includes(e.sourceHandle)
+          e.source === mergedNode.id && casesToDelete?.includes(e.sourceHandle),
       );
       edges = edges.filter((e) => {
         if (e.source != mergedNode.id) return true;
@@ -959,15 +962,15 @@ export const useFlowStore = create<FlowState>((set, get) => ({
     const id = uuidv4();
     const newNode = {
       id,
-      type: "custom",
+      type: 'custom',
       position,
       data: {
         id,
-        name: voidNode?.name ?? "",
-        type: voidNode?.type ?? "void_node",
+        name: voidNode?.name ?? '',
+        type: voidNode?.type ?? 'void_node',
         templateId: voidNode?.templateId,
         versionId: currentVersion?.id ?? null,
-        outputs: ["none"],
+        outputs: ['none'],
       },
     };
 

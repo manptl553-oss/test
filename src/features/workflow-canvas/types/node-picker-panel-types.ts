@@ -12,8 +12,8 @@ export interface TemplateMeta {
   icon?: string;
   color: string;
   border: string;
-  request?: Object;
-  response?: Object;
+  request?: object;
+  response?: object;
 }
 
 export interface NodeTemplate {

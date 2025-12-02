@@ -1,3 +1,5 @@
+import React from "react";
+
 export type SortOrder = "asc" | "desc";
 
 export type Column<T> = {
