@@ -13,40 +13,23 @@ import {
   Position,
   useReactFlow,
   useStore,
-  XYPosition
+  XYPosition,
 } from "reactflow";
 import WorkflowIcon from "./WorkflowIcon";
 
-const closedModel = ["vip_membership_invite", "pep_check_invite"];
 const normalizeHandle = (handle?: string | null) =>
   handle?.toLowerCase() ?? "none";
 const areHandlesEquivalent = (a: string, b: string): boolean => {
   if (a === b) return true;
   const groups = [
     ["next", "done", "none"],
-    ["on_true", "true"],
-    ["on_false", "false"],
   ];
   return groups.some((g) => g.includes(a) && g.includes(b));
-};
-const getLabel = (source: string | undefined) => {
-  switch (source) {
-    case "on_true":
-      return "true";
-    case "on_false":
-      return "false";
-    case "done":
-    case "success":
-    case "next":
-      return undefined;
-    default:
-      return source;
-  }
 };
 
 const CustomNode = ({ data, id }: NodeProps) => {
   const { project } = useReactFlow();
-  const {  nodeTypeMeta, nodeExecutionState } = useFlowStore();
+  const { nodeTypeMeta, nodeExecutionState } = useFlowStore();
 
   const executionStatus = nodeExecutionState?.[id] || null;
 
@@ -59,7 +42,7 @@ const CustomNode = ({ data, id }: NodeProps) => {
   };
 
   const isStartNode = data.type === "start_workflow";
-  const isAddNode = data.type === "void_node";
+  const isAddNode = data.type === NodeTypeProps.VOID;
   const name = data?.name || "start workflow";
 
   // ✅ Report node ref to FlowCanvas (for popover anchor)
@@ -190,7 +173,7 @@ const CustomNode = ({ data, id }: NodeProps) => {
 
   const renderOutputHandles = () => {
     if (isStartNode) return null;
-    return data?.outputs?.map((outputId: string, i: number) => {
+    return data?.outputs?.map((outputId: string) => {
       // const verticalPos = `${(i + 1) * (100 / (data?.outputs.length + 1))}%`;
       const isConnected = isAddNode ? true : isOutputHandleConnected(outputId);
       const handleIdForAdd = outputId === "none" ? "next" : outputId;
@@ -266,19 +249,21 @@ const CustomNode = ({ data, id }: NodeProps) => {
           {renderInputHandles()}
           <div
             className="wf-node-core"
-            style={{
-              background: style.color,
-              transition: "all 0.3s ease-in-out",
-            }}
-            // onClick={handleClick}
+            style={
+              {
+                ["--node-color"]: `${style.color}40`,
+                background: style.color,
+                transition: "all 0.3s ease-in-out",
+              } as React.CSSProperties
+            }
             onMouseEnter={(e) => {
-              const el = e.currentTarget as HTMLDivElement;
+              const el = e.currentTarget;
               el.style.borderColor = `${style.border}90`;
               el.style.transform = "scale(1.05)";
             }}
             onMouseLeave={(e) => {
-              const el = e.currentTarget as HTMLDivElement;
-              el.style.borderColor = "(--wf-background-subtle)";
+              const el = e.currentTarget;
+              el.style.borderColor = "var(--wf-background-subtle)";
               el.style.transform = "scale(1)";
             }}
           >
@@ -303,7 +288,7 @@ const CustomNode = ({ data, id }: NodeProps) => {
                   <RefreshCw className="wf-spin" />
                 )}
                 {executionStatus.status === NodeExecutionStatus.Completed && (
-                  <Check  />
+                  <Check />
                 )}
                 {executionStatus.status === NodeExecutionStatus.Failed && (
                   <CircleAlert />

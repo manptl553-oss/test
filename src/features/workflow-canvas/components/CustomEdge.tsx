@@ -85,42 +85,49 @@ const CustomEdge = memo((props: EdgeProps) => {
   };
 
   // 5️⃣ Edge Menu Renderer
-  const renderEdgeActions = (x: number, y: number, angleDeg: number) => (
-    <EdgeLabelRenderer>
-      <div
-        style={{
-          position: "absolute",
-          transform: `translate(${x}px, ${
-            y + 12
-          }px) translate(-50%, -50%) rotate(${angleDeg}deg)`,
-          pointerEvents: "none",
-        }}
-        className="absolute nodrag nopan"
-      >
-        <div
-          className={cn(
-            "wf-edge-actions",
-            hovered ? "wf-edge-actions--visible" : "wf-edge-actions--hidden"
-          )}
-          style={{ pointerEvents: "all" }}
-        >
-          <button
-            onClick={handleAddNodeBetween}
-            className="wf-edge-btn wf-btn-green"
-          >
-            <Plus className="wf-edge-icon" />
-          </button>
+  const renderEdgeActions = (x: number, y: number, angleDeg: number) => {
+    const offset = 20;
+    const rad = (angleDeg * Math.PI) / 180;
 
-          <button
-            onClick={handleUnlinkNodes}
-            className="wf-edge-btn wf-btn-red"
+    const offsetX = Math.sin(rad) * offset;
+    const offsetY = -Math.cos(rad) * offset;
+    return (
+      <EdgeLabelRenderer>
+        <div
+          style={{
+            position: "absolute",
+            transform: `translate(${x - offsetX}px, ${
+              y - offsetY
+            }px) translate(-50%, -50%) rotate(${angleDeg}deg)`,
+            pointerEvents: "none",
+          }}
+          className="absolute nodrag nopan"
+        >
+          <div
+            className={cn(
+              "wf-edge-actions",
+              hovered ? "wf-edge-actions--visible" : "wf-edge-actions--hidden"
+            )}
+            style={{ pointerEvents: "all" }}
           >
-            <Unlink className="wf-edge-icon" />
-          </button>
+            <button
+              onClick={handleAddNodeBetween}
+              className="wf-edge-btn wf-btn-green"
+            >
+              <Plus className="wf-edge-icon" />
+            </button>
+
+            <button
+              onClick={handleUnlinkNodes}
+              className="wf-edge-btn wf-btn-red"
+            >
+              <Unlink className="wf-edge-icon" />
+            </button>
+          </div>
         </div>
-      </div>
-    </EdgeLabelRenderer>
-  );
+      </EdgeLabelRenderer>
+    );
+  };
 
   const renderEdgeLabel = useCallback(
     (x: number, y: number, angleDeg: number, text: string) => {
@@ -133,7 +140,7 @@ const CustomEdge = memo((props: EdgeProps) => {
       return (
         <EdgeLabelRenderer>
           <div
-            className="absolute nodrag nopan wf-edge-label-wrapper"
+            className="wf-edge-label-wrapper"
             style={{
               transform: `translate(${x + offsetX}px, ${y + offsetY}px)
                 translate(-50%, -50%)

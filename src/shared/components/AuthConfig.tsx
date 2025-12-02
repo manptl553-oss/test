@@ -1,4 +1,4 @@
-import { Controller, useWatch } from "react-hook-form";
+import { Control, Controller, useWatch } from "react-hook-form";
 
 import { EAuthType } from "../constants";
 import { Input } from "./Input";
@@ -11,7 +11,7 @@ export function AuthConfigFields({
   name = "authentication",
   errors,
 }: {
-  control: any;
+  control: Control<any>;
   name?: string;
   errors?: any;
 }) {

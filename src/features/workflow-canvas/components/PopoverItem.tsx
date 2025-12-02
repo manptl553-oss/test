@@ -1,9 +1,10 @@
 import { CategoryTypes, formatName, NodeTypeProps } from "@/shared";
 import { useFlowStore } from "@/store";
 import WorkflowIcon from "./WorkflowIcon";
+import { NodeTemplate, WorkflowNodesCategory } from "../types";
 
 interface CategoryItemProps {
-  category: any;
+  category: WorkflowNodesCategory | NodeTemplate;
   onClick?: () => void;
 }
 
@@ -13,8 +14,9 @@ export function PopoverItem({ category, onClick }: CategoryItemProps) {
     color: "#6B7280",
     border: "rgba(107, 114, 128, 0.35)",
   };
-  if (category?.type) {
-    const templateMeta = nodeTypeMeta.get(category.type as NodeTypeProps);
+  const categoryType = (category as NodeTemplate)?.type as NodeTypeProps;
+  if (categoryType) {
+    const templateMeta = nodeTypeMeta.get(categoryType);
     style = templateMeta ?? style;
   } else if (category?.name) {
     const categoryMetaItem = categoryMeta.get(category.name as CategoryTypes);
@@ -34,9 +36,9 @@ export function PopoverItem({ category, onClick }: CategoryItemProps) {
         aria-hidden
       >
         <WorkflowIcon
-          nodeType={category.type ?? category.name}
+          nodeType={categoryType ?? category.name}
           size={20}
-          isCategory={!category.type}
+          isCategory={!categoryType}
         />
       </span>
 
@@ -46,7 +48,7 @@ export function PopoverItem({ category, onClick }: CategoryItemProps) {
           {formatName(category.name)}
         </span>
 
-        {category?.type && (
+        {categoryType && (
           <span
             className="wf-popover-item__subtitle"
             title={category.description || ""}

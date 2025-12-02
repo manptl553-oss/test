@@ -3,6 +3,7 @@ import {
   formatName,
   Input,
   nodeFieldsConfig,
+  NodeTypeProps,
   Option,
   Select,
   WorkFlowStatus,
@@ -49,7 +50,6 @@ export function WorkflowCanvas({
   groupIds: GroupIds[];
   isLoading?: boolean;
 }) {
-  console.log("🚀 ~ WorkflowCanvas ~ workflow:", workflow)
   const {
     getChangesForSync,
     nodes,
@@ -92,10 +92,10 @@ export function WorkflowCanvas({
     if (!voidNode) {
       const voidNode = nodeCategory
         .flatMap((cat) => cat.nodeTemplates)
-        .find((t) => t?.type === "void_node");
+        .find((t) => t?.type === NodeTypeProps.VOID);
       setVoidNode({
         name: voidNode?.name ?? "Void Node",
-        type: voidNode?.type ?? "void_node",
+        type: voidNode?.type ?? NodeTypeProps.VOID,
         templateId: voidNode?.id ?? "",
       });
     }

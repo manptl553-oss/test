@@ -91,72 +91,94 @@ export function Select(props: SelectProps): JSX.Element {
   const customStyles: StylesConfig<Option, boolean, GroupBase<Option>> = {
     control: (base, state) => ({
       ...base,
-      minHeight: "40px",
-      borderColor: error
-        ? "#ef4444"
-        : state.isFocused
-        ? "var(--wf-border-focus, #3b82f6)"
-        : "var(--wf-border-default, #d1d5db)",
-      backgroundColor: "var(--wf-background-base, white)",
-      color: "var(--wf-text-default, black)",
-      boxShadow: state.isFocused ? "0 0 0 2px rgba(59, 130, 246, 0.1)" : "none",
+      minHeight: "42px",
+      borderRadius: "8px",
+      backgroundColor: "var(--wf-background-subtle, #111827)",
+      borderColor: state.isFocused
+        ? "var(--wf-border-focus, #84cc16)"
+        : error
+        ? "var(--wf-feedback-danger-bg, #ef4444)"
+        : "var(--wf-border-default, #374151)",
+      color: "var(--wf-text-default, #f9fafb)",
+      boxShadow: state.isFocused
+        ? "0 0 0 2px var(--wf-border-focus, rgba(132,204,22,0.4))"
+        : "none",
       "&:hover": {
-        borderColor: error ? "#ef4444" : "var(--wf-border-focus, #3b82f6)",
+        borderColor: state.isFocused
+          ? "var(--wf-border-focus, #84cc16)"
+          : "var(--wf-border-default, #4b5563)",
       },
     }),
+
     menu: (base) => ({
       ...base,
-      backgroundColor: "var(--wf-background-base, white)",
-      border: "1px solid var(--wf-border-default, #d1d5db)",
-      boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
+      marginTop: "4px",
+      backgroundColor: "var(--wf-background-subtle, #1f2937)",
+      borderRadius: "8px",
+      border: "1px solid var(--wf-border-default, #374151)",
+      boxShadow: "0 12px 25px rgba(0,0,0,0.4)",
+      backdropFilter: "blur(6px)",
+      overflow: "hidden",
     }),
+
     menuPortal: (base) => ({
       ...base,
-      zIndex: 99999,
+      zIndex: 999999,
     }),
+
     option: (base, state) => ({
       ...base,
+      padding: "8px 12px",
+      fontSize: "0.875rem",
+      borderRadius: "0",
       backgroundColor: state.isSelected
-        ? "var(--wf-background-accent, #3b82f6)"
+        ? "var(--wf-brand-primary, #7ec040)"
         : state.isFocused
-        ? "var(--wf-background-hover, #f3f4f6)"
+        ? "var(--wf-background-hover, #374151)"
         : "transparent",
-      color: state.isSelected ? "white" : "var(--wf-text-default, black)",
+      color: state.isSelected
+        ? "var(--wf-text-inverted, #ffffff)"
+        : "var(--wf-text-default, #f9fafb)",
       cursor: "pointer",
       "&:active": {
-        backgroundColor: "var(--wf-background-accent, #3b82f6)",
+        backgroundColor: "var(--wf-brand-primary, #7ec040)",
+        color: "var(--wf-text-inverted, #ffffff)",
       },
     }),
-    multiValue: (base) => ({
-      ...base,
-      backgroundColor: "var(--wf-background-accent, #e0e7ff)",
-      borderRadius: "6px",
-    }),
-    multiValueLabel: (base) => ({
-      ...base,
-      color: "var(--wf-text-default, #1e40af)",
-      padding: "2px 6px",
-    }),
-    multiValueRemove: (base) => ({
-      ...base,
-      color: "var(--wf-text-default, #1e40af)",
-      cursor: "pointer",
-      "&:hover": {
-        backgroundColor: "var(--wf-background-hover, #c7d2fe)",
-        color: "#991b1b",
-      },
-    }),
+
     singleValue: (base) => ({
       ...base,
-      color: "var(--wf-text-default, black)",
+      color: "var(--wf-text-default, #f9fafb)",
     }),
+
     placeholder: (base) => ({
       ...base,
       color: "var(--wf-text-muted, #9ca3af)",
     }),
+
     input: (base) => ({
       ...base,
-      color: "var(--wf-text-default, black)",
+      color: "var(--wf-text-default, #f9fafb)",
+    }),
+
+    multiValue: (base) => ({
+      ...base,
+      background: "var(--wf-background-highlight, rgba(255,255,255,0.1))",
+      borderRadius: "6px",
+    }),
+
+    multiValueLabel: (base) => ({
+      ...base,
+      color: "var(--wf-text-default, #e5e7eb)",
+    }),
+
+    multiValueRemove: (base) => ({
+      ...base,
+      color: "var(--wf-text-muted, #9ca3af)",
+      "&:hover": {
+        background: "var(--wf-feedback-danger-bg, #ef4444)",
+        color: "white",
+      },
     }),
   };
 

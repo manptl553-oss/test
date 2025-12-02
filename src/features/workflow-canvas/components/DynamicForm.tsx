@@ -23,7 +23,9 @@ const splitExpression = (expr = "") => {
   const regex = /(.+?)\s*(==|!=|===|>=|<=|>|<)\s*(.+)/;
   const m = expr.match(regex);
   if (!m) return { field: "", operator: "==", value: "" };
-  return { field: m[1].trim(), operator: m[2], value: m[3].trim() };
+
+  const stripQuotes = (str: string) => str.replace(/^['"]|['"]$/g, "").trim();
+  return { field: stripQuotes(m[1]), operator: m[2], value: stripQuotes(m[3]) };
 };
 
 export const DynamicForm = ({

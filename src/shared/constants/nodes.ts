@@ -30,6 +30,7 @@ export enum NodeTypeProps {
   EVENT = "event",
   SCHEDULE = "schedule",
   WAIT = "wait",
+  VOID = "void_node",
 }
 
 export enum CategoryTypes {
@@ -41,7 +42,6 @@ export enum CategoryTypes {
   GENERAL = "general",
   KYC = "kyc",
   KYB = "kyb",
-  VOID = "void_node",
 }
 
 export const NODE_DEFINITIONS: Record<NodeTypeProps, NodeDefinition> = {
@@ -106,4 +106,6 @@ export const NODE_DEFINITIONS: Record<NodeTypeProps, NodeDefinition> = {
   code_block: { outputs: ["none"], defaultTarget: "input" },
 
   wait: { outputs: ["none"], defaultTarget: "input" },
+  
+  void_node: { outputs: ["none"], defaultTarget: "input" },
 };

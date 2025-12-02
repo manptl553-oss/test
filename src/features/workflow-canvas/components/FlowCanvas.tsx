@@ -7,6 +7,7 @@ import { Fullscreen } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import ReactFlow, {
   Background,
+  Controls,
   Edge,
   MarkerType,
   Node,
@@ -286,7 +287,10 @@ export default function FlowCanvas({ workflow }: any) {
         getAutoLayoutedElements(nodes, edges);
       setNodes(layoutedNodes);
       setEdges(layoutedEdges);
-      fitView({ padding: 0.2 });
+
+      requestAnimationFrame(() => {
+        fitView({ padding: 60 });
+      });
       setIsLayouting(false);
     }, 100);
   }, [nodes, edges, setNodes, setEdges, fitView]);
@@ -322,21 +326,12 @@ export default function FlowCanvas({ workflow }: any) {
         className="wf-flow-surface"
         proOptions={{ hideAttribution: true }}
       >
+        <Controls onFitView={handleAutoLayout} showInteractive={false} />
         {/* <Background color="#eee" /> */}
       </ReactFlow>
 
       {isPopoverOpen && <Popover />}
       {idModalOpen && <NodeConfigModal />}
-
-      <div className="wf-autolayout-wrapper">
-        <button
-          onClick={handleAutoLayout}
-          aria-label="Auto layout"
-          className="wf-autolayout-btn"
-        >
-          <Fullscreen className="wf-icon-sm" />
-        </button>
-      </div>
     </div>
   );
 }

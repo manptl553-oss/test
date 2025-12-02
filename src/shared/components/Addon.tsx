@@ -1,29 +1,12 @@
-import { useWatch } from "react-hook-form";
+import { Control, useWatch } from "react-hook-form";
+import {
+  addOnLabels,
+  durationLabels,
+  EBankStatementDuration,
+  EOnboardingAddonType,
+} from "../constants";
 import { Label } from "./Label";
 import { Select } from "./Select";
-import { EOnboardingAddonType } from "../constants";
-
-export enum EBankStatementDuration {
-  LastMonth = "lastMonth",
-  PastTwoMonths = "pastTwoMonths",
-  PastThreeMonths = "pastThreeMonths",
-  PastSixMonths = "pastSixMonths",
-}
-
-const addOnLabels: Record<EOnboardingAddonType, string> = {
-  [EOnboardingAddonType.PEPCheck]: "PEP Check",
-  [EOnboardingAddonType.SSNVerification]: "SSN Verification",
-  [EOnboardingAddonType.CriminalBackgroundCheck]: "Criminal Background Check",
-  [EOnboardingAddonType.BankAuth]: "Bank Account Verification",
-  [EOnboardingAddonType.BankStatements]: "Bank Statement Retrieval",
-};
-
-const durationLabels: Record<EBankStatementDuration, string> = {
-  [EBankStatementDuration.PastTwoMonths]: "Past 2 months",
-  [EBankStatementDuration.PastThreeMonths]: "Past 3 months",
-  [EBankStatementDuration.PastSixMonths]: "Past 6 months",
-  [EBankStatementDuration.LastMonth]: "Last month",
-};
 
 export function AddOnsConfig({
   control,
@@ -31,7 +14,7 @@ export function AddOnsConfig({
   name = "addons",
   errors,
 }: {
-  control?: any;
+  control?: Control<any>;
   setValue?: any; // From useForm()
   name?: string;
   errors?: any;
@@ -43,10 +26,6 @@ export function AddOnsConfig({
 
   const isBankStatementsSelected = selectedAddons?.some(
     (addon: any) => addon.addonType === EOnboardingAddonType.BankStatements
-  );
-
-  const isBankAccountVerificationSelected = selectedAddons?.some(
-    (addon: any) => addon.addonType === EOnboardingAddonType.BankAuth
   );
 
   const handleAddonToggle = (
@@ -148,18 +127,8 @@ export function AddOnsConfig({
                   className="wf-checkbox"
                 />
 
-                <label
-                  htmlFor={addonType}
-                  className={`wf-addon-label ${
-                    isDisabled ? "wf-disabled" : ""
-                  }`}
-                >
+                <label htmlFor={addonType} className={`wf-addon-label`}>
                   {addOnLabels[addonType]}
-                  {isDisabled && (
-                    <span className="wf-addon-note">
-                      (Required for Bank Statements)
-                    </span>
-                  )}
                 </label>
               </div>
 

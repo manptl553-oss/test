@@ -129,7 +129,10 @@
   padding: 0.5rem 0.75rem;
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
-.wf-input:focus, .wf-input:focus-visible, .wf-textarea:focus, .wf-textarea:focus-visible{
+.wf-input:focus,
+.wf-input:focus-visible,
+.wf-textarea:focus,
+.wf-textarea:focus-visible {
   border-color: var(--wf-border-default, #d1d5db);
   outline: 0px;
   box-shadow: none;
@@ -145,13 +148,6 @@
 .wf-input::placeholder,
 .wf-textarea::placeholder {
   color: #9ca3af;
-}
-
-.wf-input:focus,
-.wf-textarea:focus {
-  outline: none;
-  border-color: var(--wf-border-focus, #3b82f6);
-  box-shadow: 0 0 0 1px var(--wf-border-focus, #3b82f6);
 }
 
 .wf-input:disabled,
@@ -920,17 +916,12 @@
 }
 
 .wf-checkbox:disabled {
-  opacity: 0.5;
   cursor: not-allowed;
 }
 
 .wf-addon-label {
   cursor: pointer;
   color: var(--wf-text-default, #111827);
-}
-
-.wf-disabled {
-  opacity: 0.6;
 }
 
 .wf-addon-note {
@@ -961,13 +952,17 @@
 }
 
 .simple-loader {
-  border: 4px solid #e5e7eb; 
+  border: 4px solid #e5e7eb;
   border-top: 4px solid var(--wf-brand-primary);
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }

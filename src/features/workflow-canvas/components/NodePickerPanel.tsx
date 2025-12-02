@@ -7,7 +7,7 @@ import {
 import { useFlowStore } from "@/store";
 import { BugIcon, ChevronLeft } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { NavigationItem, NodeTemplate, WorkflowCategory } from "../types";
+import { NavigationItem, NodeTemplate, WorkflowNodesCategory } from "../types";
 import { PopoverItem } from "./PopoverItem";
 import WorkflowIcon from "./WorkflowIcon";
 
@@ -47,7 +47,7 @@ export default function NodePickerPanel({
 
   const currentView = navigationStack[navigationStack.length - 1];
   const style = categoryMeta.get(
-    (currentView?.data as WorkflowCategory)?.name as CategoryTypes
+    (currentView?.data as WorkflowNodesCategory)?.name as CategoryTypes
   ) || {
     icon: BugIcon,
     color: "bg-gray-300",
@@ -55,12 +55,12 @@ export default function NodePickerPanel({
   };
 
   const goBack = () => setNavigationStack((stack) => stack.slice(0, -1));
-  const navigateToCategory = (category: WorkflowCategory) =>
+  const navigateToCategory = (category: WorkflowNodesCategory) =>
     setNavigationStack((stack) => [
       ...stack,
       { type: "category", data: category },
     ]);
-  const navigateToSubCategory = (subCategory: WorkflowCategory) =>
+  const navigateToSubCategory = (subCategory: WorkflowNodesCategory) =>
     setNavigationStack((stack) => [
       ...stack,
       { type: "subcategory", data: subCategory },
@@ -97,7 +97,7 @@ export default function NodePickerPanel({
     const root = currentView.type === "root" ? currentView.data : [];
     if (!root) return;
     return root.map(
-      (category: WorkflowCategory) =>
+      (category: WorkflowNodesCategory) =>
         category.visibility && (
           <PopoverItem
             key={category.id}
@@ -128,7 +128,7 @@ export default function NodePickerPanel({
     }
     if (category?.subCategories?.length > 0) {
       const tempData = category.subCategories.map(
-        (subCat: WorkflowCategory) =>
+        (subCat: WorkflowNodesCategory) =>
           subCat.visibility && (
             <PopoverItem
               key={subCat.id}
@@ -170,7 +170,7 @@ export default function NodePickerPanel({
             <ChevronLeft className="wf-icon-md" />
           </button>
         )}
-        {formatName((currentView?.data as WorkflowCategory)?.name || "Start")}
+        {formatName((currentView?.data as WorkflowNodesCategory)?.name || "Start")}
       </div>
 
       {/* Category Header Preview */}
@@ -191,7 +191,7 @@ export default function NodePickerPanel({
             >
               <WorkflowIcon
                 nodeType={
-                  ((currentView?.data as WorkflowCategory)
+                  ((currentView?.data as WorkflowNodesCategory)
                     ?.name as CategoryTypes) || ""
                 }
                 isCategory={true}

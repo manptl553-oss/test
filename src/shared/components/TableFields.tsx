@@ -124,15 +124,15 @@ function TableField({
     <div className={cn("wf-table-field", className)}>
       <Label className="wf-table-field__label">{label}</Label>
 
-      <div className={cn("wf-table-field__header", headerClassName)}>
-        {columns &&
-          columns.map((col) => (
+      {columns && (
+        <div className={cn("wf-table-field__header", headerClassName)}>
+          {columns.map((col) => (
             <div key={col.name} className="wf-table-field__header-col">
               {col.label}
             </div>
           ))}
-        {/* <div className="wf-table-field__actions">Actions</div> */}
-      </div>
+        </div>
+      )}
 
       {fields.map((row, idx) => (
         <div key={row.id} className={cn("wf-table-field__row", rowClassName)}>

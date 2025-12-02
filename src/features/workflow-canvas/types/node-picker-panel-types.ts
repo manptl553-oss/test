@@ -5,7 +5,7 @@ export type NavigationItem =
     }
   | {
       type: "category" | "subcategory";
-      data: WorkflowCategory;
+      data: WorkflowNodesCategory;
     };
 
 export interface TemplateMeta {
@@ -27,7 +27,7 @@ export interface NodeTemplate {
 }
 
 // Category + SubCategory structure
-export interface WorkflowCategory {
+export interface WorkflowNodesCategory {
   id: string;
   name: string;
   description: string;
@@ -37,8 +37,8 @@ export interface WorkflowCategory {
   parentId: string | null;
   icon: string | null;
   visibility: boolean;
-  subCategories: WorkflowCategory[];
+  subCategories: WorkflowNodesCategory[];
   nodeTemplates: NodeTemplate[];
 }
 
-export type WorkflowCategoryList = WorkflowCategory[];
+export type WorkflowCategoryList = WorkflowNodesCategory[];

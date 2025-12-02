@@ -144,20 +144,26 @@ const DialogContent = React.forwardRef<
   // Close on outside click (with race condition protection)
   // Close on outside click (with race condition protection)
   useEffect(() => {
-
-
     if (!open || !isReadyForOutsideClick || isModal) {
       return;
     }
 
-
     const onClickOutside = (e: MouseEvent) => {
       const target = e.target as Node;
 
-      // Only close if clicking outside the dialog content
-      if (dialogRef.current && !dialogRef.current.contains(target)) {
+      // Check if click is on a React-Select menu
+      const isReactSelectMenu = (target as Element).closest?.(
+        ".react-select__menu-portal, .react-select__menu"
+      );
+
+      // Only close if clicking outside the dialog content AND not on React-Select menu
+      if (
+        dialogRef.current &&
+        !dialogRef.current.contains(target) &&
+        !isReactSelectMenu
+      ) {
         setOpen(false);
-      } 
+      }
     };
 
     // Use capture phase to handle this before other listeners

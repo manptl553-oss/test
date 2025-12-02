@@ -4,7 +4,11 @@ import {
   getNodeDefinition,
   HTTP_METHODS,
 } from "@/shared";
-import { Workflow, WorkflowEdge, WorkflowNode } from "@/shared/types/workflow.types";
+import {
+  Workflow,
+  WorkflowEdge,
+  WorkflowNode,
+} from "@/shared/types/workflow.types";
 import { NodeData } from "@/store";
 import { Edge, Node } from "reactflow";
 
@@ -83,9 +87,12 @@ function mapHandleToCondition(sourceHandle: string | null | undefined): string {
   ) {
     return "none";
   }
-  if (sourceHandle === "true" || sourceHandle == "on_true") return "on_true";
-  if (sourceHandle === "false" || sourceHandle == "on_false") return "on_false";
-  if (sourceHandle.startsWith("case_")) return sourceHandle;
+  if (
+    sourceHandle.startsWith("case_") ||
+    sourceHandle == "on_true" ||
+    sourceHandle == "on_false"
+  )
+    return sourceHandle;
   return "none";
 }
 
