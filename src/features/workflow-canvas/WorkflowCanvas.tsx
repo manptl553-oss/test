@@ -49,6 +49,7 @@ export function WorkflowCanvas({
   groupIds: GroupIds[];
   isLoading?: boolean;
 }) {
+  console.log("🚀 ~ WorkflowCanvas ~ workflow:", workflow)
   const {
     getChangesForSync,
     nodes,
@@ -72,6 +73,12 @@ export function WorkflowCanvas({
     () => (workflow ? normalizeWorkflowData(workflow) : null),
     [workflow]
   );
+
+    useEffect(() => {
+    if (workflow?.name) {
+      setWorkflowName(workflow.name);
+    }
+  }, [workflow?.name]); 
   // const isNameChanged = useMemo(
   //   () => workflow && workflowName.trim() !== workflow.name.trim(),
   //   [workflowName, workflow]
