@@ -285,7 +285,6 @@ const CustomNode = ({ data, id }: NodeProps) => {
             <WorkflowIcon
               nodeType={data.type}
               size={40}
-              className="w-10 wf-node-icon"
             />
           </div>
           {executionStatus && (

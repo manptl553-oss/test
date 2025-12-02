@@ -117,3 +117,7 @@
 .wf-spin {
   animation: wf-spin 1s linear infinite;
 }
+.wf-image-container-size{
+  width: 100%;
+  height: 100%;
+}

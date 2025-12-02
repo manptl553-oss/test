@@ -35,7 +35,7 @@ export function PopoverItem({ category, onClick }: CategoryItemProps) {
       >
         <WorkflowIcon
           nodeType={category.type ?? category.name}
-          size={40}
+          size={20}
           isCategory={!category.type}
         />
       </span>

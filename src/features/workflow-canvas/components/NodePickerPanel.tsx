@@ -196,6 +196,7 @@ export default function NodePickerPanel({
                 }
                 isCategory={true}
                 className="text-white w-8 h-8"
+                size={30}
               />
             </div>
 

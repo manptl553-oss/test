@@ -22,6 +22,7 @@ import FlowCanvas from "./components/FlowCanvas";
 import { normalizeWorkflowData } from "./helpers/normalize";
 import { FieldConfig, WorkflowCategoryList } from "./types";
 import "./workflow-canvas.css";
+import { Loader } from "@/shared/Loader";
 export function WorkflowCanvas({
   nodeExecution,
   workflow,
@@ -33,6 +34,7 @@ export function WorkflowCanvas({
   handleRunWorkflow,
   handlePublish,
   groupIds,
+  isLoading,
 }: {
   nodeExecution: NodeExecutionEvent;
   workflow: Workflow;
@@ -45,6 +47,7 @@ export function WorkflowCanvas({
   handleSaveWorkflow: (workflow: SaveWorkFlowPayload) => Promise<boolean>;
   handlePublish: (versionId: string, status: WorkFlowStatus) => void;
   groupIds: GroupIds[];
+  isLoading?: boolean;
 }) {
   const {
     getChangesForSync,
@@ -187,11 +190,10 @@ export function WorkflowCanvas({
               workflow?.version?.status !== WorkFlowStatus.PUBLISHED
                 ? "Publish"
                 : "Save"}
-              {isDirty() ? "Save" : "Publish"}
             </Button>
           </div>
         )}
-        {nodes?.length > 0 && (
+        {/* {nodes?.length > 0 && (
           <div>
             <Button
               className="bg-(--wf-brand-primary) text-(--wf-text-inverted) "
@@ -205,12 +207,18 @@ export function WorkflowCanvas({
               Dry Run
             </Button>
           </div>
-        )}
+        )} */}
       </header>
 
       <ReactFlowProvider>
         <div className="wf-canvas-pane">
-          <FlowCanvas workflow={normalizedData} />
+          {isLoading ? (
+            <div className="wf-loader-container">
+              <Loader size={60} />
+            </div>
+          ) : (
+            <FlowCanvas workflow={normalizedData} />
+          )}
         </div>
       </ReactFlowProvider>
     </div>
