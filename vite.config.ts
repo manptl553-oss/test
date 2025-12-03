@@ -63,7 +63,6 @@ export default defineConfig({
 
         // This ensures the CSS file is always named correctly
         assetFileNames: (assetInfo) => {
-          console.log("🚀 ~ assetInfo:", assetInfo)
           if (assetInfo.name === 'bit-workflow-engine.css') {
             return 'bit-workflow-engine.css'; // matches package.json export
           }

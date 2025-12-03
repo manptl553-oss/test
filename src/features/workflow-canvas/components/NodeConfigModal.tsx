@@ -12,22 +12,16 @@ import { useMemo, useState } from "react";
 import { useReactFlow } from "reactflow";
 import { DynamicForm } from "./DynamicForm";
 
-export const getSourceHandle = (sourceHandle: string | undefined) => {
-  switch (sourceHandle) {
-    case "true":
-      return "on_true";
-    case "false":
-      return "on_false";
-    default:
-      return sourceHandle;
-  }
-};
-
 export function NodeConfigModal() {
   const { setNodes } = useReactFlow();
   const { activeNode, setActiveNode, updateNode } = useFlowStore(); // Add updateNode from store
   const nodeData = activeNode?.data;
   const nodeId = activeNode?.id as string;
+  const ignoredConfig = ["skip", "continueOnError"];
+
+  const isConfigEmpty = !Object.keys(nodeData?.configuration ?? {}).some(
+    (k) => !ignoredConfig.includes(k)
+  );
 
   const nodeType = nodeData?.type as string;
 
@@ -41,7 +35,11 @@ export function NodeConfigModal() {
 
   const defaultValues = useMemo(() => {
     const saved = nodeData?.configuration ?? {};
+<<<<<<< HEAD
     const result: any = {};
+=======
+    let result: any = {};
+>>>>>>> b916dd2f9979662654d2b06d437009e211054025
     fields.forEach((f: any) => {
       const val = saved[f.name];
       if (f.type === "conditions") {
@@ -63,7 +61,7 @@ export function NodeConfigModal() {
       if (Array.isArray(values.conditions)) {
         finalConfig.conditions = values.conditions.map(
           (c: any, index: number) => ({
-            expression: `${c.field} ${c.operator} ${c.value}`,
+            expression: `'${c.field}' ${c.operator} '${c.value}'`,
             operator: "&&",
           })
         );
@@ -74,7 +72,7 @@ export function NodeConfigModal() {
         finalConfig.switchCases = values.switchCases.map(
           (c: any, index: number) => ({
             condition: `case_${index + 1}`,
-            expression: `${c.field} ${c.operator} ${c.value}`,
+            expression: `'${c.field}' ${c.operator} '${c.value}'`,
           })
         );
       }
@@ -106,7 +104,6 @@ export function NodeConfigModal() {
           )
         );
       }
-
       setActiveNode(null);
     } catch (e) {
       console.error("Save failed", e);
@@ -116,7 +113,14 @@ export function NodeConfigModal() {
   return (
     <Dialog
       open={nodeData ? true : false}
+<<<<<<< HEAD
       onOpenChange={() => setActiveNode(null)}
+=======
+      onOpenChange={() => {
+        setActiveNode(null);
+      }}
+      isModal={isConfigEmpty ? true : false}
+>>>>>>> b916dd2f9979662654d2b06d437009e211054025
     >
       <DialogContent className="wf-node-config-dialog">
         <DialogHeader className="wf-node-config-header">
@@ -133,7 +137,9 @@ export function NodeConfigModal() {
           defaultValues={defaultValues}
           onSubmit={handleFormSubmit}
           schema={schema as any}
-          onClose={() => setActiveNode(null)}
+          onClose={() => {
+            setActiveNode(null);
+          }}
         />
       </DialogContent>
     </Dialog>

@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 import React, { JSX, memo, useMemo, useState } from "react";
+=======
+import React, { memo, useCallback, useMemo, useState } from "react";
+>>>>>>> b916dd2f9979662654d2b06d437009e211054025
 import {
   BaseEdge,
   EdgeLabelRenderer,
@@ -7,19 +11,34 @@ import {
   useReactFlow,
   useStore,
 } from "reactflow";
+<<<<<<< HEAD
 import { cn, NodeTypeProps, nodeTypeStyles } from "@/shared";
 import { useFlowStore } from "@/store";
 import { Plus, Unlink } from "lucide-react";
 import { v4 as uuidv4 } from "uuid";
+=======
+import { cn, formatName, getEdgeLabel, NodeTypeProps } from "@/shared";
+import { useFlowStore } from "@/store";
+import { Plus, Unlink } from "lucide-react";
+>>>>>>> b916dd2f9979662654d2b06d437009e211054025
 
 /* -------------------------------------------------------------------
    CONSTANTS
 ------------------------------------------------------------------- */
+<<<<<<< HEAD
 const DOT_SPACING = 10;
 const DOT_RADIUS = 2;
 const NODE_MAIN_RADIUS = 52;
 const EDGE_CAP_RADIUS = 10;
 const EDGE_CAP_GAP = -2;
+=======
+const DOT_SPACING = 18;
+const DOT_RADIUS = 4;
+
+const NODE_MAIN_RADIUS = 52; // Visual circle size for your node
+const EDGE_CAP_RADIUS = 10; // Half-circle size
+const EDGE_CAP_GAP = -2; // Negative = slight overlap into main circle
+>>>>>>> b916dd2f9979662654d2b06d437009e211054025
 
 /* -------------------------------------------------------------------
    UTIL — Color Interpolation
@@ -44,18 +63,27 @@ const CustomEdge = memo((props: EdgeProps) => {
   const { getNode } = useReactFlow();
   const nodeInternals = useStore((s) => s.nodeInternals);
 
+<<<<<<< HEAD
   const { deleteEdge, addNodeBetweenEdge } = useFlowStore();
   const sourceNode: any = getNode(source);
+=======
+  const { deleteEdge, addNodeBetweenEdge, nodeTypeMeta } = useFlowStore();
+  const sourceNode = getNode(source);
+>>>>>>> b916dd2f9979662654d2b06d437009e211054025
   const targetNode = getNode(target);
   const allNodes = useMemo(() => Array.from(nodeInternals.values()), [nodeInternals]);
 
   const isSelf = source === target;
 
   const sourceColor =
-    nodeTypeStyles[sourceNode?.data?.type as NodeTypeProps]?.bg ?? "#3b82f6";
-  const targetColor =
-    nodeTypeStyles[targetNode?.data?.type as NodeTypeProps]?.bg ?? "#10b981";
+    nodeTypeMeta.get(sourceNode?.data?.type as NodeTypeProps)?.color ??
+    "#3b82f6";
 
+  const targetColor =
+    nodeTypeMeta.get(targetNode?.data?.type as NodeTypeProps)?.color ??
+    "#6B7280";
+
+<<<<<<< HEAD
   const isSelfLoop = props?.data?.loopType === "self";
   const isLoopChild = props?.data?.loopType === "loop-child";
   const isLoopBack = props?.data?.loopType === "loop-back";
@@ -108,6 +136,12 @@ const CustomEdge = memo((props: EdgeProps) => {
     }
     return dots;
   };
+=======
+  //  SELF LOOP (clean U-shape)
+  const isSelfLoop = props?.data?.loopType === "self";
+  const isLoopChild = props?.data?.loopType === "loop-child"; // loop → child
+  const isLoopBack = props?.data?.loopType === "loop-back"; // child → loop
+>>>>>>> b916dd2f9979662654d2b06d437009e211054025
 
   const handleAddNodeBetween = () => {
     const position = {
@@ -130,6 +164,7 @@ const CustomEdge = memo((props: EdgeProps) => {
     deleteEdge(props.id);
   };
 
+<<<<<<< HEAD
   const renderEdgeActions = (x: number, y: number) => (
     <EdgeLabelRenderer>
       <div
@@ -140,31 +175,54 @@ const CustomEdge = memo((props: EdgeProps) => {
         }}
         className="wf-edge-action-layer nodrag nopan"
       >
+=======
+  // 5️⃣ Edge Menu Renderer
+  const renderEdgeActions = (x: number, y: number, angleDeg: number) => {
+    const offset = 20;
+    const rad = (angleDeg * Math.PI) / 180;
+
+    const offsetX = Math.sin(rad) * offset;
+    const offsetY = -Math.cos(rad) * offset;
+    return (
+      <EdgeLabelRenderer>
+>>>>>>> b916dd2f9979662654d2b06d437009e211054025
         <div
-          className={cn(
-            "wf-edge-actions",
-            hovered && "wf-edge-actions--visible"
-          )}
-          style={{ pointerEvents: "all" }}
+          style={{
+            position: "absolute",
+            transform: `translate(${x - offsetX}px, ${
+              y - offsetY
+            }px) translate(-50%, -50%) rotate(${angleDeg}deg)`,
+            pointerEvents: "none",
+          }}
+          className="absolute nodrag nopan"
         >
-          <button
-            onClick={handleAddNodeBetween}
-            className="wf-edge-action-btn wf-edge-action-btn--add"
+          <div
+            className={cn(
+              "wf-edge-actions",
+              hovered ? "wf-edge-actions--visible" : "wf-edge-actions--hidden"
+            )}
+            style={{ pointerEvents: "all" }}
           >
-            <Plus className="wf-edge-action-icon" />
-          </button>
+            <button
+              onClick={handleAddNodeBetween}
+              className="wf-edge-btn wf-btn-green"
+            >
+              <Plus className="wf-edge-icon" />
+            </button>
 
-          <button
-            onClick={handleUnlinkNodes}
-            className="wf-edge-action-btn wf-edge-action-btn--remove"
-          >
-            <Unlink className="wf-edge-action-icon" />
-          </button>
+            <button
+              onClick={handleUnlinkNodes}
+              className="wf-edge-btn wf-btn-red"
+            >
+              <Unlink className="wf-edge-icon" />
+            </button>
+          </div>
         </div>
-      </div>
-    </EdgeLabelRenderer>
-  );
+      </EdgeLabelRenderer>
+    );
+  };
 
+<<<<<<< HEAD
 if (isSelfLoop) {
   const pos = sourceNode.positionAbsolute;
   const w = sourceNode.width;
@@ -380,6 +438,157 @@ if (isLoopBack) {
 
 
   /* Normal edges */
+=======
+  const renderEdgeLabel = useCallback(
+    (x: number, y: number, angleDeg: number, text: string) => {
+      const offset = 20;
+      const rad = (angleDeg * Math.PI) / 180;
+
+      const offsetX = Math.sin(rad) * offset;
+      const offsetY = -Math.cos(rad) * offset;
+
+      return (
+        <EdgeLabelRenderer>
+          <div
+            className="wf-edge-label-wrapper"
+            style={{
+              transform: `translate(${x + offsetX}px, ${y + offsetY}px)
+                translate(-50%, -50%)
+                rotate(${angleDeg}deg)`,
+            }}
+          >
+            <span className="wf-edge-label">{text}</span>
+          </div>
+        </EdgeLabelRenderer>
+      );
+    },
+    []
+  );
+
+  //  if (isSelfLoop) {
+  //     const pos = sourceNode.positionAbsolute;
+  //     const width = sourceNode.width;
+  //     const height = sourceNode.height;
+
+  //     const left = pos.x - 80;
+  //     const right = pos.x + width + 80;
+  //     const top = pos.y - 40;
+  //     const bottom = pos.y + height + 40;
+
+  //     const path = `
+  //       M ${pos.x + width} ${pos.y + height / 2}
+  //       L ${right} ${pos.y + height / 2}
+  //       L ${right} ${bottom}
+  //       L ${left} ${bottom}
+  //       L ${left} ${pos.y + height / 2}
+  //       L ${pos.x} ${pos.y + height / 2}
+  //     `;
+
+  //     return (
+  //       <g
+  //         onMouseEnter={() => setHovered(true)}
+  //         onMouseLeave={() => setHovered(false)}
+  //       >
+  //         <path d={path} stroke={sourceColor} strokeWidth={3} fill="none" />
+  //         {renderEdgeActions(pos.x + width / 2, bottom)}
+  //       </g>
+  //     );
+  //   }
+
+  /* =====================================================================================
+     2) LOOP → CHILD  (simple smooth path)
+  ===================================================================================== */
+  // if (isLoopChild) {
+  //   const [path] = getSmoothStepPath({
+  //     sourceX,
+  //     sourceY,
+  //     targetX,
+  //     targetY,
+  //     borderRadius: 30,
+  //   });
+
+  //   return (
+  //     <g
+  //       onMouseEnter={() => setHovered(true)}
+  //       onMouseLeave={() => setHovered(false)}
+  //     >
+  //       <BaseEdge id={id} path={path} />
+
+  //       {/* Render caps */}
+  //       <g transform={`translate(${sourceX}, ${sourceY}) rotate(0)`}>
+  //         <path
+  //           d={`M 0 -${EDGE_CAP_RADIUS} A ${EDGE_CAP_RADIUS} ${EDGE_CAP_RADIUS} 0 0 1 0 ${EDGE_CAP_RADIUS} Z`}
+  //           fill={sourceColor}
+  //         />
+  //       </g>
+
+  //       <g transform={`translate(${targetX}, ${targetY}) rotate(180)`}>
+  //         <path
+  //           d={`M 0 -${EDGE_CAP_RADIUS} A ${EDGE_CAP_RADIUS} ${EDGE_CAP_RADIUS} 0 0 1 0 ${EDGE_CAP_RADIUS} Z`}
+  //           fill={targetColor}
+  //         />
+  //       </g>
+
+  //       {renderEdgeActions((sourceX + targetX) / 2, (sourceY + targetY) / 2)}
+  //     </g>
+  //   );
+  // }
+
+  /* =====================================================================================
+     3) CHILD → LOOP (N8N style rectangular loop-back)
+  ===================================================================================== */
+  // if (isLoopBack) {
+  //   const loop = targetNode;
+  //   const child = sourceNode;
+
+  //   const L = loop.positionAbsolute;
+  //   const C = child.positionAbsolute;
+
+  //   const left = L.x - 120;
+  //   const right = C.x + child.width + 120;
+  //   const top = L.y + loop.height + 30;
+  //   const bottom = C.y + child.height + 30;
+
+  //   const path = `
+  //     M ${C.x + child.width} ${C.y + child.height / 2}
+  //     L ${right} ${C.y + child.height / 2}
+  //     L ${right} ${bottom}
+  //     L ${left} ${bottom}
+  //     L ${left} ${L.y + loop.height / 2}
+  //     L ${L.x} ${L.y + loop.height / 2}
+  //   `;
+
+  //   return (
+  //     <g
+  //       onMouseEnter={() => setHovered(true)}
+  //       onMouseLeave={() => setHovered(false)}
+  //     >
+  //       <path d={path} stroke={sourceColor} strokeWidth={3} fill="none" />
+
+  //       {/* caps */}
+  //       <circle
+  //         cx={C.x + child.width}
+  //         cy={C.y + child.height / 2}
+  //         r={6}
+  //         fill={sourceColor}
+  //       />
+
+  //       <circle
+  //         cx={L.x}
+  //         cy={L.y + loop.height / 2}
+  //         r={6}
+  //         fill={targetColor}
+  //       />
+
+  //       {renderEdgeActions(right, bottom)}
+  //     </g>
+  //   );
+  // }
+
+  /* ---------------------------------------------------------------
+     NORMAL EDGES (with dotted animation + half-caps)
+  ----------------------------------------------------------------- */
+>>>>>>> b916dd2f9979662654d2b06d437009e211054025
   const [hitPath] = getSmoothStepPath({
     sourceX,
     sourceY,
@@ -388,11 +597,13 @@ if (isLoopBack) {
     borderRadius: 30,
   });
 
+  // Circle centers
   const srcCX = sourceX - NODE_MAIN_RADIUS;
   const srcCY = sourceY;
   const tgtCX = targetX + NODE_MAIN_RADIUS;
   const tgtCY = targetY;
 
+  // Direction vector
   const vx = tgtCX - srcCX;
   const vy = tgtCY - srcCY;
   const len = Math.sqrt(vx * vx + vy * vy) || 1;
@@ -402,18 +613,21 @@ if (isLoopBack) {
   const srcAngle = (Math.atan2(uy, ux) * 180) / Math.PI;
   const tgtAngle = srcAngle + 180;
 
+  // Cap origins
   const srcOX = srcCX + ux * (NODE_MAIN_RADIUS + EDGE_CAP_GAP);
   const srcOY = srcCY + uy * (NODE_MAIN_RADIUS + EDGE_CAP_GAP) - 10;
 
   const tgtOX = tgtCX - ux * (NODE_MAIN_RADIUS + EDGE_CAP_GAP) + 10;
   const tgtOY = tgtCY - uy * (NODE_MAIN_RADIUS + EDGE_CAP_GAP) - 10;
 
+  // Dotted segment start/end
   const startX = srcOX + ux * EDGE_CAP_RADIUS;
   const startY = srcOY + uy * EDGE_CAP_RADIUS;
 
   const endX = tgtOX - ux * EDGE_CAP_RADIUS;
   const endY = tgtOY - uy * EDGE_CAP_RADIUS;
 
+  // Dots
   const dx = endX - startX;
   const dy = endY - startY;
   const dLen = Math.sqrt(dx * dx + dy * dy);
@@ -422,101 +636,80 @@ if (isLoopBack) {
   const dots = [];
   for (let i = 1; i < dCount; i++) {
     const t = i / dCount;
-    const delay = t * 0.8;
-    const fillColor =
-  sourceColor === targetColor
-    ? sourceColor
-    : lerpColor(sourceColor, targetColor, t);
     dots.push(
       <circle
         key={`dot-${i}`}
         cx={startX + dx * t}
         cy={startY + dy * t}
         r={DOT_RADIUS}
-        fill={fillColor}
-      >
-        <animate
-          attributeName="opacity"
-          values="0.3;1;1;0.3"
-          keyTimes="0;0.1;0.3;1"
-          dur="3s"
-          begin={`${delay}s`}
-          repeatCount="indefinite"
-        />
-        {/* <animate
-          attributeName="r"
-          values={`${DOT_RADIUS};${DOT_RADIUS * 1.8};${DOT_RADIUS * 1.8};${DOT_RADIUS}`}
-          keyTimes="0;0.1;0.3;1"
-          dur="3s"
-          begin={`${delay}s`}
-          repeatCount="indefinite"
-        /> */}
-      </circle>
+        fill={lerpColor(sourceColor, targetColor, t)}
+      />
     );
   }
+<<<<<<< HEAD
 
   const midX = sourceX + dx * 0.5;
   const midY = sourceY + dy * 0.5;
 
   return (
     <g onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}>
+=======
+  const midX = sourceX + dx * 0.5;
+  const midY = sourceY + dy * 0.5;
+  /* ---------------------------------------------------------------
+     RENDER NORMAL EDGE
+  ----------------------------------------------------------------- */
+
+  const labelX = startX + dx * 0.5;
+  const labelY = startY + dy * 0.5;
+  const labelAngle = (Math.atan2(dy, dx) * 180) / Math.PI;
+  const normalizedAngle = (labelAngle + 360) % 360;
+  const displayAngle =
+    normalizedAngle > 90 && normalizedAngle < 270
+      ? normalizedAngle + 180
+      : normalizedAngle;
+
+  return (
+    <g
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => {
+        setHovered(false);
+      }}
+    >
+      {/* hit area */}
+>>>>>>> b916dd2f9979662654d2b06d437009e211054025
       <BaseEdge
         id={id}
         path={hitPath}
         style={{ stroke: "transparent", strokeWidth: 25 }}
       />
 
+      {/* dots */}
       {dots}
 
+      {/* source cap */}
       <g transform={`translate(${srcOX}, ${srcOY}) rotate(${srcAngle})`}>
         <path
           d={`M 0 -${EDGE_CAP_RADIUS} A ${EDGE_CAP_RADIUS} ${EDGE_CAP_RADIUS} 0 0 1 0 ${EDGE_CAP_RADIUS} Z`}
           fill={sourceColor}
-        >
-          <animate
-            attributeName="opacity"
-            values="0.5;1;1;0.5"
-            keyTimes="0;0.1;0.2;1"
-            dur="3s"
-            repeatCount="indefinite"
-          />
-          {/* <animateTransform
-            attributeName="transform"
-            // type="scale"
-            values="1;1.3;1.3;1"
-            keyTimes="0;0.1;0.2;1"
-            dur="3s"
-            repeatCount="indefinite"
-          /> */}
-        </path>
+        />
       </g>
 
+      {/* target cap */}
       <g transform={`translate(${tgtOX}, ${tgtOY}) rotate(${tgtAngle})`}>
         <path
           d={`M 0 -${EDGE_CAP_RADIUS} A ${EDGE_CAP_RADIUS} ${EDGE_CAP_RADIUS} 0 0 1 0 ${EDGE_CAP_RADIUS} Z`}
           fill={targetColor}
-        >
-          <animate
-            attributeName="opacity"
-            values="0.5;1;1;0.5"
-            keyTimes="0;0.1;0.2;1"
-            dur="3s"
-            begin="0.8s"
-            repeatCount="indefinite"
-          />
-          {/* <animateTransform
-            attributeName="transform"
-            // type="scale"
-            values="1;1.3;1.3;1"
-            keyTimes="0;0.1;0.2;1"
-            dur="3s"
-            begin="0.8s"
-            repeatCount="indefinite"
-          /> */}
-        </path>
+        />
       </g>
+<<<<<<< HEAD
 
       {renderEdgeActions(midX, midY)}
+=======
+      {label &&
+        renderEdgeLabel(labelX, labelY, displayAngle, formatName(label))}
+      {renderEdgeActions(labelX, labelY, displayAngle)}
+>>>>>>> b916dd2f9979662654d2b06d437009e211054025
     </g>
   );
 });

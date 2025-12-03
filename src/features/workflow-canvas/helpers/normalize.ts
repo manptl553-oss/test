@@ -1,5 +1,13 @@
-import { getEdgeLabelForNode, getNodeDefinition } from "@/shared";
-import { Workflow, WorkflowEdge } from "@/shared/types/workflow.types";
+import {
+  EAuthType,
+  getEdgeLabelForNode,
+  getNodeDefinition,
+} from "@/shared";
+import {
+  Workflow,
+  WorkflowEdge,
+  WorkflowNode,
+} from "@/shared/types/workflow.types";
 import { NodeData } from "@/store";
 import { Edge, Node } from "reactflow";
 
@@ -28,8 +36,13 @@ export const normalizeWorkflowData = (workflow: Workflow): Workflow => {
     //  Loop node handling (handles both parentNode & group_id cases)
     if (sourceType === "loop") {
       const isLoopBody =
+<<<<<<< HEAD
         targetNode?.parent_id === sourceNode?.id ||
         edge.group_id === sourceNode?.id;
+=======
+        targetNode?.parentId === sourceNode?.id ||
+        edge.groupId === sourceNode?.id;
+>>>>>>> b916dd2f9979662654d2b06d437009e211054025
 
       if (isLoopBody) sourceHandle = "body";
       else sourceHandle = "end";
@@ -77,16 +90,39 @@ function mapHandleToCondition(sourceHandle: string | null | undefined): string {
   ) {
     return "none";
   }
+<<<<<<< HEAD
   if (sourceHandle === "true") return "on_true";
   if (sourceHandle === "false") return "on_false";
   if (sourceHandle.startsWith("case_")) return sourceHandle;
+=======
+  if (
+    sourceHandle.startsWith("case_") ||
+    sourceHandle == "on_true" ||
+    sourceHandle == "on_false"
+  )
+    return sourceHandle;
+>>>>>>> b916dd2f9979662654d2b06d437009e211054025
   return "none";
 }
 
 // 3. Transform a single node
-export function transformNode(node: Node<NodeData>): any {
+export function transformNode(node: Node<NodeData>): WorkflowNode {
   const nodeData = node?.data;
 
+<<<<<<< HEAD
+=======
+  const nodeConfiguration = nodeData?.configuration ?? {};
+  if (nodeData.type == "membership_invite") {
+    nodeConfiguration["appName"] = "KYC";
+    nodeConfiguration["roleIds"] = [17];
+  }
+  if (nodeData.type == "webhook") {
+    nodeConfiguration["method"] = "POST";
+    nodeConfiguration["authentication"] = {
+      type: EAuthType.NONE,
+    };
+  }
+>>>>>>> b916dd2f9979662654d2b06d437009e211054025
   return {
     id: nodeData?.id, // Use the id from data
     versionId: nodeData.versionId,
@@ -106,7 +142,7 @@ export function transformNode(node: Node<NodeData>): any {
 }
 
 // 4. Transform a single edge
-export function transformEdge(edge: Edge): any {
+export function transformEdge(edge: Edge): WorkflowEdge {
   return {
     id: edge.id,
     versionId: edge.data.versionId,

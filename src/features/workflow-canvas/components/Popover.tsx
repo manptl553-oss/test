@@ -99,8 +99,13 @@ export const Popover = () => {
       style={{
         ...style,
         width: 360,
+<<<<<<< HEAD
         background: "#fff",
         border: "1px solid #e2e8f0",
+=======
+        background: "var(--wf-background-base, #ffffff)",
+        border: "1px solid var(--wf-border-default, #e2e8f0)",
+>>>>>>> b916dd2f9979662654d2b06d437009e211054025
         borderRadius: 12,
         padding: 16,
         boxShadow: "0 4px 14px rgba(0,0,0,0.15)",
@@ -118,8 +123,8 @@ export const Popover = () => {
           height: 0,
           borderTop: "8px solid transparent",
           borderBottom: "8px solid transparent",
-          borderLeft: side === "left" ? "8px solid #fff" : "none",
-          borderRight: side === "right" ? "8px solid #fff" : "none",
+          borderLeft: side === "left" ? "8px solid var(--wf-background-base, #ffffff)" : "none",
+          borderRight: side === "right" ? "8px solid var(--wf-background-base, #ffffff)" : "none",
         }}
       />
 

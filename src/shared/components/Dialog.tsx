@@ -77,6 +77,10 @@ const DialogOverlay = React.forwardRef<
   const { open, setOpen } = useDialogCtx();
 
   const handleClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    // In modal mode, prevent any propagation
+    if (isModal) {
+      e.stopPropagation();
+    }
     onClick?.(e);
     if (!e.defaultPrevented) {
       setOpen(false);
@@ -130,21 +134,46 @@ const DialogContent = React.forwardRef<
   }, [open, setOpen]);
 
   // Close on outside click (with race condition protection)
+  // Close on outside click (with race condition protection)
   useEffect(() => {
+<<<<<<< HEAD
     if (!open || !isReadyForOutsideClick) return;
+=======
+    if (!open || !isReadyForOutsideClick || isModal) {
+      return;
+    }
+>>>>>>> b916dd2f9979662654d2b06d437009e211054025
 
     const onClickOutside = (e: MouseEvent) => {
       const target = e.target as Node;
 
-      // Only close if clicking outside the dialog content
-      if (dialogRef.current && !dialogRef.current.contains(target)) {
+      // Check if click is on a React-Select menu
+      const isReactSelectMenu = (target as Element).closest?.(
+        ".react-select__menu-portal, .react-select__menu"
+      );
+
+      // Only close if clicking outside the dialog content AND not on React-Select menu
+      if (
+        dialogRef.current &&
+        !dialogRef.current.contains(target) &&
+        !isReactSelectMenu
+      ) {
         setOpen(false);
       }
     };
 
+<<<<<<< HEAD
     document.addEventListener("mousedown", onClickOutside);
     return () => document.removeEventListener("mousedown", onClickOutside);
   }, [open, isReadyForOutsideClick, setOpen]);
+=======
+    // Use capture phase to handle this before other listeners
+    document.addEventListener("mousedown", onClickOutside, true);
+    return () => {
+      document.removeEventListener("mousedown", onClickOutside, true);
+    };
+  }, [open, isReadyForOutsideClick, setOpen, isModal]);
+>>>>>>> b916dd2f9979662654d2b06d437009e211054025
 
   if (!open) return null;
 
@@ -171,10 +200,19 @@ const DialogContent = React.forwardRef<
         >
           {children}
 
+<<<<<<< HEAD
           <DialogClose className="wf-dialog-close">
             <X className="wf-icon-sm" />
             <span className="sr-only">Close</span>
           </DialogClose>
+=======
+          {!isModal && (
+            <DialogClose className="wf-dialog-close">
+              <X className="wf-icon-sm" />
+              {/* <span className="sr-only">Close</span> */}
+            </DialogClose>
+          )}
+>>>>>>> b916dd2f9979662654d2b06d437009e211054025
         </div>
       </div>
     </>

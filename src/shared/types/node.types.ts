@@ -2,9 +2,21 @@
 
 import { NodeTypeProps } from "../constants";
 
-export type NodeType = "default" | "conditional" | "loop" | "router" | "start" | "end";
+export type NodeType =
+  | "default"
+  | "conditional"
+  | "loop"
+  | "router"
+  | "start"
+  | "end";
 
-export type ConditionalOutput = "true" | "false" | "default" | "route1" | "route2" | "route3";
+export type ConditionalOutput =
+  | "true"
+  | "false"
+  | "default"
+  | "route1"
+  | "route2"
+  | "route3";
 
 // export interface NodeData {
 //   label: string;
@@ -16,8 +28,6 @@ export type ConditionalOutput = "true" | "false" | "default" | "route1" | "route
 //   };
 //   outputs?: ConditionalOutput[];
 // }
-
-
 
 // Sidebar & UI Node Listing Types
 export interface NodeProperty {
@@ -54,7 +64,6 @@ export type NodeDefinition = {
   selfLoopHandle?: string;
   labels?: Record<string, string>;
 };
-
 
 export const HTTP_METHODS = ["GET", "POST", "PUT", "PATCH", "DELETE"].map(
   (m) => ({
@@ -102,3 +111,9 @@ export const HTTP_METHODS = ["GET", "POST", "PUT", "PATCH", "DELETE"].map(
 //   options?: FieldOption[] | DynamicFiledOptions[];
 //   display?: false;
 // }
+
+export enum NodeExecutionStatus {
+  Running = "started",
+  Completed = "completed",
+  Failed = "failed",
+}

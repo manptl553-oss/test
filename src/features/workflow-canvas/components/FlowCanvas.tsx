@@ -1,12 +1,13 @@
 import { Calendar, Clock, Globe, Webhook } from "lucide-react";
 // import dagre from "dagre";
-import { NodeTypeProps, nodeTypeStyles } from "@/shared";
+import { NodeTypeProps } from "@/shared";
 import { getAutoLayoutedElements } from "@/shared/utils/layout";
 import { NodeData, useFlowStore } from "@/store";
 import { Fullscreen } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import ReactFlow, {
   Background,
+  Controls,
   Edge,
   MarkerType,
   Node,
@@ -16,10 +17,12 @@ import ReactFlow, {
 } from "reactflow";
 import "reactflow/dist/style.css";
 import CustomEdge from "./CustomEdge";
-import CustomNode from "./CustomNode";
 import { Popover } from "./Popover";
 import { v4 as uuidv4 } from "uuid";
+import CustomNode from "./CustomNode";
+import { NodeConfigModal } from "./NodeConfigModal";
 
+<<<<<<< HEAD
 // ---------- TYPES ----------
 interface PopoverItem {
   id: string;
@@ -38,14 +41,19 @@ interface PopoverConfig {
   onSelect?: (item: PopoverItem) => void;
 }
 
+=======
+>>>>>>> b916dd2f9979662654d2b06d437009e211054025
 export function mapWorkflowToFlow(workflow: any, actions?: any) {
   const nodes: Node<NodeData>[] = [];
   const edges: Edge[] = [];
   if (!workflow) return { nodes, edges };
   // Workflow nodes
   workflow.nodes?.forEach((wfNode: any, index: number) => {
+<<<<<<< HEAD
     const icon =
       wfNode.icon || nodeTypeStyles[wfNode.type as NodeTypeProps].icon;
+=======
+>>>>>>> b916dd2f9979662654d2b06d437009e211054025
     let outputs: string[] = [];
 
     switch (wfNode.type) {
@@ -76,7 +84,6 @@ export function mapWorkflowToFlow(workflow: any, actions?: any) {
         templateId: wfNode.templateId,
         name: wfNode.name,
         type: wfNode.type,
-        icon,
         configuration: wfNode.config,
         outputs,
         ...actions,
@@ -142,6 +149,7 @@ export function mapWorkflowToFlow(workflow: any, actions?: any) {
 const nodeTypes = { custom: CustomNode };
 const edgeTypes = { custom: CustomEdge };
 
+<<<<<<< HEAD
 // ---------- TRIGGER MODULES ----------
 const triggerModules: PopoverItem[] = [
   {
@@ -185,6 +193,9 @@ function useDebounce<T>(value: T, delay: number): T {
   return debouncedValue;
 }
 
+=======
+// ---------- MAIN COMPONENT ----------
+>>>>>>> b916dd2f9979662654d2b06d437009e211054025
 export default function FlowCanvas({ workflow }: any) {
   const {
     setNodes,
@@ -206,6 +217,11 @@ export default function FlowCanvas({ workflow }: any) {
   const isPopoverOpen = useMemo(
     () => ["start_workflow", "addNode"].includes(activeNode?.data?.type),
     [activeNode?.data?.type] // ✅ More specific dependency
+  );
+
+  const idModalOpen = useMemo(
+    () => !isPopoverOpen && activeNode != null,
+    [isPopoverOpen, activeNode]
   );
 
   const containerRef = useRef<HTMLDivElement>(null);
@@ -445,7 +461,10 @@ export default function FlowCanvas({ workflow }: any) {
         getAutoLayoutedElements(nodes, edges);
       setNodes(layoutedNodes);
       setEdges(layoutedEdges);
-      fitView({ padding: 0.2 });
+
+      requestAnimationFrame(() => {
+        fitView({ padding: 60 });
+      });
       setIsLayouting(false);
     }, 100);
   }, [nodes, edges, setNodes, setEdges, fitView]);
@@ -457,6 +476,13 @@ export default function FlowCanvas({ workflow }: any) {
     [activeNode, setActiveNode]
   );
 
+<<<<<<< HEAD
+=======
+  const onPaneClick = useCallback(() => {
+    setActiveNode(null); // This clears the selected node, which makes isPopoverOpen false
+  }, [setActiveNode]);
+
+>>>>>>> b916dd2f9979662654d2b06d437009e211054025
   return (
     <div className="wf-flow-root" ref={containerRef}>
       <ReactFlow
@@ -470,24 +496,22 @@ export default function FlowCanvas({ workflow }: any) {
         onConnectStart={onConnectStart}
         onConnectEnd={onConnectEnd}
         onNodeClick={handleNodeClick}
+<<<<<<< HEAD
+=======
+        onNodeDrag={onNodeDrag}
+        onNodeDragStop={onNodeDragStop}
+        onPaneClick={onPaneClick}
+>>>>>>> b916dd2f9979662654d2b06d437009e211054025
         fitView
         className="wf-flow-surface"
         proOptions={{ hideAttribution: true }}
       >
-        <Background color="#eee" />
+        <Controls onFitView={handleAutoLayout} showInteractive={false} />
+        {/* <Background color="#eee" /> */}
       </ReactFlow>
 
       {isPopoverOpen && <Popover />}
-
-      <div className="wf-autolayout-wrapper">
-        <button
-          onClick={handleAutoLayout}
-          aria-label="Auto layout"
-          className="wf-autolayout-btn"
-        >
-          <Fullscreen className="wf-icon-sm" />
-        </button>
-      </div>
+      {idModalOpen && <NodeConfigModal />}
     </div>
   );
 }

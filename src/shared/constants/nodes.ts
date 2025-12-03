@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import {
   Mail,
   Bell,
@@ -33,6 +34,8 @@ import {
   Settings2,
   Zap,
 } from "lucide-react";
+=======
+>>>>>>> b916dd2f9979662654d2b06d437009e211054025
 import { NodeDefinition } from "../types";
 
 export enum NodeTypeProps {
@@ -65,9 +68,14 @@ export enum NodeTypeProps {
   WEBHOOK = "webhook",
   EVENT = "event",
   SCHEDULE = "schedule",
+<<<<<<< HEAD
+=======
+  WAIT = "wait",
+  VOID = "void_node",
+>>>>>>> b916dd2f9979662654d2b06d437009e211054025
 }
 
-export enum NodeIconTypeProps {
+export enum CategoryTypes {
   TRIGGER = "trigger",
   ACTION = "action",
   DATA_TRANSFORM = "data_transform",
@@ -78,6 +86,7 @@ export enum NodeIconTypeProps {
   KYB = "kyb",
 }
 
+<<<<<<< HEAD
 export const nodeTypeStyles: Record<
   NodeTypeProps | NodeIconTypeProps,
   {
@@ -287,6 +296,8 @@ export const nodeTypeStyles: Record<
   },
 };
 
+=======
+>>>>>>> b916dd2f9979662654d2b06d437009e211054025
 export const NODE_DEFINITIONS: Record<NodeTypeProps, NodeDefinition> = {
   webhook: { outputs: ["none"], defaultTarget: "input" },
   event: { outputs: ["none"], defaultTarget: "input" },
@@ -348,4 +359,11 @@ export const NODE_DEFINITIONS: Record<NodeTypeProps, NodeDefinition> = {
   },
 
   code_block: { outputs: ["none"], defaultTarget: "input" },
+<<<<<<< HEAD
+=======
+
+  wait: { outputs: ["none"], defaultTarget: "input" },
+  
+  void_node: { outputs: ["none"], defaultTarget: "input" },
+>>>>>>> b916dd2f9979662654d2b06d437009e211054025
 };

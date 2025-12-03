@@ -1,50 +1,42 @@
-import { Button, isTriggerNode, NodeTypeProps, nodeTypeStyles } from "@/shared";
+import {
+  Button,
+  isTriggerNode,
+  NodeExecutionStatus,
+  NodeTypeProps,
+} from "@/shared";
 import { useFlowStore } from "@/store";
-import { PlusIcon, Trash2 } from "lucide-react";
-import React, { memo, useCallback, useEffect, useRef } from "react";
+import { Check, CircleAlert, RefreshCw, Trash2 } from "lucide-react";
+import { memo, useCallback, useEffect, useRef } from "react";
 import {
   Handle,
   NodeProps,
   Position,
   useReactFlow,
   useStore,
-  useStoreApi,
   XYPosition,
 } from "reactflow";
-import { NodeConfigModal } from "./NodeConfigModal";
+import WorkflowIcon from "./WorkflowIcon";
 
-const closedModel = ["vip_membership_invite", "pep_check_invite"];
 const normalizeHandle = (handle?: string | null) =>
   handle?.toLowerCase() ?? "none";
 const areHandlesEquivalent = (a: string, b: string): boolean => {
   if (a === b) return true;
   const groups = [
     ["next", "done", "none"],
-    ["on_true", "true"],
-    ["on_false", "false"],
   ];
   return groups.some((g) => g.includes(a) && g.includes(b));
-};
-const getLabel = (source: string | undefined) => {
-  switch (source) {
-    case "on_true":
-      return "true";
-    case "on_false":
-      return "false";
-    case "done":
-    case "success":
-    case "next":
-      return undefined;
-    default:
-      return source;
-  }
 };
 
 const CustomNode = ({ data, id }: NodeProps) => {
   const { project } = useReactFlow();
+  const { nodeTypeMeta, nodeExecutionState } = useFlowStore();
+
+  const executionStatus = nodeExecutionState?.[id] || null;
+
   const nodeRef = useRef<HTMLDivElement>(null);
   const store = useStoreApi();
   const edges = useStore((s) => s.edges);
+<<<<<<< HEAD
   const Icon = data.icon || PlusIcon;
   const isStartNode = (data as any).type === "start_workflow";
   const isAddNode = (data as any).type === "addNode";
@@ -63,6 +55,17 @@ const CustomNode = ({ data, id }: NodeProps) => {
   const handleClick = () => {
     setActiveNode(open ? null : data);
   };
+=======
+  const style = nodeTypeMeta.get(data?.type as NodeTypeProps) || {
+    icon: undefined,
+    color: "#6B7280",
+    border: "rgba(107, 114, 128, 0.35)",
+  };
+
+  const isStartNode = data.type === "start_workflow";
+  const isAddNode = data.type === NodeTypeProps.VOID;
+  const name = data?.name || "start workflow";
+>>>>>>> b916dd2f9979662654d2b06d437009e211054025
 
   // ✅ Report node ref to FlowCanvas (for popover anchor)
   useEffect(() => {
@@ -161,7 +164,7 @@ const CustomNode = ({ data, id }: NodeProps) => {
               position={Position.Left}
               id={`input-${i + 1}`}
               className="wf-handle-rounded"
-              style={{ background: style.bg }}
+              style={{ background: style.color }}
             />
           </div>
         </div>
@@ -174,25 +177,44 @@ const CustomNode = ({ data, id }: NodeProps) => {
         type="target"
         position={Position.Left}
         id="input"
+<<<<<<< HEAD
         className="wf-handle-invisible"
         style={{ top: "50%", background: style.bg,  left: -2 }}
+=======
+        className={`wf-input-row ${isConnected && "wf-handle-invisible"}`}
+        style={{
+          top: "50%",
+          background: style.color,
+          left: `${isConnected ? -2 : "6px"}`,
+        }}
+        isConnectable={!isConnected}
+>>>>>>> b916dd2f9979662654d2b06d437009e211054025
       />
     );
   };
 
   const renderOutputHandles = () => {
     if (isStartNode) return null;
+<<<<<<< HEAD
     return (data as any).outputs?.map((outputId: string, i: number) => {
       const verticalPos = `${
         (i + 1) * (100 / ((data as any).outputs.length + 1))
       }%`;
       const isConnected = isHandleConnected(outputId);
+=======
+    return data?.outputs?.map((outputId: string) => {
+      // const verticalPos = `${(i + 1) * (100 / (data?.outputs.length + 1))}%`;
+      const isConnected = isAddNode ? true : isOutputHandleConnected(outputId);
+>>>>>>> b916dd2f9979662654d2b06d437009e211054025
       const handleIdForAdd = outputId === "none" ? "next" : outputId;
-      const label = getLabel(outputId);
 
       return (
-        <div key={outputId} className="wf-output-row">
-          {label && <div className="wf-output-label">{label}</div>}
+        <div
+          key={outputId}
+          className="wf-output-row"
+          style={{ zIndex: isConnected ? 50 : 51 }}
+        >
+          {/* {label && <div className="wf-output-label">{label}</div>} */}
 
           <div className="wf-handle-wrapper">
             <Handle
@@ -214,7 +236,7 @@ const CustomNode = ({ data, id }: NodeProps) => {
                 opacity: 0,
                 background: "transparent",
                 right: "-1px",
-                zIndex: 50, // ABOVE the + button
+                zIndex: isConnected ? 50 : 51,
                 position: "absolute",
               }}
               onClick={(e) => {
@@ -231,7 +253,7 @@ const CustomNode = ({ data, id }: NodeProps) => {
               <div
                 className="wf-output-add"
                 style={{
-                  background: style.bg,
+                  background: style.color,
                   pointerEvents: "auto",
                   zIndex: 10,  // BELOW handle
                 }}
@@ -257,33 +279,93 @@ const CustomNode = ({ data, id }: NodeProps) => {
           {renderInputHandles()}
           <div
             className="wf-node-core"
+<<<<<<< HEAD
             style={{
               background: style.bg,
               transition: "all 0.3s ease-in-out",
             }}
             onClick={handleClick}
+=======
+            style={
+              {
+                ["--node-color"]: `${style.color}40`,
+                background: style.color,
+                transition: "all 0.3s ease-in-out",
+              } as React.CSSProperties
+            }
+>>>>>>> b916dd2f9979662654d2b06d437009e211054025
             onMouseEnter={(e) => {
-              const el = e.currentTarget as HTMLDivElement;
+              const el = e.currentTarget;
               el.style.borderColor = `${style.border}90`;
               el.style.transform = "scale(1.05)";
             }}
             onMouseLeave={(e) => {
+<<<<<<< HEAD
               const el = e.currentTarget as HTMLDivElement;
               el.style.borderColor = "white";
+=======
+              const el = e.currentTarget;
+              el.style.borderColor = "var(--wf-background-subtle)";
+>>>>>>> b916dd2f9979662654d2b06d437009e211054025
               el.style.transform = "scale(1)";
             }}
           >
-            <Icon className="wf-node-icon" />
+            <WorkflowIcon
+              nodeType={data.type}
+              size={40}
+            />
           </div>
+<<<<<<< HEAD
           {renderOutputHandles()}
           {!isAddNode && (
             <div className="wf-node-name">
               {name}
+=======
+          {executionStatus && (
+            <div className="wf-tooltip-wrapper">
+              {/* Status Icon */}
+              <div
+                className={`wf-status-icon ${
+                  executionStatus.status === NodeExecutionStatus.Completed
+                    ? "wf-status-success"
+                    : executionStatus.status === NodeExecutionStatus.Failed
+                    ? "wf-status-error"
+                    : "wf-status-running"
+                }`}
+              >
+                {executionStatus.status === NodeExecutionStatus.Running && (
+                  <RefreshCw className="wf-spin" />
+                )}
+                {executionStatus.status === NodeExecutionStatus.Completed && (
+                  <Check />
+                )}
+                {executionStatus.status === NodeExecutionStatus.Failed && (
+                  <CircleAlert />
+                )}
+              </div>
+
+              {/* Tooltip */}
+              <div
+                className={`wf-tooltip ${
+                  executionStatus.status === NodeExecutionStatus.Failed
+                    ? "wf-tooltip-error"
+                    : "wf-tooltip-success"
+                }`}
+              >
+                {executionStatus.status === NodeExecutionStatus.Failed
+                  ? (executionStatus?.data as { error: string })?.error ||
+                    "Execution Failed"
+                  : "Execution Completed"}
+              </div>
+>>>>>>> b916dd2f9979662654d2b06d437009e211054025
             </div>
           )}
+          {renderOutputHandles()}
+          {!isAddNode && <div className="wf-node-name">{name}</div>}
         </div>
 
         {!isStartNode && (
+<<<<<<< HEAD
           <div
             className="wf-node-toolbar"
             onClick={(e) => e.stopPropagation()}
@@ -292,12 +374,15 @@ const CustomNode = ({ data, id }: NodeProps) => {
               className="wf-node-toolbar-btn"
               onClick={handleDeleteClick}
             >
+=======
+          <div className="wf-node-toolbar" onClick={(e) => e.stopPropagation()}>
+            <Button className="wf-btn--destructive" onClick={handleDeleteClick}>
+>>>>>>> b916dd2f9979662654d2b06d437009e211054025
               <Trash2 className="wf-node-toolbar-icon" />
             </Button>
           </div>
         )}
       </div>
-      {isNodeConfigModelOpen && <NodeConfigModal />}
     </>
   );
 };

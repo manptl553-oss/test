@@ -29,7 +29,9 @@ const splitExpression = (expr = "") => {
   const regex = /(.+?)\s*(==|!=|===|>=|<=|>|<)\s*(.+)/;
   const m = expr.match(regex);
   if (!m) return { field: "", operator: "==", value: "" };
-  return { field: m[1].trim(), operator: m[2], value: m[3].trim() };
+
+  const stripQuotes = (str: string) => str.replace(/^['"]|['"]$/g, "").trim();
+  return { field: stripQuotes(m[1]), operator: m[2], value: stripQuotes(m[3]) };
 };
 
 export const DynamicForm = ({
@@ -80,7 +82,11 @@ export const DynamicForm = ({
     
     return d;
   }, [defaultValues, fields]);
+<<<<<<< HEAD
   
+=======
+
+>>>>>>> b916dd2f9979662654d2b06d437009e211054025
   const {
     handleSubmit,
     control,
@@ -118,7 +124,11 @@ export const DynamicForm = ({
               control={control}
               name={field.name}
               render={({ field: rhf }) => (
-                <Input {...rhf} placeholder={field.placeholder} />
+                <Input
+                  {...rhf}
+                  placeholder={field.placeholder}
+                  disabled={field.readOnly}
+                />
               )}
             />
             {errorMsg && <p className="wf-error-text">{errorMsg}</p>}
@@ -133,7 +143,20 @@ export const DynamicForm = ({
               control={control}
               name={field.name}
               render={({ field: rhf }) => (
+<<<<<<< HEAD
                 <Textarea {...rhf} placeholder={field.placeholder} />
+=======
+                <Textarea
+                  placeholder={field.placeholder}
+                  value={
+                    typeof rhf.value === "string"
+                      ? rhf.value
+                      : JSON.stringify(rhf.value ?? {}, null, 2)
+                  }
+                  onChange={(e) => rhf.onChange(e.target.value)}
+                  disabled={field.readOnly}
+                />
+>>>>>>> b916dd2f9979662654d2b06d437009e211054025
               )}
             />
             {errorMsg && <p className="wf-error-text">{errorMsg}</p>}
@@ -148,6 +171,7 @@ export const DynamicForm = ({
               control={control}
               name={field.name}
               render={({ field: { value, onChange } }) => (
+<<<<<<< HEAD
                 <Select value={value} onValueChange={onChange}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select" />
@@ -160,6 +184,16 @@ export const DynamicForm = ({
                     ))}
                   </SelectContent>
                 </Select>
+=======
+                <Select
+                  isMulti={isMulti}
+                  options={field.options || []}
+                  value={value ?? (isMulti ? [] : "")}
+                  onValueChange={onChange}
+                  placeholder={isMulti ? "Select multiple" : "Select"}
+                  isDisabled={field.readOnly}
+                />
+>>>>>>> b916dd2f9979662654d2b06d437009e211054025
               )}
             />
             {errorMsg && <p className="wf-error-text">{errorMsg}</p>}
@@ -192,7 +226,11 @@ export const DynamicForm = ({
               control={control}
               name={field.name}
               render={({ field: rhf }) => (
-                <Checkbox checked={rhf.value} onCheckedChange={rhf.onChange} />
+                <Checkbox
+                  checked={rhf.value}
+                  onCheckedChange={rhf.onChange}
+                  disabled={field.readOnly}
+                />
               )}
             />
             <Label>{field.label}</Label>
@@ -248,7 +286,12 @@ export const DynamicForm = ({
               )}
             />
             {errorMsg && <p className="wf-error-text">{errorMsg}</p>}
+<<<<<<< HEAD
           </div>);
+=======
+          </div>
+        );
+>>>>>>> b916dd2f9979662654d2b06d437009e211054025
 
       case "conditions":
       case "cases":
@@ -276,14 +319,25 @@ export const DynamicForm = ({
   return (
     <form onSubmit={handleSubmit(onSubmitInternal)} className="wf-dynamic-form">
       <div className={twoPane ? "wf-form-grid" : "wf-field-column"}>
-        <div className="wf-field-column">
+        <div className="wf-field-column wf-scroll-hide">
           {(twoPane ? left : visibleFields).map(renderField)}
         </div>
-        {twoPane && <div className="wf-field-column">{right.map(renderField)}</div>}
+        {twoPane && (
+          <div className="wf-field-column wf-scroll-hide">
+            {right.map(renderField)}
+          </div>
+        )}
       </div>
 
       <div className="wf-actions-row">
+<<<<<<< HEAD
         <Button type="submit" className="wf-button-fill wf-button-text-contrast">
+=======
+        <Button
+          type="submit"
+          className="wf-button-fill wf-button-text-contrast"
+        >
+>>>>>>> b916dd2f9979662654d2b06d437009e211054025
           Save
         </Button>
         {onCancel && (

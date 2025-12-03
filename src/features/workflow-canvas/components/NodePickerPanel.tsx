@@ -1,9 +1,23 @@
+<<<<<<< HEAD
 import { NODE_DEFINITIONS, nodeCategoryConst, NodeTypeProps, nodeTypeStyles } from "@/shared";
 import { useFlowStore } from "@/store";
 import { BugIcon, ChevronLeft } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { NavigationItem } from "../types";
+=======
+import {
+  CategoryTypes,
+  formatName,
+  NODE_DEFINITIONS,
+  NodeTypeProps,
+} from "@/shared";
+import { useFlowStore } from "@/store";
+import { BugIcon, ChevronLeft } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { NavigationItem, NodeTemplate, WorkflowNodesCategory } from "../types";
+>>>>>>> b916dd2f9979662654d2b06d437009e211054025
 import { PopoverItem } from "./PopoverItem";
+import WorkflowIcon from "./WorkflowIcon";
 
 export default function NodePickerPanel({
   id,
@@ -12,7 +26,17 @@ export default function NodePickerPanel({
   id: string;
   isStartNode?: boolean;
 }) {
+<<<<<<< HEAD
   const { updateNode, setActiveNode } = useFlowStore();
+=======
+  const {
+    updateNode,
+    setActiveNode,
+    nodeCategories,
+    categoryMeta,
+    nodeTypeMeta,
+  } = useFlowStore();
+>>>>>>> b916dd2f9979662654d2b06d437009e211054025
   const panelRef = useRef<HTMLDivElement>(null);
 
   const nodeCategory = useMemo(
@@ -34,6 +58,7 @@ export default function NodePickerPanel({
   );
 
   const currentView = navigationStack[navigationStack.length - 1];
+<<<<<<< HEAD
   const style = nodeTypeStyles[currentView?.data?.type as NodeTypeProps] ||
     nodeTypeStyles[currentView?.data?.name as NodeTypeProps] || {
       icon: BugIcon,
@@ -43,11 +68,27 @@ export default function NodePickerPanel({
 
   const goBack = () => setNavigationStack((stack) => stack.slice(0, -1));
   const navigateToCategory = (category: any) =>
+=======
+  const style = categoryMeta.get(
+    (currentView?.data as WorkflowNodesCategory)?.name as CategoryTypes
+  ) || {
+    icon: BugIcon,
+    color: "bg-gray-300",
+    border: "border-gray-500",
+  };
+
+  const goBack = () => setNavigationStack((stack) => stack.slice(0, -1));
+  const navigateToCategory = (category: WorkflowNodesCategory) =>
+>>>>>>> b916dd2f9979662654d2b06d437009e211054025
     setNavigationStack((stack) => [
       ...stack,
       { type: "category", data: category },
     ]);
+<<<<<<< HEAD
   const navigateToSubCategory = (subCategory: any) =>
+=======
+  const navigateToSubCategory = (subCategory: WorkflowNodesCategory) =>
+>>>>>>> b916dd2f9979662654d2b06d437009e211054025
     setNavigationStack((stack) => [
       ...stack,
       { type: "subcategory", data: subCategory },
@@ -55,8 +96,13 @@ export default function NodePickerPanel({
 
   const selectTemplate = (template: any) => {
     const nodeType = template.type as NodeTypeProps;
+<<<<<<< HEAD
     const Icon = nodeTypeStyles[nodeType]?.icon;
     const outputs=NODE_DEFINITIONS[nodeType] || ["none"]
+=======
+    const Icon = nodeTypeMeta.get(nodeType)?.icon;
+    const outputs = NODE_DEFINITIONS[nodeType] || ["none"];
+>>>>>>> b916dd2f9979662654d2b06d437009e211054025
     const nodeData = {
       name: template.name,
       templateId: template?.id,
@@ -84,6 +130,7 @@ export default function NodePickerPanel({
   const renderRootView = () => {
     const root = currentView.type === "root" ? currentView.data : [];
     if (!root) return;
+<<<<<<< HEAD
     return root.map((category: any) => {
       return (
         <PopoverItem
@@ -93,6 +140,18 @@ export default function NodePickerPanel({
         />
       );
     });
+=======
+    return root.map(
+      (category: WorkflowNodesCategory) =>
+        category.visibility && (
+          <PopoverItem
+            key={category.id}
+            category={category}
+            onClick={() => navigateToCategory(category)}
+          />
+        )
+    );
+>>>>>>> b916dd2f9979662654d2b06d437009e211054025
   };
 
   const renderCategoryView = () => {
@@ -112,6 +171,7 @@ export default function NodePickerPanel({
       categoryArray.push(...tempData);
     }
     if (category?.subCategories?.length > 0) {
+<<<<<<< HEAD
       const tempData = category.subCategories.map((subCat: any) => {
         return (
           <PopoverItem
@@ -125,6 +185,22 @@ export default function NodePickerPanel({
           />
         );
       });
+=======
+      const tempData = category.subCategories.map(
+        (subCat: WorkflowNodesCategory) =>
+          subCat.visibility && (
+            <PopoverItem
+              key={subCat.id}
+              category={subCat}
+              onClick={() =>
+                subCat?.subCategories?.length > 0
+                  ? navigateToCategory(subCat)
+                  : navigateToSubCategory(subCat)
+              }
+            />
+          )
+      );
+>>>>>>> b916dd2f9979662654d2b06d437009e211054025
       categoryArray.push(...tempData);
     }
     return categoryArray;
@@ -151,24 +227,41 @@ export default function NodePickerPanel({
             <ChevronLeft className="wf-icon-md" />
           </button>
         )}
+<<<<<<< HEAD
         {currentView?.data?.name || "Start"}
+=======
+        {formatName((currentView?.data as WorkflowNodesCategory)?.name || "Start")}
+>>>>>>> b916dd2f9979662654d2b06d437009e211054025
       </div>
       {currentView.type !== "root" && (
         <div className="wf-node-picker__body">
           <div
             className="wf-node-picker__summary"
             style={{
+<<<<<<< HEAD
               background: `${style.bg}20 `,
               border: `1px solid ${style.border}`,
+=======
+              background: `${style.color}20`, // keep dynamic branding tint
+              borderColor: style.border ?? style.color,
+>>>>>>> b916dd2f9979662654d2b06d437009e211054025
             }}
           >
             <div
               className="wf-node-picker__summary-icon"
               style={{
-                background: style.bg,
+                background: style.color,
               }}
             >
-              <style.icon />
+              <WorkflowIcon
+                nodeType={
+                  ((currentView?.data as WorkflowNodesCategory)
+                    ?.name as CategoryTypes) || ""
+                }
+                isCategory={true}
+                className="text-white w-8 h-8"
+                size={30}
+              />
             </div>
 
             <span className="wf-node-picker__summary-title">
@@ -178,10 +271,18 @@ export default function NodePickerPanel({
         </div>
       )}
 
+<<<<<<< HEAD
       <div className="wf-node-picker__list">
         {currentView.type === "root" && renderRootView()}
         {currentView.type === "category" && renderCategoryView()}
         {currentView.type === "subcategory" && renderSubCategoryView()}
+=======
+      {/* Items */}
+      <div className="wf-node-picker__list wf-scroll-hide">
+        {renderRootView()}
+        {renderCategoryView()}
+        {renderSubCategoryView()}
+>>>>>>> b916dd2f9979662654d2b06d437009e211054025
       </div>
     </div>
   );
