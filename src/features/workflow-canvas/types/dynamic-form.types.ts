@@ -11,7 +11,8 @@ export type BaseFieldType =
   | "cases"
   | "auth"
   | "schedule"
-  | "addOn";
+  | "addOn"
+  | "loop";
 
 interface FieldBaseConfig {
   name: string;

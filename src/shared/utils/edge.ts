@@ -27,7 +27,7 @@ export const makeEdge = (params: Partial<Edge>): Edge => {
   const expression =
     sourceNode?.data?.configuration?.switchCases?.find(
       (e: any) => e.condition === sourceHandle
-    ).expression ?? "";
+    )?.expression ?? "";
 
   return {
     id: params.id || uuidv4(),

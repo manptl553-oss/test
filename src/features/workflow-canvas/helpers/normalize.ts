@@ -135,7 +135,7 @@ export function transformEdge(edge: Edge): WorkflowEdge {
     versionId: edge.data.versionId,
     sourceId: edge.source, // Use source directly (it's already the node's data.id)
     targetId: edge.target, // Use target directly
-    groupId: null,
+    groupId: edge?.data?.groupId ?? null,
     condition: mapHandleToCondition(edge.sourceHandle),
     expression: edge?.data?.expression ?? "",
   };

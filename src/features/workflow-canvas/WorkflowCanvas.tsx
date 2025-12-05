@@ -200,7 +200,7 @@ export function WorkflowCanvas({
             </Button>
           </div>
         )}
-        {/* {nodes?.length > 0 && (
+        {nodes?.length > 0 && (
           <div>
             <Button
               className="bg-(--wf-brand-primary) text-(--wf-text-inverted) "
@@ -214,7 +214,7 @@ export function WorkflowCanvas({
               Dry Run
             </Button>
           </div>
-        )} */}
+        )}
       </header>
 
       <ReactFlowProvider>

@@ -4,32 +4,32 @@ import {
   DialogHeader,
   DialogTitle,
   EditableNodeName,
+  ELoopType,
   nodeFieldsConfig,
   nodeValidationSchema,
-} from "@/shared";
-import { useFlowStore } from "@/store";
-import { useMemo, useState } from "react";
-import { useReactFlow } from "reactflow";
-import { DynamicForm } from "./DynamicForm";
+} from '@/shared';
+import { useFlowStore } from '@/store';
+import { useMemo, useState } from 'react';
+import { useReactFlow } from 'reactflow';
+import { DynamicForm } from './DynamicForm';
 
 export function NodeConfigModal() {
   const { setNodes } = useReactFlow();
   const { activeNode, setActiveNode, updateNode } = useFlowStore(); // Add updateNode from store
   const nodeData = activeNode?.data;
   const nodeId = activeNode?.id as string;
-  const ignoredConfig = ["skip", "continueOnError"];
+  const ignoredConfig = ['skip', 'continueOnError'];
 
   const isConfigEmpty = !Object.keys(nodeData?.configuration ?? {}).some(
-    (k) => !ignoredConfig.includes(k)
+    (k) => !ignoredConfig.includes(k),
   );
 
   const nodeType = nodeData?.type as string;
 
   const [nodeName, setNodeName] = useState(
-    nodeData?.name || nodeType?.toUpperCase()
+    nodeData?.name || nodeType?.toUpperCase(),
   );
 
-  const isTrigger = ["webhook", "event"].includes(nodeType);
   const fields = nodeFieldsConfig[nodeType] ?? [];
   const schema = nodeValidationSchema[nodeType];
 
@@ -38,19 +38,25 @@ export function NodeConfigModal() {
     let result: any = {};
     fields.forEach((f: any) => {
       const val = saved[f.name];
-      if (f.type === "conditions") {
+      console.log("🚀 ~ NodeConfigModal ~ val:", val)
+      if (f.type === 'conditions') {
         result[f.name] = Array.isArray(val) ? val : [];
-      } else if (f.type === "cases") {
+      } else if (f.type === 'cases') {
         result[f.name] = Array.isArray(val) ? val : [];
-      } else if (f.type === "textarea") {
+      } else if (f.type === 'textarea') {
         result[f.name] =
-          typeof val !== "string" ? JSON.stringify(val, null, 2) : val;
-      } else if (f.type == "schedule") {
+          typeof val !== 'string' ? JSON.stringify(val, null, 2) : val;
+      } else if (f.type == 'schedule') {
         result = saved;
-      } else if (f.type == "addOn") {
+      } else if (f.type == 'addOn') {
         result[f.name] = Array.isArray(val) ? val : [];
+      } else if (f.type === 'loop') {
+        result.loopType = saved?.loopType ?? ELoopType.FIXED;
+        result.maxIterations = saved?.maxIterations ?? '';
+        result.exitCondition = saved?.exitCondition ?? '';
+        result.dataSourcePath = saved?.dataSourcePath ?? '';
       } else {
-        result[f.name] = val ?? "";
+        result[f.name] = val ?? '';
       }
     });
     return result;
@@ -65,8 +71,8 @@ export function NodeConfigModal() {
         finalConfig.conditions = values.conditions.map(
           (c: any, index: number) => ({
             expression: `'${c.field}' ${c.operator} '${c.value}'`,
-            operator: "&&",
-          })
+            operator: '&&',
+          }),
         );
       }
 
@@ -76,7 +82,7 @@ export function NodeConfigModal() {
           (c: any, index: number) => ({
             condition: `case_${index + 1}`,
             expression: `'${c.field}' ${c.operator} '${c.value}'`,
-          })
+          }),
         );
       }
       const payload = {
@@ -102,13 +108,13 @@ export function NodeConfigModal() {
                     configuration: finalConfig,
                   },
                 }
-              : node
-          )
+              : node,
+          ),
         );
       }
       setActiveNode(null);
     } catch (e) {
-      console.error("Save failed", e);
+      console.error('Save failed', e);
     }
   };
 
@@ -144,4 +150,4 @@ export function NodeConfigModal() {
   );
 }
 
-NodeConfigModal.displayName = "NodeConfigModal";
+NodeConfigModal.displayName = 'NodeConfigModal';

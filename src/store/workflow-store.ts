@@ -16,6 +16,7 @@ import {
   CategoryTypes,
   getOutputsForNode,
   getTargetHandleForNode,
+  handleLoopNodeTopology,
   isTriggerNode,
   NodeExecutionEvent,
   NodeTypeProps,
@@ -545,23 +546,44 @@ export const useFlowStore = create<FlowState>((set, get) => ({
     });
   },
 
-  addNodeBetweenEdge: (position, edge) => {
-    const { nodes, edges, getNewNode, setDeletedEdgeId } = get();
+addNodeBetweenEdge: (position, edge) => {
+    const { nodes, edges, getNewNode, setDeletedEdgeId, currentVersion } = get();
 
     if (!edge) return;
     const sourceEdgeId = edge.id;
-    // const edge = edges.find((e) => e.id === sourceEdgeId);
-    // if (!edge) return;
 
     const sourceNode = nodes.find((n) => n.id === edge.source);
     const targetNode = nodes.find((n) => n.id === edge.target);
     if (!sourceNode || !targetNode) return;
 
+    // 1. Detect Loop Context
+    const isSelfLoop = edge.source === edge.target;
+    const isLoopBack = edge.data?.loopType === 'loop-back';
+    
+    // 2. Determine Parent Loop for the New Node
+    //    - If splitting a Self Loop, the Source IS the parent.
+
+    let parentLoopId = sourceNode.data.parentLoop; 
+    
+
+    if (isSelfLoop && sourceNode.data.type === 'loop') { 
+        parentLoopId = sourceNode.id;
+    }
+
+    // 3. Create the New Node
     const newNode = getNewNode(position);
-    let newEdges = edges.filter((e) => e.id !== sourceEdgeId);
+    
+    // Assign Parent ID (parentLoop)
+    if (parentLoopId) {
+        newNode.data.parentLoop = parentLoopId;
 
+    }
+
+    // 4. Prepare Edge Removal
     setDeletedEdgeId(sourceEdgeId);
+    const newEdges = edges.filter((e) => e.id !== sourceEdgeId);
 
+    // Special Trigger Check
     if (isTriggerNode(newNode?.data?.type?.toLowerCase?.())) {
       set({
         nodes: [...nodes, newNode],
@@ -572,23 +594,55 @@ export const useFlowStore = create<FlowState>((set, get) => ({
       return;
     }
 
+    /* ------------------------------------------------------------
+       5. EDGE 1: Source -> New Node
+    ------------------------------------------------------------ */
+    const dataToNew = { ...edge.data };
+    
+    // Assign Group ID for the edge
+    if (parentLoopId) {
+        dataToNew.groupId = parentLoopId;
+    }
+
+    if (isSelfLoop) {
+        dataToNew.loopType = 'loop-child'; 
+    } else if (isLoopBack) {
+        delete dataToNew.loopType;
+    }
+
     const edgeToNew = makeEdge({
       source: sourceNode.id,
       target: newNode.id,
       sourceHandle: edge.sourceHandle ?? 'none',
       targetHandle: getTargetHandleForNode(newNode),
-      data: edge.data,
+      data: dataToNew,
     });
+
+    /* ------------------------------------------------------------
+       6. EDGE 2: New Node -> Target
+    ------------------------------------------------------------ */
+    const dataFromNew = { 
+        versionId: currentVersion?.id, 
+        loopType: '',
+        groupId: parentLoopId || undefined 
+    };
+
+    if (isSelfLoop || isLoopBack) {
+        dataFromNew.loopType = 'loop-back';
+    }
+
+    const primaryOutput = getOutputsForNode(newNode)[0];
 
     const edgeFromNew = makeEdge({
       source: newNode.id,
       target: targetNode.id,
-      sourceHandle: getOutputsForNode(newNode)[0],
+      sourceHandle: primaryOutput,
       targetHandle: edge.targetHandle ?? 'input',
+      data: dataFromNew,
     });
 
     newEdges.push(edgeToNew, edgeFromNew);
-
+     
     set({
       nodes: [...nodes, newNode],
       edges: newEdges,
@@ -597,7 +651,6 @@ export const useFlowStore = create<FlowState>((set, get) => ({
       showSidebar: false,
     });
   },
-
   renameNode: (nodeId, newName) => {
     set((state) => {
       const dirtyNodeIds = new Set(state.dirtyNodeIds);
@@ -618,7 +671,7 @@ export const useFlowStore = create<FlowState>((set, get) => ({
     });
   },
 
-  deleteNode: (nodeId) => {
+ deleteNode: (nodeId) => {
     const state = get();
     const {
       nodes,
@@ -632,67 +685,94 @@ export const useFlowStore = create<FlowState>((set, get) => ({
     if (activeNode && activeNode?.id == nodeId) setActiveNode(null);
 
     const deletedNode = nodes.find((n) => n.id === nodeId);
-    const isLoop = deletedNode?.data?.type === 'loop';
+    if (!deletedNode) return;
 
+    // 1. Identify Edges
     const incoming = edges.filter((e) => e.target === nodeId);
     const outgoing = edges.filter((e) => e.source === nodeId);
 
-    // Track which edges are being removed
-    const removedEdges = edges.filter(
-      (e) => e.source === nodeId || e.target === nodeId,
-    );
+    // Track edges to be removed (initially just direct connections)
+    const removedEdges = [...incoming, ...outgoing];
 
+    // Filter out the edges directly attached to the deleted node from the main list
     let updatedEdges = edges.filter(
-      (e) => e.source !== nodeId && e.target !== nodeId,
+      (e) => e.source !== nodeId && e.target !== nodeId
     );
 
-    if (isLoop) {
-      const childNodes = nodes.filter((n) => n.parentNode === nodeId);
-      const childIds = new Set(childNodes.map((n) => n.id));
+    // 2. CHECK FOR LOOP BACK SCENARIO (Preserving the Rectangle)
+    // Does the deleted node have an edge that goes BACK to the loop start?
+    const loopBackEdge = outgoing.find((e) => e.data?.loopType === 'loop-back');
 
-      // Track loop-related edges being removed
-      const loopEdges = edges.filter(
-        (e) =>
-          e.source === nodeId ||
-          e.target === nodeId ||
-          (childIds.has(e.source) && e.target === nodeId),
-      );
-
-      removedEdges.push(...loopEdges);
-
-      updatedEdges = updatedEdges.filter(
-        (e) => !(e.source === nodeId || e.target === nodeId),
-      );
-      updatedEdges = updatedEdges.filter(
-        (e) => !(childIds.has(e.source) && e.target === nodeId),
-      );
-    } else {
-      // Reconnect previous → next
-      if (incoming.length > 0 && outgoing.length > 0) {
-        const reconnectedEdges = incoming.map((inEdge) => {
-          const outEdge = outgoing[0];
-          return makeEdge({
-            source: inEdge.source,
-            target: outEdge.target,
-            sourceHandle: inEdge.sourceHandle ?? 'none',
-            targetHandle: outEdge.targetHandle ?? 'input',
-            data: inEdge?.data ?? {},
-          });
+    if (loopBackEdge && incoming.length > 0) {
+      // Case: Deleting 'Aggregate'.
+      // We must connect 'Group' (incoming source) -> 'Loop Start' (outgoing target)
+      // preserving the 'loop-back' type to keep the L-shape line.
+      
+      const newLoopBackEdges = incoming.map((inEdge) => {
+        return makeEdge({
+          source: inEdge.source,
+          target: loopBackEdge.target, // The Loop Node ID
+          sourceHandle: inEdge.sourceHandle ?? 'none',
+          targetHandle: loopBackEdge.targetHandle ?? 'input', // Usually 'input' or loop connector
+          data: { 
+            ...loopBackEdge.data, // Important: Inherit 'loop-back' type
+            versionId: state.currentVersion?.id 
+          }, 
         });
+      });
 
-        updatedEdges = [...updatedEdges, ...reconnectedEdges];
-        // Note: reconnectedEdges are NEW edges, will be tracked as added
-      }
+      updatedEdges = [...updatedEdges, ...newLoopBackEdges];
+    }
+    // 3. Standard Bridge Logic (A -> B -> C  =>  A -> C)
+    // Only run this if we didn't just handle a Loop Back
+    else if (!loopBackEdge && incoming.length > 0 && outgoing.length > 0) {
+      const reconnectedEdges = incoming.map((inEdge) => {
+        const outEdge = outgoing[0]; // Usually just one output in linear flow
+        return makeEdge({
+          source: inEdge.source,
+          target: outEdge.target,
+          sourceHandle: inEdge.sourceHandle ?? 'none',
+          targetHandle: outEdge.targetHandle ?? 'input',
+          data: { ...inEdge.data, versionId: state.currentVersion?.id },
+        });
+      });
+
+      updatedEdges = [...updatedEdges, ...reconnectedEdges];
     }
 
+    // 4. Handle Loop Node Deletion specifically
+    // If the Loop itself is deleted, we just ensure edges are gone.
+    // The visual topology breaks naturally here.
+    const isLoop = deletedNode.data?.type === NodeTypeProps.LOOP;
+    
+    if (isLoop) {
+       // If you are using React Flow 'parentNode' feature (visual grouping):
+       // This block removes edges inside the group if the group is deleted.
+       const childNodes = nodes.filter((n) => n.parentNode === nodeId);
+       const childIds = new Set(childNodes.map((n) => n.id));
+       
+       const childEdges = edges.filter(
+        (e) => childIds.has(e.source) && childIds.has(e.target)
+       );
+       
+       // Optional: Decide if you want to delete the edges INSIDE the loop 
+       // when the loop wrapper is deleted. 
+       // If you want to keep nodes but remove connections to the loop:
+       // The code above (filtering updatedEdges) already removed connections TO the loop.
+    }
+
+    // 5. Final State Update
     const updatedNodes = nodes.filter((n) => n.id !== nodeId);
+    
+    // Safety clean: ensure no edges point to non-existent nodes
     const validNodeIds = new Set(updatedNodes.map((n) => n.id));
     const cleanedEdges = updatedEdges.filter(
-      (e) => validNodeIds.has(e.source) && validNodeIds.has(e.target),
+      (e) => validNodeIds.has(e.source) && validNodeIds.has(e.target)
     );
-    setDeletedNodeId(nodeId);
 
-    // Track deleted edges (only if they were synced)
+    setDeletedNodeId(nodeId);
+    
+    // Track deleted edges for sync
     removedEdges.forEach((edge) => {
       setDeletedEdgeId(edge.id);
     });
@@ -703,6 +783,7 @@ export const useFlowStore = create<FlowState>((set, get) => ({
       connectedHandles: computeConnectedHandles(cleanedEdges, updatedNodes),
     });
   },
+  
   updateNode: (nodeId, nodeData) => {
     let {
       nodes,
@@ -803,6 +884,26 @@ export const useFlowStore = create<FlowState>((set, get) => ({
         (edge) => edge.source === mergedNode.id,
       )?.id;
       if (sourceEdgeId) oldNode.data.outputs?.push(normalizedOutputs[0]);
+    }
+
+    if (newType === NodeTypeProps.LOOP) {
+      const result = handleLoopNodeTopology({
+        mergedNode,
+        oldNodeId: nodeId, // <--- PASS THE ORIGINAL ID HERE (This is critical)
+        nodes,
+        edges,
+        currentVersion,
+        getNewNode,
+        trackDeletedEdges,
+      });
+
+      set({
+        nodes: result.nodes,
+        edges: result.edges,
+        connectedHandles: computeConnectedHandles(result.edges),
+      });
+      _updateNodeInternals?.(mergedNode.id);
+      return; // Stop here for Loops
     }
 
     // If NOT conditional/rule/switch → simple update

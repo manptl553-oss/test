@@ -3,6 +3,7 @@ import { z } from "zod";
 import { HTTP_METHODS } from "../types";
 import { addOnSchema } from "./addon-schema";
 import { scheduleSchema } from "./schedule-schema";
+import { LoopSchema } from "./loop-schema";
 
 /**
  * Nodes that use DynamicForm only.
@@ -80,7 +81,13 @@ export const nodeFieldsConfig: Record<string, FieldConfig[]> = {
       type: "schedule",
     },
   ],
-
+  loop:[
+    {
+      name:"loop",
+      label:"Loop",
+      type:"loop"
+    }
+  ],
   event: [
     {
       name: "eventName",
@@ -577,6 +584,8 @@ export const nodeValidationSchema: Record<string, z.ZodSchema<any>> = {
       .min(1, "At least one case is required"),
   }),
 
+  /* Loop Node */
+  loop:LoopSchema,
   update_database: z.object({
     table: z.string().min(1, "Table is required"),
 
